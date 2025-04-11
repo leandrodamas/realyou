@@ -2,6 +2,8 @@
 import React from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
+import { Video } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Chat {
   id: number;
@@ -53,6 +55,12 @@ const ChatList: React.FC = () => {
     },
   ];
 
+  const handleVideoCall = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log(`Iniciando chamada de vídeo com usuário ${id}`);
+    // Aqui implementaríamos a lógica de chamada de vídeo
+  };
+
   return (
     <div className="divide-y">
       {chats.map((chat) => (
@@ -72,11 +80,24 @@ const ChatList: React.FC = () => {
             </div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-sm text-gray-600 truncate max-w-[200px]">{chat.lastMessage}</p>
-              {chat.unreadCount > 0 && (
-                <span className="bg-whatsapp text-white text-xs rounded-full px-2 py-0.5">
-                  {chat.unreadCount}
-                </span>
-              )}
+              <div className="flex items-center space-x-2">
+                {chat.unreadCount > 0 && (
+                  <span className="bg-whatsapp text-white text-xs rounded-full px-2 py-0.5">
+                    {chat.unreadCount}
+                  </span>
+                )}
+                {chat.isOnline && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-green-500 h-8 w-8" 
+                    onClick={(e) => handleVideoCall(chat.id, e)}
+                  >
+                    <Video className="h-4 w-4" />
+                    <span className="sr-only">Chamada de vídeo com {chat.name}</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </Link>

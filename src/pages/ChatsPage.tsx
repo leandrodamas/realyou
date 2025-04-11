@@ -1,11 +1,51 @@
 
-import React from "react";
+import React, { useState } from "react";
 import ChatList from "@/components/chats/ChatList";
 import { Button } from "@/components/ui/button";
-import { Search, Edit } from "lucide-react";
+import { Search, Edit, Video, VideoOff, Mic, MicOff, PhoneOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const ChatsPage: React.FC = () => {
+  const [inCall, setInCall] = useState(false);
+  const [callWith, setCallWith] = useState("");
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+
+  const startCall = (name: string) => {
+    setCallWith(name);
+    setInCall(true);
+    toast.success(`Chamada de vídeo iniciada com ${name}`);
+  };
+
+  const endCall = () => {
+    toast.info(`Chamada encerrada com ${callWith}`);
+    setInCall(false);
+    setCallWith("");
+  };
+
+  const toggleVideo = () => {
+    setVideoEnabled(!videoEnabled);
+    toast(`Vídeo ${!videoEnabled ? 'ativado' : 'desativado'}`);
+  };
+
+  const toggleAudio = () => {
+    setAudioEnabled(!audioEnabled);
+    toast(`Microfone ${!audioEnabled ? 'ativado' : 'desativado'}`);
+  };
+
+  // Simula uma chamada recebida após 5 segundos quando a página é carregada
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!inCall) {
+        startCall("Maria Silva");
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
@@ -32,6 +72,61 @@ const ChatsPage: React.FC = () => {
       <div className="bg-white">
         <ChatList />
       </div>
+
+      {/* Video Call Dialog */}
+      <Dialog open={inCall} onOpenChange={(open) => !open && endCall()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chamada de vídeo com {callWith}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center">
+            <div className="bg-gray-900 w-full h-64 rounded-lg flex items-center justify-center mb-4">
+              {videoEnabled ? (
+                <video 
+                  className="w-full h-full object-cover rounded-lg"
+                  autoPlay
+                  muted
+                  loop
+                  src="https://assets.mixkit.co/videos/preview/mixkit-woman-sitting-in-a-modern-kitchen-speaking-through-a-video-call-755-large.mp4"
+                />
+              ) : (
+                <div className="text-white text-center">
+                  <VideoOff className="h-12 w-12 mx-auto mb-2" />
+                  <p>Vídeo desativado</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-4 mt-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleVideo}
+                className={videoEnabled ? "bg-white" : "bg-gray-200"}
+              >
+                {videoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleAudio}
+                className={audioEnabled ? "bg-white" : "bg-gray-200"}
+              >
+                {audioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+              </Button>
+              
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={endCall}
+              >
+                <PhoneOff className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
