@@ -1,11 +1,29 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, UserPlus, X, Sparkles } from "lucide-react";
+import { Camera, UserPlus, X, Sparkles, Clock, User, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface MatchedPerson {
+  name: string;
+  profession: string;
+  avatar: string;
+  schedule: {
+    day: string;
+    slots: string[];
+    active: boolean;
+  }[];
+}
 
 const FaceCapture: React.FC = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [connectionSent, setConnectionSent] = useState(false);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
@@ -22,12 +40,38 @@ const FaceCapture: React.FC = () => {
   const handleReset = () => {
     setCapturedImage(null);
     setIsCameraActive(false);
+    setMatchedPerson(null);
+    setIsSearching(false);
+    setConnectionSent(false);
   };
 
   const handleSearch = () => {
-    // In a real implementation, this would send the image for facial recognition matching
-    console.log("Searching for face matches...");
-    // Simulate processing
+    // Simulate searching for a face match
+    setIsSearching(true);
+    
+    // Simulate a delay for processing
+    setTimeout(() => {
+      setIsSearching(false);
+      setMatchedPerson({
+        name: "Alex Johnson",
+        profession: "Terapeuta",
+        avatar: "/placeholder.svg",
+        schedule: [
+          { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+          { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+          { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+          { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+          { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
+          { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
+          { day: "Domingo", slots: [], active: false }
+        ]
+      });
+    }, 2000);
+  };
+
+  const sendConnectionRequest = () => {
+    setConnectionSent(true);
+    toast.success("Solicitação de conexão enviada!");
   };
 
   return (
@@ -71,32 +115,153 @@ const FaceCapture: React.FC = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
               <div className="mb-6 text-center">
-                <p className="text-gray-600 mb-1">Take a picture to connect</p>
-                <p className="text-xs text-gray-400">Be yourself, be real</p>
+                <p className="text-gray-600 mb-1">Tire uma foto para se conectar</p>
+                <p className="text-xs text-gray-400">Seja você mesmo, seja real</p>
               </div>
               <Button 
                 onClick={handleStartCamera} 
                 className="rounded-full px-6 bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md">
-                Start Camera
+                Iniciar Câmera
               </Button>
             </div>
           )}
         </div>
 
-        {capturedImage && (
+        {capturedImage && !matchedPerson && (
           <div className="mt-6 space-y-3">
             <Button 
               className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md" 
-              onClick={handleSearch}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Find Friends with Face Recognition
+              onClick={handleSearch}
+              disabled={isSearching}
+            >
+              {isSearching ? (
+                <div className="flex items-center">
+                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                  Procurando...
+                </div>
+              ) : (
+                <>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Encontrar Profissionais com Reconhecimento Facial
+                </>
+              )}
             </Button>
             <p className="text-xs text-gray-500 text-center px-4">
-              We'll notify people if we find a match, and they can choose to connect with you
+              Notificaremos as pessoas se encontrarmos uma correspondência, e elas poderão escolher se conectar com você
             </p>
           </div>
         )}
+
+        <AnimatePresence>
+          {matchedPerson && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mt-6 bg-white rounded-xl p-4 shadow-md border border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <img 
+                  src={matchedPerson.avatar} 
+                  alt={matchedPerson.name} 
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="font-medium">{matchedPerson.name}</h3>
+                  <p className="text-xs text-gray-500">{matchedPerson.profession}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline"
+                  className="flex-1 text-sm h-9"
+                  onClick={() => setShowScheduleDialog(true)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Ver Horários
+                </Button>
+                
+                <Button 
+                  className={`flex-1 text-sm h-9 ${connectionSent ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-purple-600 to-blue-500'}`}
+                  onClick={sendConnectionRequest}
+                  disabled={connectionSent}
+                >
+                  {connectionSent ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Solicitação Enviada
+                    </>
+                  ) : (
+                    <>
+                      <User className="h-4 w-4 mr-2" />
+                      Enviar Solicitação
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Horários de Atendimento</DialogTitle>
+          </DialogHeader>
+          
+          {matchedPerson && (
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center gap-3 pb-4 border-b">
+                <img 
+                  src={matchedPerson.avatar} 
+                  alt={matchedPerson.name} 
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="font-medium">{matchedPerson.name}</h3>
+                  <p className="text-xs text-gray-500">{matchedPerson.profession}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-3">Disponibilidade Semanal</h4>
+                <div className="space-y-3">
+                  {matchedPerson.schedule
+                    .filter(day => day.active)
+                    .map((day, index) => (
+                    <div key={index} className="border-b border-gray-100 pb-2 last:border-0">
+                      <p className="text-sm font-medium">{day.day}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {day.slots.map((slot, slotIndex) => (
+                          <Button
+                            key={slotIndex}
+                            variant="secondary"
+                            className="text-xs h-7 px-2"
+                            size="sm"
+                          >
+                            {slot}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={() => setShowScheduleDialog(false)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-500"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
