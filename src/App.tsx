@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ChatsPage from "./pages/ChatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
+import FaceRegistrationPage from "./pages/FaceRegistrationPage";
 import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
 import NavBar from "./components/layout/NavBar";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/chats" element={<ChatsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/face-recognition" element={<FaceRecognitionPage />} />
+            <Route path="/register" element={<FaceRegistrationPage />} />
             <Route path="/search" element={<SearchPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
