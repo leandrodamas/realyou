@@ -16,7 +16,10 @@ import {
   MessageCircle, 
   Share2,
   Bookmark,
-  Shield
+  Shield,
+  Eye,
+  Bell,
+  Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
