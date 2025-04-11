@@ -1,13 +1,12 @@
 
 import React from "react";
-import NavBar from "@/components/layout/NavBar";
 import FaceCapture from "@/components/facial-recognition/FaceCapture";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const FaceRecognitionPage: React.FC = () => {
   return (
-    <div className="pb-16 bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       {/* Header */}
       <header className="bg-white p-4 flex items-center border-b">
         <Link to="/" className="mr-4">
@@ -20,9 +19,6 @@ const FaceRecognitionPage: React.FC = () => {
       <div className="mt-4">
         <FaceCapture />
       </div>
-
-      {/* Navigation Bar */}
-      <NavBar />
     </div>
   );
 };

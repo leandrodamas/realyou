@@ -1,6 +1,5 @@
 
 import React from "react";
-import NavBar from "@/components/layout/NavBar";
 import ChatList from "@/components/chats/ChatList";
 import { Button } from "@/components/ui/button";
 import { Search, Edit } from "lucide-react";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 
 const ChatsPage: React.FC = () => {
   return (
-    <div className="pb-16 bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b">
         <h1 className="text-xl font-bold">Chats</h1>
@@ -33,9 +32,6 @@ const ChatsPage: React.FC = () => {
       <div className="bg-white">
         <ChatList />
       </div>
-
-      {/* Navigation Bar */}
-      <NavBar />
     </div>
   );
 };

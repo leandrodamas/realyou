@@ -1,14 +1,12 @@
 
 import React from "react";
-import NavBar from "@/components/layout/NavBar";
 import Stories from "@/components/home/Stories";
 import Feed from "@/components/home/Feed";
 import { Search, SendHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 const Index: React.FC = () => {
   return (
-    <div className="pb-16 bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b">
         <h1 className="text-xl font-bold text-whatsapp-dark">FaceConnect</h1>
@@ -25,9 +23,6 @@ const Index: React.FC = () => {
 
       {/* Feed */}
       <Feed />
-
-      {/* Navigation Bar */}
-      <NavBar />
     </div>
   );
 };

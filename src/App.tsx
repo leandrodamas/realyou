@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
 import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
+import NavBar from "./components/layout/NavBar";
 
 const queryClient = new QueryClient();
 
@@ -19,15 +20,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/chats" element={<ChatsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/face-recognition" element={<FaceRecognitionPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="pb-16"> {/* Added padding bottom to accommodate NavBar */}
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/chats" element={<ChatsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/face-recognition" element={<FaceRecognitionPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <NavBar />
+        </div>
       </Router>
     </TooltipProvider>
   </QueryClientProvider>
