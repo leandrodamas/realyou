@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import ProfileGallery from "@/components/profile/ProfileGallery";
 import ProfileAchievements from "@/components/profile/ProfileAchievements";
 
@@ -30,9 +31,11 @@ const ProfilePage: React.FC = () => {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md p-4 flex justify-between items-center border-b sticky top-0 z-10">
         <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Your Profile</h1>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Settings className="h-5 w-5 text-gray-500" />
-        </Button>
+        <Link to="/settings">
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Settings className="h-5 w-5 text-gray-500" />
+          </Button>
+        </Link>
       </header>
 
       {/* Profile Info */}
