@@ -1,13 +1,24 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
 import QuickSettingsSection from "@/components/profile/QuickSettingsSection";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import FloatingActionButton from "@/components/profile/FloatingActionButton";
+import { useLocation } from "react-router-dom";
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if there's a tab parameter in the URL
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (tabParam && ["posts", "about", "services", "achievements"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
 
   const openSettings = (section?: string) => {
     if (section) {

@@ -4,9 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileGallery from "@/components/profile/ProfileGallery";
 import BusinessCard from "@/components/profile/BusinessCard";
 import ProfileAchievements from "@/components/profile/ProfileAchievements";
+import ServiceSchedulingSection from "@/components/profile/ServiceSchedulingSection";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trophy, Edit } from "lucide-react";
+import { Trophy, Edit, Calendar } from "lucide-react";
 
 interface ProfileTabsProps {
   activeTab: string;
@@ -23,7 +24,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab, open
       onValueChange={setActiveTab}
     >
       <div className="sticky top-16 z-10 bg-white/80 backdrop-blur-md">
-        <TabsList className="grid grid-cols-3 mx-4 mt-4 p-1 bg-gray-100 rounded-xl">
+        <TabsList className="grid grid-cols-4 mx-4 mt-4 p-1 bg-gray-100 rounded-xl">
           <TabsTrigger 
             value="posts"
             className={`rounded-lg ${activeTab === 'posts' ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white' : ''}`}
@@ -35,6 +36,13 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab, open
             className={`rounded-lg ${activeTab === 'about' ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white' : ''}`}
           >
             About
+          </TabsTrigger>
+          <TabsTrigger 
+            value="services"
+            className={`rounded-lg ${activeTab === 'services' ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white' : ''}`}
+          >
+            <Calendar className="h-4 w-4 mr-1" />
+            Serviços
           </TabsTrigger>
           <TabsTrigger 
             value="achievements"
@@ -70,6 +78,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab, open
             When I'm not coding, you can find me hiking or experimenting with new recipes.
           </p>
         </div>
+      </TabsContent>
+      
+      <TabsContent value="services" className="px-4 pb-4 animate-fade-in">
+        <ServiceSchedulingSection />
       </TabsContent>
 
       <TabsContent value="achievements" className="px-4 animate-fade-in">
