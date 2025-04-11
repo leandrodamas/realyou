@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, UserPlus, X } from "lucide-react";
+import { Camera, UserPlus, X, Sparkles } from "lucide-react";
 
 const FaceCapture: React.FC = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -31,11 +31,15 @@ const FaceCapture: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <h2 className="text-xl font-bold text-center mb-4">Connect via Face Recognition</h2>
+    <div className="flex flex-col items-center p-6">
+      <div className="w-full">
+        <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
+          <Sparkles className="h-5 w-5 text-purple-500" />
+          <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Connect with RealYou</span>
+          <Sparkles className="h-5 w-5 text-blue-500" />
+        </h2>
         
-        <div className="bg-gray-100 rounded-lg aspect-square w-full relative overflow-hidden">
+        <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl aspect-square w-full relative overflow-hidden border border-gray-100 shadow-inner">
           {isCameraActive ? (
             <div className="flex flex-col items-center justify-center h-full">
               {/* Camera view would be shown here in a real implementation */}
@@ -43,8 +47,8 @@ const FaceCapture: React.FC = () => {
                 <p className="text-white">Camera Preview</p>
               </div>
               <div className="absolute bottom-4 w-full flex justify-center">
-                <Button onClick={handleCapture} className="rounded-full bg-white text-black">
-                  <Camera className="h-6 w-6" />
+                <Button onClick={handleCapture} className="rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100">
+                  <Camera className="h-8 w-8" />
                 </Button>
               </div>
             </div>
@@ -53,12 +57,12 @@ const FaceCapture: React.FC = () => {
               <img 
                 src={capturedImage} 
                 alt="Captured face" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-2xl"
               />
               <Button 
                 variant="destructive" 
                 size="icon"
-                className="absolute top-2 right-2 rounded-full"
+                className="absolute top-3 right-3 rounded-full shadow-md"
                 onClick={handleReset}
               >
                 <X className="h-4 w-4" />
@@ -66,8 +70,13 @@ const FaceCapture: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-gray-500 mb-4">Take a picture to connect</p>
-              <Button onClick={handleStartCamera} className="bg-whatsapp hover:bg-whatsapp-dark">
+              <div className="mb-6 text-center">
+                <p className="text-gray-600 mb-1">Take a picture to connect</p>
+                <p className="text-xs text-gray-400">Be yourself, be real</p>
+              </div>
+              <Button 
+                onClick={handleStartCamera} 
+                className="rounded-full px-6 bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md">
                 Start Camera
               </Button>
             </div>
@@ -75,12 +84,14 @@ const FaceCapture: React.FC = () => {
         </div>
 
         {capturedImage && (
-          <div className="mt-4 space-y-2">
-            <Button className="w-full bg-whatsapp hover:bg-whatsapp-dark" onClick={handleSearch}>
+          <div className="mt-6 space-y-3">
+            <Button 
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md" 
+              onClick={handleSearch}>
               <UserPlus className="mr-2 h-4 w-4" />
               Find Friends with Face Recognition
             </Button>
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 text-center px-4">
               We'll notify people if we find a match, and they can choose to connect with you
             </p>
           </div>

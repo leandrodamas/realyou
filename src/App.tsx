@@ -20,7 +20,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Router>
-        <div className="pb-16"> {/* Added padding bottom to accommodate NavBar */}
+        <div className="pb-20"> {/* Added extra padding bottom to accommodate NavBar and center camera button */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/chats" element={<ChatsPage />} />
