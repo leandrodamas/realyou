@@ -3,7 +3,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { 
   Clock, AlertCircle, Check, Clock3,
-  Calendar, InfoIcon, MoreVertical
+  Calendar, InfoIcon, MoreVertical,
+  Video, MapPin, Phone, User, CreditCard
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,49 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
         return "bg-gray-50 border-gray-200";
     }
   };
+  
+  const getLocationIcon = (location?: string) => {
+    if (!location) return null;
+    
+    switch (location) {
+      case "online":
+        return <Video className="h-3.5 w-3.5 text-blue-500" />;
+      case "in-person":
+        return <MapPin className="h-3.5 w-3.5 text-purple-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusBadge = (status?: AppointmentType["status"]) => {
+    if (!status) return null;
+    
+    switch (status) {
+      case "pending":
+        return (
+          <Badge className="bg-amber-100 text-amber-700 border-0 flex items-center">
+            <Clock3 className="h-3 w-3 mr-1" />
+            Pendente
+          </Badge>
+        );
+      case "confirmed":
+        return (
+          <Badge className="bg-green-100 text-green-700 border-0 flex items-center">
+            <Check className="h-3 w-3 mr-1" />
+            Confirmado
+          </Badge>
+        );
+      case "completed":
+        return (
+          <Badge className="bg-gray-100 text-gray-700 border-0 flex items-center">
+            <Check className="h-3 w-3 mr-1" />
+            Concluído
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <motion.div
@@ -77,28 +121,7 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
           </div>
         </div>
         
-        {appointment.type === "scheduled" && (
-          <div className="flex items-center">
-            {appointment.status === "pending" && (
-              <Badge className="bg-amber-100 text-amber-700 border-0 flex items-center">
-                <Clock3 className="h-3 w-3 mr-1" />
-                Pendente
-              </Badge>
-            )}
-            {appointment.status === "confirmed" && (
-              <Badge className="bg-green-100 text-green-700 border-0 flex items-center">
-                <Check className="h-3 w-3 mr-1" />
-                Confirmado
-              </Badge>
-            )}
-            {appointment.status === "completed" && (
-              <Badge className="bg-gray-100 text-gray-700 border-0 flex items-center">
-                <Check className="h-3 w-3 mr-1" />
-                Concluído
-              </Badge>
-            )}
-          </div>
-        )}
+        {appointment.type === "scheduled" && getStatusBadge(appointment.status)}
         
         {appointment.type === "free" && (
           <TooltipProvider>
@@ -116,35 +139,59 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
       
       {/* Client information for scheduled appointments */}
       {appointment.type === "scheduled" && appointment.clientName && (
-        <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
-              <img 
-                src={appointment.clientImage} 
-                alt={appointment.clientName}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div>
-              <p className="text-sm font-medium">{appointment.clientName}</p>
-              <div className="flex items-center text-xs text-gray-500">
-                {appointment.location === "online" ? (
-                  <span>Consulta online</span>
-                ) : (
-                  <span>Presencial</span>
-                )}
-                {appointment.price && (
-                  <>
-                    <span className="mx-1">•</span>
-                    <span>R${appointment.price}</span>
-                  </>
-                )}
+        <div className="mt-3 pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
+                <img 
+                  src={appointment.clientImage} 
+                  alt={appointment.clientName}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{appointment.clientName}</p>
+                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                  <User className="h-3 w-3" />
+                  <span>Cliente</span>
+                  {appointment.location && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <span className="flex items-center">
+                        {getLocationIcon(appointment.location)}
+                        <span className="ml-1">
+                          {appointment.location === "online" ? "Online" : "Presencial"}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              {appointment.price && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 flex gap-1 items-center">
+                  <CreditCard className="h-3 w-3" />
+                  <span>R${appointment.price}</span>
+                </Badge>
+              )}
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          <div className="mt-2 flex gap-2">
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+              <Phone className="h-3 w-3" />
+              <span>Contatar</span>
+            </Button>
+            {appointment.location === "online" && (
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
+                <Video className="h-3 w-3" />
+                <span>Link da reunião</span>
+              </Button>
+            )}
+          </div>
         </div>
       )}
       
