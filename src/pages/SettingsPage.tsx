@@ -14,6 +14,7 @@ import AchievementsSection from "@/components/settings/AchievementsSection";
 import NotificationsSection from "@/components/settings/NotificationsSection";
 import ThemeToggle from "@/components/settings/ThemeToggle";
 import LogoutButton from "@/components/settings/LogoutButton";
+import SubscriptionSection from "@/components/settings/SubscriptionSection"; // New import
 
 // Define the friend categories for visibility settings
 const friendCategories = [
@@ -43,6 +44,7 @@ const SettingsPage: React.FC = () => {
   const [selectedAchievements, setSelectedAchievements] = useState(
     achievementCategories.filter(cat => cat.public).map(cat => cat.id)
   );
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   // Function to handle saving settings
   const handleSaveSettings = (section: string) => {
@@ -67,6 +69,14 @@ const SettingsPage: React.FC = () => {
     );
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setActiveSection(sectionId);
+    }
+  };
+
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -80,10 +90,30 @@ const SettingsPage: React.FC = () => {
           <Button variant="ghost" size="icon" className="rounded-full">
             <ChevronRight className="h-5 w-5 text-gray-500 rotate-180" />
           </Button>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Settings</h1>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Configurações</h1>
         </Link>
+        
+        <div className="flex overflow-x-auto gap-2 px-2 py-1 no-scrollbar">
+          {["privacy", "subscription", "stories", "photos", "achievements", "notifications"].map((section) => (
+            <Button 
+              key={section}
+              variant="ghost" 
+              size="sm" 
+              className={`whitespace-nowrap text-xs px-3 ${activeSection === section ? 'bg-purple-100 text-purple-800' : ''}`}
+              onClick={() => scrollToSection(section)}
+            >
+              {section === "privacy" && "Privacidade"}
+              {section === "subscription" && "Assinatura"}
+              {section === "stories" && "Stories"}
+              {section === "photos" && "Fotos"}
+              {section === "achievements" && "Conquistas"}
+              {section === "notifications" && "Notificações"}
+            </Button>
+          ))}
+        </div>
+        
         <Button variant="ghost" onClick={() => handleSaveSettings("All")} size="sm">
-          Save All
+          Salvar
         </Button>
       </header>
 
@@ -101,49 +131,64 @@ const SettingsPage: React.FC = () => {
           }}
         >
           {/* Privacy Section */}
-          <PrivacySection 
-            profileVisibility={profileVisibility}
-            setProfileVisibility={setProfileVisibility}
-            faceRecPrivacy={faceRecPrivacy}
-            setFaceRecPrivacy={setFaceRecPrivacy}
-            handleSaveSettings={handleSaveSettings}
-            fadeIn={fadeIn}
-          />
+          <div id="privacy">
+            <PrivacySection 
+              profileVisibility={profileVisibility}
+              setProfileVisibility={setProfileVisibility}
+              faceRecPrivacy={faceRecPrivacy}
+              setFaceRecPrivacy={setFaceRecPrivacy}
+              handleSaveSettings={handleSaveSettings}
+              fadeIn={fadeIn}
+            />
+          </div>
+
+          {/* Subscription Section - New */}
+          <div id="subscription">
+            <SubscriptionSection fadeIn={fadeIn} />
+          </div>
 
           {/* Story Visibility */}
-          <StoryVisibilitySection
-            storyVisibility={storyVisibility}
-            setStoryVisibility={setStoryVisibility}
-            friendCategories={friendCategories}
-            handleSaveSettings={handleSaveSettings}
-            fadeIn={fadeIn}
-          />
+          <div id="stories">
+            <StoryVisibilitySection
+              storyVisibility={storyVisibility}
+              setStoryVisibility={setStoryVisibility}
+              friendCategories={friendCategories}
+              handleSaveSettings={handleSaveSettings}
+              fadeIn={fadeIn}
+            />
+          </div>
 
           {/* Photos and Media */}
-          <PhotosAndMediaSection
-            photoPrivacy={photoPrivacy}
-            friendCategories={friendCategories}
-            handlePhotoPrivacyChange={handlePhotoPrivacyChange}
-            handleSaveSettings={handleSaveSettings}
-            fadeIn={fadeIn}
-          />
+          <div id="photos">
+            <PhotosAndMediaSection
+              photoPrivacy={photoPrivacy}
+              friendCategories={friendCategories}
+              handlePhotoPrivacyChange={handlePhotoPrivacyChange}
+              handleSaveSettings={handleSaveSettings}
+              fadeIn={fadeIn}
+            />
+          </div>
 
           {/* Achievement Settings */}
-          <AchievementsSection
-            achievementCategories={achievementCategories}
-            selectedAchievements={selectedAchievements}
-            handleAchievementChange={handleAchievementChange}
-            handleSaveSettings={handleSaveSettings}
-            fadeIn={fadeIn}
-          />
+          <div id="achievements">
+            <AchievementsSection
+              achievementCategories={achievementCategories}
+              selectedAchievements={selectedAchievements}
+              handleAchievementChange={handleAchievementChange}
+              handleSaveSettings={handleSaveSettings}
+              fadeIn={fadeIn}
+            />
+          </div>
 
           {/* Notifications */}
-          <NotificationsSection
-            notificationsEnabled={notificationsEnabled}
-            setNotificationsEnabled={setNotificationsEnabled}
-            handleSaveSettings={handleSaveSettings}
-            fadeIn={fadeIn}
-          />
+          <div id="notifications">
+            <NotificationsSection
+              notificationsEnabled={notificationsEnabled}
+              setNotificationsEnabled={setNotificationsEnabled}
+              handleSaveSettings={handleSaveSettings}
+              fadeIn={fadeIn}
+            />
+          </div>
 
           {/* Theme Toggle */}
           <ThemeToggle 
