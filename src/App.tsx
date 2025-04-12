@@ -10,8 +10,11 @@ import ProfilePage from "./pages/ProfilePage";
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
 import FaceRegistrationPage from "./pages/FaceRegistrationPage";
 import SearchPage from "./pages/SearchPage";
+import AdvancedSearchPage from "./pages/AdvancedSearchPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import OnboardingPage from "./pages/OnboardingPage";
+import TimelinePage from "./pages/TimelinePage";
 import NavBar from "./components/layout/NavBar";
 
 const queryClient = new QueryClient();
@@ -30,7 +33,10 @@ const App = () => (
             <Route path="/face-recognition" element={<FaceRecognitionPage />} />
             <Route path="/register" element={<FaceRegistrationPage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/advanced-search" element={<AdvancedSearchPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/timeline" element={<TimelinePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
