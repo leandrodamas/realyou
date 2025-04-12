@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { addDays } from "date-fns";
 import { VisualTimelineProps } from "./types";
 import TimelineNavigation from "./TimelineNavigation";
@@ -14,6 +14,11 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  
+  // Update currentDate when initialDate changes
+  useEffect(() => {
+    setCurrentDate(initialDate);
+  }, [initialDate]);
   
   // Generate a week of dates starting from currentDate
   const weekDates = [...Array(7)].map((_, i) => addDays(currentDate, i));
