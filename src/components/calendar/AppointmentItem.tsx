@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AppointmentType } from "./types";
 import AppointmentHeader from "./appointment/AppointmentHeader";
 import ClientInfo from "./appointment/ClientInfo";
 import BookingActions from "./appointment/BookingActions";
+import AppointmentDetails from "./appointment/AppointmentDetails";
 import { getAppointmentColor } from "./appointment/utils";
 
 interface AppointmentItemProps {
@@ -21,7 +22,16 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
   showBookingActions,
   onTimeSelect
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const isAvailable = appointment.type === "free";
+  
+  const handleClick = () => {
+    if (isAvailable && showBookingActions) {
+      onTimeSelect(appointment.time);
+    } else if (appointment.type === "scheduled") {
+      setIsOpen(!isOpen);
+    }
+  };
   
   return (
     <motion.div
@@ -33,13 +43,11 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
         "border rounded-lg p-3 transition-all",
         getAppointmentColor(appointment.type, appointment.status),
         isSelected && "ring-2 ring-purple-400",
-        isAvailable && showBookingActions && "cursor-pointer hover:border-purple-300"
+        (isAvailable && showBookingActions) || appointment.type === "scheduled" 
+          ? "cursor-pointer hover:border-purple-300" 
+          : ""
       )}
-      onClick={() => {
-        if (isAvailable && showBookingActions) {
-          onTimeSelect(appointment.time);
-        }
-      }}
+      onClick={handleClick}
     >
       <AppointmentHeader appointment={appointment} />
       
@@ -49,6 +57,13 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({
         <BookingActions 
           isSelected={isSelected} 
           showBookingActions={showBookingActions} 
+        />
+      )}
+      
+      {appointment.type === "scheduled" && (
+        <AppointmentDetails 
+          appointment={appointment} 
+          isOpen={isOpen}
         />
       )}
     </motion.div>

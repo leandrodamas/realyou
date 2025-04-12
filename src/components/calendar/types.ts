@@ -10,6 +10,7 @@ export interface AppointmentType {
   status?: "confirmed" | "pending" | "completed";
   location?: "online" | "in-person";
   price?: number;
+  notes?: string; // Optional notes for the appointment
 }
 
 export interface TimelineDay {
