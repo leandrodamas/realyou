@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Calendar, User, Settings, Award, Star, 
   CheckCircle, ArrowRight, Camera, Image, MapPin, Clock, Shield,
-  BadgeCheck, Users, CreditCard, Zap, CheckCheck
+  BadgeCheck, Users, CreditCard, Zap, CheckCheck, DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

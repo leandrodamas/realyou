@@ -50,7 +50,7 @@ const AdvancedSearchPage: React.FC = () => {
       distance: 2.3, // km
       available: "Hoje",
       image: "https://randomuser.me/api/portraits/men/32.jpg",
-      coordinates: [-43.182365, -22.951878], // Rio coordinates
+      coordinates: [-43.182365, -22.951878] as [number, number], // Rio coordinates with explicit type annotation
     },
     {
       id: 2,
@@ -62,7 +62,7 @@ const AdvancedSearchPage: React.FC = () => {
       distance: 1.5,
       available: "Amanhã",
       image: "https://randomuser.me/api/portraits/women/44.jpg",
-      coordinates: [-43.185365, -22.954878],
+      coordinates: [-43.185365, -22.954878] as [number, number],
     },
     {
       id: 3,
@@ -74,7 +74,7 @@ const AdvancedSearchPage: React.FC = () => {
       distance: 3.8,
       available: "Hoje",
       image: "https://randomuser.me/api/portraits/men/62.jpg",
-      coordinates: [-43.188365, -22.958878],
+      coordinates: [-43.188365, -22.958878] as [number, number],
     },
     {
       id: 4,
@@ -86,7 +86,7 @@ const AdvancedSearchPage: React.FC = () => {
       distance: 5.1,
       available: "Em 2 dias",
       image: "https://randomuser.me/api/portraits/women/28.jpg",
-      coordinates: [-43.192365, -22.961878],
+      coordinates: [-43.192365, -22.961878] as [number, number],
     }
   ];
 
