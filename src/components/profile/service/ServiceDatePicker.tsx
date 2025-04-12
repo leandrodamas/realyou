@@ -72,7 +72,7 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
               const isUrgent = isUrgentDate(props.date);
               return (
                 <div className="relative w-full h-full flex items-center justify-center">
-                  {props.children}
+                  <div>{props.date.getDate()}</div>
                   {isUrgent && (
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                       <div className="h-1 w-5 bg-amber-500 rounded-full"></div>
