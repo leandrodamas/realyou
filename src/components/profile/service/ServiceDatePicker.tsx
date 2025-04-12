@@ -2,11 +2,12 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarClock, Check } from "lucide-react";
+import { CalendarClock, Check, Zap, TrendingUp } from "lucide-react";
 import { format, isSameDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ServiceDatePickerProps {
   selectedDate: Date | undefined;
@@ -30,6 +31,10 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
     addDays(new Date(), 1),
   ];
   
+  const highDemandDates = [
+    addDays(new Date(), 2),
+  ];
+  
   const isDateAvailable = (date: Date) => {
     return availableDates.some(availableDate => 
       isSameDay(availableDate, date)
@@ -39,6 +44,12 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
   const isUrgentDate = (date: Date) => {
     return urgentDates.some(urgentDate => 
       isSameDay(urgentDate, date)
+    );
+  };
+  
+  const isHighDemandDate = (date: Date) => {
+    return highDemandDates.some(highDemandDate => 
+      isSameDay(highDemandDate, date)
     );
   };
 
@@ -62,20 +73,28 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
             return date < today || !isDateAvailable(date);
           }}
           modifiers={{
-            urgent: (date) => isUrgentDate(date)
+            urgent: (date) => isUrgentDate(date),
+            highDemand: (date) => isHighDemandDate(date)
           }}
           modifiersClassNames={{
-            urgent: "bg-amber-50 text-amber-900 font-medium"
+            urgent: "bg-amber-50 text-amber-900 font-medium",
+            highDemand: "bg-rose-50 text-rose-900 font-medium"
           }}
           components={{
             DayContent: (props) => {
               const isUrgent = isUrgentDate(props.date);
+              const isHighDemand = isHighDemandDate(props.date);
               return (
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div>{props.date.getDate()}</div>
                   {isUrgent && (
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                       <div className="h-1 w-5 bg-amber-500 rounded-full"></div>
+                    </div>
+                  )}
+                  {isHighDemand && (
+                    <div className="absolute top-0 right-0">
+                      <TrendingUp className="h-3 w-3 text-rose-500" />
                     </div>
                   )}
                 </div>
@@ -93,6 +112,10 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
             <div className="h-2 w-2 bg-amber-500 rounded-full mr-1"></div>
             Disponibilidade urgente
           </Badge>
+          <Badge variant="outline" className="bg-rose-50 border-rose-200">
+            <TrendingUp className="h-3 w-3 text-rose-500 mr-1" />
+            Preço dinâmico (+20%)
+          </Badge>
         </div>
         
         {selectedDate && (
@@ -102,6 +125,11 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
                 <span className="flex items-center justify-center">
                   <Check className="h-3 w-3 mr-1" />
                   Disponibilidade confirmada para {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                </span>
+              ) : isHighDemandDate(selectedDate) ? (
+                <span className="flex items-center justify-center text-rose-600">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Alta demanda em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })} (preço dinâmico)
                 </span>
               ) : (
                 <span>
