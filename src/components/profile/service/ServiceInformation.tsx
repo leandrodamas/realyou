@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -68,7 +67,7 @@ const ServiceInformation: React.FC = () => {
               <h4 className="font-medium">Consultoria de Software</h4>
               <div className="flex flex-wrap gap-1 mt-1">
                 <p className="text-xs text-gray-500">Superstar • Escolha da Semana</p>
-                <Badge variant="outline" size="sm" className="text-[10px] border-purple-200 bg-purple-50 text-purple-700">
+                <Badge variant="outline" className="text-[10px] border-purple-200 bg-purple-50 text-purple-700">
                   <ThumbsUp className="h-2.5 w-2.5 mr-0.5" />
                   98% de aprovação
                 </Badge>
