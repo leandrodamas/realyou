@@ -14,6 +14,7 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [filters, setFilters] = useState<string[]>(["scheduled", "free", "buffer", "blocked"]);
   
   // Update currentDate when initialDate changes
   useEffect(() => {
@@ -41,8 +42,14 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time === selectedTime ? null : time);
   };
+
+  const handleFiltersChange = (newFilters: string[]) => {
+    setFilters(newFilters);
+  };
   
-  const dayAppointments = getDayAppointments(currentDate, mockAppointmentsData);
+  // Apply filters to appointments
+  const dayAppointments = getDayAppointments(currentDate, mockAppointmentsData)
+    .filter(appointment => filters.includes(appointment.type));
 
   return (
     <div className="bg-white rounded-lg border shadow-sm">

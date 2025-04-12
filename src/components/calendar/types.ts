@@ -21,4 +21,6 @@ export interface TimelineDay {
 export interface VisualTimelineProps {
   initialDate?: Date;
   showBookingActions?: boolean;
+  filters?: string[];
+  onFiltersChange?: (filters: string[]) => void;
 }

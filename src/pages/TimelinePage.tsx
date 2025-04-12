@@ -8,9 +8,14 @@ import VisualTimeline from "@/components/calendar/VisualTimeline";
 
 const TimelinePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [appointmentFilters, setAppointmentFilters] = useState<string[]>(["scheduled", "free", "buffer", "blocked"]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
+  };
+
+  const handleFiltersChange = (filters: string[]) => {
+    setAppointmentFilters(filters);
   };
 
   return (
@@ -20,12 +25,18 @@ const TimelinePage: React.FC = () => {
       <TimelineStats />
       <TimelineFilters 
         selectedDate={selectedDate} 
-        onDateChange={handleDateChange} 
+        onDateChange={handleDateChange}
+        appointmentFilters={appointmentFilters}
+        onFiltersChange={handleFiltersChange}
       />
       
       {/* Timeline component */}
       <div className="p-4">
-        <VisualTimeline initialDate={selectedDate} />
+        <VisualTimeline 
+          initialDate={selectedDate}
+          filters={appointmentFilters}
+          onFiltersChange={handleFiltersChange}
+        />
       </div>
     </div>
   );
