@@ -10,16 +10,23 @@ import { generateMockAppointmentsData, getDayAppointments } from "./mockData";
 
 const VisualTimeline: React.FC<VisualTimelineProps> = ({ 
   initialDate = new Date(),
-  showBookingActions = true
+  showBookingActions = true,
+  filters = ["scheduled", "free", "buffer", "blocked"],
+  onFiltersChange
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [filters, setFilters] = useState<string[]>(["scheduled", "free", "buffer", "blocked"]);
+  const [localFilters, setLocalFilters] = useState<string[]>(filters);
   
   // Update currentDate when initialDate changes
   useEffect(() => {
     setCurrentDate(initialDate);
   }, [initialDate]);
+
+  // Update filters when external filters change
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
   
   // Generate a week of dates starting from currentDate
   const weekDates = [...Array(7)].map((_, i) => addDays(currentDate, i));
@@ -44,12 +51,15 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
   };
 
   const handleFiltersChange = (newFilters: string[]) => {
-    setFilters(newFilters);
+    setLocalFilters(newFilters);
+    if (onFiltersChange) {
+      onFiltersChange(newFilters);
+    }
   };
   
   // Apply filters to appointments
   const dayAppointments = getDayAppointments(currentDate, mockAppointmentsData)
-    .filter(appointment => filters.includes(appointment.type));
+    .filter(appointment => localFilters.includes(appointment.type));
 
   return (
     <div className="bg-white rounded-lg border shadow-sm">

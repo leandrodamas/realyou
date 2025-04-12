@@ -4,7 +4,6 @@ import { Clock, InfoIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import AppointmentStatus from "./AppointmentStatus";
@@ -30,16 +29,14 @@ const AppointmentHeader: React.FC<AppointmentHeaderProps> = ({ appointment }) =>
       {appointment.type === "scheduled" && <AppointmentStatus status={appointment.status} />}
       
       {appointment.type === "free" && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <InfoIcon className="h-4 w-4 text-gray-400" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Horário disponível para agendamento</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <InfoIcon className="h-4 w-4 text-gray-400" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Horário disponível para agendamento</p>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );

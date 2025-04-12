@@ -17,6 +17,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import TimelinePage from "./pages/TimelinePage";
 import NavBar from "./components/layout/NavBar";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (
