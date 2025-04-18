@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Camera, ArrowRight, Search } from "lucide-react";
@@ -15,6 +15,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
   const [title, setTitle] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [showCBOSearch, setShowCBOSearch] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Carregar informações do usuário do localStorage se disponíveis
   useEffect(() => {
@@ -41,6 +42,39 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       console.error("Erro ao carregar perfil do usuário:", error);
     }
   }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageDataUrl = reader.result as string;
+        setProfileImage(imageDataUrl);
+
+        // Update localStorage with new profile image
+        try {
+          const savedProfile = localStorage.getItem('userProfile');
+          const profile = savedProfile ? JSON.parse(savedProfile) : {};
+          
+          const updatedProfile = {
+            ...profile,
+            profileImage: imageDataUrl
+          };
+          
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+          toast.success("Foto de perfil atualizada!");
+        } catch (error) {
+          console.error("Erro ao salvar imagem de perfil:", error);
+          toast.error("Não foi possível salvar a foto");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFullName(e.target.value);
@@ -141,7 +175,18 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
               <Camera className="h-6 w-6 text-gray-400" />
             </div>
           )}
-          <Button variant="outline" size="sm">
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden" 
+            onChange={handleFileChange}
+          />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={triggerFileInput}
+          >
             {profileImage ? "Alterar Foto" : "Fazer Upload"}
           </Button>
         </div>
