@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,16 +7,17 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UploadDialogProps } from "../types/gallery";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 export const UploadWorkDialog: React.FC<UploadDialogProps> = ({ 
   open, 
   onOpenChange,
   onUploadSuccess 
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading } = useFileUpload();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -30,23 +30,16 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
       return;
     }
 
+    const { publicUrl, error: uploadError } = await uploadFile(file, {
+      bucketName: 'work_gallery'
+    });
+
+    if (uploadError || !publicUrl) {
+      toast.error("Erro ao fazer upload da imagem");
+      return;
+    }
+
     try {
-      setIsUploading(true);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('work_gallery')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('work_gallery')
-        .getPublicUrl(filePath);
-
       const { error: dbError } = await supabase
         .from('work_gallery')
         .insert({
@@ -64,10 +57,8 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
       setTitle("");
       setDescription("");
     } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error("Erro ao fazer upload da imagem");
-    } finally {
-      setIsUploading(false);
+      console.error('Error saving work:', error);
+      toast.error("Erro ao salvar o trabalho");
     }
   };
 
