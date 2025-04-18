@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -57,7 +56,8 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
       price: "Grátis", 
       features: ["Perfil básico", "Até 5 agendamentos/mês", "Suporte via email"],
       isCurrent: currentPlan === "basic",
-      color: "bg-gray-100"
+      color: "bg-gray-100",
+      serviceFee: 7, // 7% de taxa de serviço
     },
     { 
       id: "pro", 
@@ -65,7 +65,8 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
       price: "R$29,90/mês", 
       features: ["Perfil destacado", "Agendamentos ilimitados", "Taxa reduzida (7%)", "Suporte prioritário"],
       isCurrent: currentPlan === "pro",
-      color: "bg-blue-100"
+      color: "bg-blue-100",
+      serviceFee: 7, // 7% de taxa de serviço
     },
     { 
       id: "premium", 
@@ -73,7 +74,8 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
       price: "R$49,90/mês", 
       features: ["Perfil em destaque nos resultados", "Agendamentos ilimitados", "Taxa mínima (5%)", "Suporte VIP 24/7", "Insights de negócio"],
       isCurrent: currentPlan === "premium",
-      color: "bg-purple-100"
+      color: "bg-purple-100",
+      serviceFee: 5, // 5% de taxa de serviço
     }
   ];
 
@@ -331,6 +333,22 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
           <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
           <p className="text-sm text-amber-700">
             Suas informações de pagamento são armazenadas com segurança e nunca compartilhadas com terceiros.
+          </p>
+        </div>
+      </div>
+
+      {/* New Service Fee Information Section */}
+      <div className="p-3 bg-blue-50 rounded-lg flex items-start gap-2 border border-blue-200 mt-4">
+        <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+        <div>
+          <p className="text-sm text-blue-700 font-medium">Taxas de Serviço</p>
+          {plans.map(plan => (
+            <div key={plan.id} className="text-xs text-blue-600 mt-1">
+              {plan.name}: {plan.serviceFee}% de taxa de serviço
+            </div>
+          ))}
+          <p className="text-xs text-blue-500 mt-2">
+            As taxas de serviço são deduzidas automaticamente de cada transação realizada através da plataforma.
           </p>
         </div>
       </div>
