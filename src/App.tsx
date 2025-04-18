@@ -23,10 +23,10 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <MotionConfig reducedMotion="user">
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <Router>
           <div className="pb-20"> {/* Added extra padding bottom to accommodate NavBar and center camera button */}
             <Routes>
@@ -46,8 +46,8 @@ const App = () => (
             <NavBar />
           </div>
         </Router>
-      </MotionConfig>
-    </TooltipProvider>
+      </TooltipProvider>
+    </MotionConfig>
   </QueryClientProvider>
 );
 
