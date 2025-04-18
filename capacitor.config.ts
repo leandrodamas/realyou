@@ -11,19 +11,25 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 1000, // Reduzido para iniciar mais rápido
       backgroundColor: "#128C7E",
       splashImmersive: true
     },
     Permissions: {
       permissions: ["camera"]
+    },
+    Camera: {
+      presentationStyle: 'fullscreen'
     }
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
   },
   ios: {
-    contentInset: "always"
+    contentInset: "always",
+    allowsLinkPreview: false
   }
 };
 

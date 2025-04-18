@@ -30,6 +30,18 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   const [internalCapturedImage, setInternalCapturedImage] = React.useState<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = React.useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isHeavyDevice, setIsHeavyDevice] = React.useState(false);
+
+  // Determinar se o dispositivo é um dispositivo móvel de baixo desempenho
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+    const isOldAndroid = /Android 4.|Android 5.|Android 6./i.test(userAgent);
+    const isLowPerformanceIOS = /iPhone OS 9_|iPhone OS 10_|iPhone OS 11_/i.test(userAgent) && 
+                               !/iPhone X|iPhone 8|iPhone 11|iPhone 12|iPhone 13|iPhone 14/i.test(userAgent);
+    
+    setIsHeavyDevice(isMobile && (isOldAndroid || isLowPerformanceIOS));
+  }, []);
 
   // Determine which state to use (external if provided, otherwise internal)
   const isCameraActive = externalIsCameraActive !== undefined ? externalIsCameraActive : internalIsCameraActive;
@@ -45,16 +57,17 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     handleSearch,
     sendConnectionRequest,
     setNoMatchFound,
-    setMatchedPerson
+    setMatchedPerson,
+    resetState
   } = useFacialRecognition();
 
-  // Ensure proper cleanup when component unmounts
+  // Garantir limpeza correta quando componente é desmontado
   useEffect(() => {
     return () => {
-      // Stop camera if active when navigating away
       if (isCameraActive) {
         setIsCameraActive(false);
       }
+      resetState();
     };
   }, []);
 
@@ -65,9 +78,13 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
 
   const handleCapture = () => {
     if (canvasRef.current) {
-      const imageDataUrl = canvasRef.current.toDataURL('image/png');
-      setCapturedImage(imageDataUrl);
-      if (onCaptureImage) onCaptureImage(imageDataUrl);
+      try {
+        const imageDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
+        setCapturedImage(imageDataUrl);
+        if (onCaptureImage) onCaptureImage(imageDataUrl);
+      } catch (error) {
+        console.error("Erro ao processar captura:", error);
+      }
     }
     setIsCameraActive(false);
   };
@@ -79,15 +96,21 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center p-6">
+    <div className="flex flex-col items-center p-4 sm:p-6">
       <div className="w-full">
-        {!isRegistrationMode && (
+        {!isRegistrationMode && !isHeavyDevice && (
           <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
               Connect with RealYou
             </span>
             <Sparkles className="h-5 w-5 text-blue-500" />
+          </h2>
+        )}
+        
+        {!isRegistrationMode && isHeavyDevice && (
+          <h2 className="text-lg font-bold text-center mb-2">
+            Connect with RealYou
           </h2>
         )}
         
@@ -124,11 +147,14 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         </AnimatePresence>
       </div>
 
-      <ScheduleDialog 
-        showDialog={showScheduleDialog} 
-        matchedPerson={matchedPerson}
-        onCloseDialog={() => setShowScheduleDialog(false)}
-      />
+      {/* Só renderizar o diálogo de agenda quando necessário */}
+      {showScheduleDialog && (
+        <ScheduleDialog 
+          showDialog={showScheduleDialog} 
+          matchedPerson={matchedPerson}
+          onCloseDialog={() => setShowScheduleDialog(false)}
+        />
+      )}
     </div>
   );
 };
