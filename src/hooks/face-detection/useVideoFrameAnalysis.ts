@@ -5,6 +5,7 @@ export const useVideoFrameAnalysis = () => {
   const analyzeVideoFrame = useCallback((video: HTMLVideoElement): ImageData | null => {
     try {
       const canvas = document.createElement('canvas');
+      // Explicitly type the context as CanvasRenderingContext2D
       const context = canvas.getContext('2d', { willReadFrequency: true });
       if (!context) return null;
 
