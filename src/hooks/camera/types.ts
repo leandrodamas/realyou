@@ -1,32 +1,36 @@
 
-export interface CameraAccessState {
-  videoRef: React.RefObject<HTMLVideoElement>;
-  streamRef: React.RefObject<MediaStream | null>;
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  initializeCamera: (constraints: MediaStreamConstraints) => Promise<MediaStream | null>;
-  mountedRef: React.RefObject<boolean>;
-}
+import { RefObject } from "react";
 
 export interface DeviceDetectionState {
   hasCamera: boolean;
   checkCameraAvailability: () => Promise<boolean>;
 }
 
+export interface CameraAccessState {
+  videoRef: RefObject<HTMLVideoElement>;
+  streamRef: RefObject<MediaStream | null>;
+  isLoading: boolean;
+  isVideoReady: boolean;
+  setIsLoading: (loading: boolean) => void;
+  initializeCamera: (constraints: MediaStreamConstraints) => Promise<MediaStream | null>;
+  mountedRef: RefObject<boolean>;
+}
+
 export interface CameraErrorState {
   hasError: boolean;
   lastErrorMessage: string | null;
-  retryCountRef: React.MutableRefObject<number>;
-  handleCameraError: (error: unknown) => void;
+  retryCountRef: RefObject<number>;
+  handleCameraError: (error: any) => void;
   resetError: () => void;
 }
 
 export interface CameraStreamState {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: RefObject<HTMLVideoElement>;
   hasError: boolean;
   switchCamera: () => void;
   facingMode: "user" | "environment";
   hasCamera: boolean;
   isLoading: boolean;
   lastErrorMessage: string | null;
+  isVideoReady: boolean;
 }

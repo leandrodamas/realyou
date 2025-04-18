@@ -4,8 +4,13 @@ import { useCallback } from 'react';
 export const useVideoFrameAnalysis = () => {
   const analyzeVideoFrame = useCallback((video: HTMLVideoElement): ImageData | null => {
     try {
+      // Verifique se o vídeo está pronto para ser analisado
+      if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+        console.log("Video not ready for analysis, readyState:", video.readyState);
+        return null;
+      }
+
       const canvas = document.createElement('canvas');
-      // Explicitly type the context as CanvasRenderingContext2D
       const context = canvas.getContext('2d', { willReadFrequency: true }) as CanvasRenderingContext2D;
       if (!context) return null;
 

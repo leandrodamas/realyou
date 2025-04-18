@@ -27,7 +27,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage } = useCameraStream(isCameraActive);
+  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage, isVideoReady } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
@@ -38,14 +38,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     isCameraActive,
     isInitializing,
     isLoading,
-    videoRef
+    videoRef,
+    isVideoReady
   });
 
   useEffect(() => {
     mountedRef.current = true;
 
+    // Auto-captura apenas quando o vídeo estiver realmente pronto
     let autoCapture: NodeJS.Timeout | null = null;
-    if (isCameraActive && !isLoading && !isInitializing) {
+    if (isCameraActive && !isLoading && !isInitializing && isVideoReady) {
       autoCapture = setTimeout(() => {
         if (mountedRef.current && videoRef.current && videoRef.current.readyState >= 2) {
           console.log("Auto-capturing image for testing");
@@ -58,7 +60,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       mountedRef.current = false;
       if (autoCapture) clearTimeout(autoCapture);
     };
-  }, [isCameraActive, isLoading, isInitializing]);
+  }, [isCameraActive, isLoading, isInitializing, isVideoReady]);
 
   useEffect(() => {
     const debugInterval = setInterval(() => {
@@ -68,13 +70,14 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           paused: videoRef.current.paused,
           videoWidth: videoRef.current.videoWidth,
           videoHeight: videoRef.current.videoHeight,
-          faceDetected: faceDetected
+          faceDetected: faceDetected,
+          isVideoReady: isVideoReady
         });
       }
     }, 2000);
     
     return () => clearInterval(debugInterval);
-  }, [isCameraActive, faceDetected]);
+  }, [isCameraActive, faceDetected, isVideoReady]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -83,6 +86,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
+        // Use valores padrão caso o vídeo não tenha dimensões ainda
         const videoWidth = video.videoWidth || 640;
         const videoHeight = video.videoHeight || 480;
         
@@ -106,8 +110,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           
           const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
           console.log("Image captured successfully");
-          
-          (window as any).capturedImage = imageDataUrl;
           
           if (mountedRef.current) {
             if (typeof window !== 'undefined') {
@@ -165,7 +167,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
               onSwitchCamera={switchCamera}
               onIncreaseBrightness={increaseBrightness}
               onDecreaseBrightness={decreaseBrightness}
-              errorMessage={errorMessage}
+              errorMessage={errorMessage || lastErrorMessage}
             />
             <CaptureCanvas ref={canvasRef} />
           </>

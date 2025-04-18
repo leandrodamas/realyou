@@ -9,6 +9,7 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
   const videoRef = useRef<HTMLVideoElement>(null);
   const mountedRef = useRef<boolean>(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -17,6 +18,28 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
       cleanupCameraStream(streamRef.current, videoRef.current);
     };
   }, []);
+
+  const waitForVideoReady = (video: HTMLVideoElement) => {
+    return new Promise<boolean>((resolve) => {
+      const checkReady = () => {
+        if (video.readyState >= 2) {
+          console.log("Video is ready with dimensions:", video.videoWidth, "x", video.videoHeight);
+          resolve(true);
+        } else {
+          console.log("Video not ready yet, current readyState:", video.readyState);
+          setTimeout(checkReady, 100);
+        }
+      };
+
+      video.addEventListener('loadeddata', () => {
+        console.log("Video loadeddata event fired");
+        checkReady();
+      });
+
+      // Também verificamos imediatamente
+      checkReady();
+    });
+  };
 
   const initializeCamera = async (constraints: MediaStreamConstraints) => {
     try {
@@ -46,19 +69,17 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
         videoRef.current.autoplay = true;
         
         try {
-          // Force a layout refresh before playing to avoid potential visual glitches
-          setTimeout(async () => {
-            if (videoRef.current) {
-              try {
-                await videoRef.current.play();
-                console.log("Video playback started successfully");
-              } catch (playError) {
-                console.error("Error during video playback:", playError);
-              }
-            }
-          }, 100);
+          // Tocar o vídeo e aguardar pelo menos 500ms para garantir que o navegador tenha tempo de inicializar
+          await videoRef.current.play();
+          console.log("Video playback started successfully");
+          
+          // Aguardar até que o vídeo esteja pronto para uso
+          if (await waitForVideoReady(videoRef.current)) {
+            setIsVideoReady(true);
+          }
         } catch (playError) {
           console.error("Error during video playback:", playError);
+          toast.error("Erro ao iniciar a câmera. Tente novamente.");
           throw playError;
         }
       }
@@ -75,6 +96,7 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
     streamRef,
     isLoading,
     setIsLoading,
+    isVideoReady,
     initializeCamera,
     mountedRef
   };

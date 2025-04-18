@@ -8,7 +8,7 @@ import { CameraStreamState } from "./camera/types";
 
 export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
-  const { videoRef, streamRef, isLoading, setIsLoading, initializeCamera, mountedRef } = useCameraAccess(isCameraActive, facingMode);
+  const { videoRef, streamRef, isLoading, setIsLoading, isVideoReady, initializeCamera, mountedRef } = useCameraAccess(isCameraActive, facingMode);
   const { hasCamera, checkCameraAvailability } = useDeviceDetection();
   const { hasError, lastErrorMessage, retryCountRef, handleCameraError, resetError } = useCameraError();
 
@@ -84,6 +84,7 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
     facingMode, 
     hasCamera, 
     isLoading,
-    lastErrorMessage
+    lastErrorMessage,
+    isVideoReady
   };
 };

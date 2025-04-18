@@ -8,13 +8,15 @@ interface UseFaceDetectionProps {
   isInitializing: boolean;
   isLoading: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
+  isVideoReady?: boolean;
 }
 
 export const useFaceDetection = ({
   isCameraActive,
   isInitializing,
   isLoading,
-  videoRef
+  videoRef,
+  isVideoReady = false
 }: UseFaceDetectionProps) => {
   const [faceDetected, setFaceDetected] = useState(false);
   const mountedRef = useRef<boolean>(true);
@@ -49,16 +51,22 @@ export const useFaceDetection = ({
                          !isInitializing && 
                          !isLoading && 
                          videoRef.current && 
-                         videoRef.current.readyState >= 2;
+                         (videoRef.current.readyState >= 2 || isVideoReady);
     
     if (shouldDetect) {
-      console.log("Starting face detection loop");
+      console.log("Starting face detection loop, video ready:", isVideoReady);
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const intervalTime = isMobileDevice ? 500 : 300;
       
       intervalRef.current = setInterval(() => {
-        if (!videoRef.current || !videoRef.current.videoWidth || !isCameraActive || !mountedRef.current) {
+        if (!videoRef.current || !isCameraActive || !mountedRef.current) {
           clearDetectionInterval();
+          return;
+        }
+        
+        // Verificação adicional para garantir que o vídeo está pronto
+        if (!videoRef.current.videoWidth || videoRef.current.readyState < 2) {
+          console.log("Video not fully ready yet, skipping detection");
           return;
         }
         
@@ -101,7 +109,7 @@ export const useFaceDetection = ({
     }
     
     return clearDetectionInterval;
-  }, [isCameraActive, isInitializing, isLoading, videoRef]);
+  }, [isCameraActive, isInitializing, isLoading, videoRef, isVideoReady]);
 
   return { faceDetected };
 };
