@@ -1,7 +1,5 @@
 
 import React, { useRef, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
 import { useFaceDetection } from "@/hooks/useFaceDetection";
@@ -9,6 +7,9 @@ import { useLoading } from "@/hooks/useLoading";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
 import CameraPreview from "./components/CameraPreview";
+import IntroSection from "./components/IntroSection";
+import CapturedImageView from "./components/CapturedImageView";
+import CaptureCanvas from "./components/CaptureCanvas";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
@@ -28,7 +29,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [brightness, setBrightness] = useState(2.0); // Start with higher brightness
+  const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   
   const { isInitializing, loadingProgress } = useLoading({ isCameraActive });
@@ -43,7 +44,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   useEffect(() => {
     mountedRef.current = true;
 
-    // Automatically capture image after 3 seconds for testing
     let autoCapture: NodeJS.Timeout | null = null;
     if (isCameraActive && !isLoading && !isInitializing) {
       autoCapture = setTimeout(() => {
@@ -60,7 +60,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     };
   }, [isCameraActive, isLoading, isInitializing]);
 
-  // Log video element status periodically for debugging
   useEffect(() => {
     const debugInterval = setInterval(() => {
       if (videoRef.current && isCameraActive) {
@@ -84,7 +83,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
-        // Make sure we have video dimensions
         const videoWidth = video.videoWidth || 640;
         const videoHeight = video.videoHeight || 480;
         
@@ -102,19 +100,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
             context.translate(-canvas.width, 0);
           }
           
-          context.filter = `brightness(${brightness}) contrast(1.2) saturate(1.1)`;
+          context.filter = `brightness(${brightness}) contrast(1.2)`;
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
           context.filter = 'none';
           
           const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
           console.log("Image captured successfully");
           
-          // Store the captured image in a global variable to make it accessible
-          // This is crucial for debugging - check this in dev tools console
           (window as any).capturedImage = imageDataUrl;
           
           if (mountedRef.current) {
-            // Store the image data in localStorage
             if (typeof window !== 'undefined') {
               localStorage.setItem('tempCapturedImage', imageDataUrl);
               console.log("Image saved to localStorage");
@@ -137,7 +132,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   };
 
   const increaseBrightness = () => {
-    setBrightness(prev => Math.min(prev + 0.3, 3.0)); // Allow higher max brightness
+    setBrightness(prev => Math.min(prev + 0.3, 3.0));
     toast.success("Brilho aumentado");
   };
 
@@ -147,20 +142,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   };
 
   if (!isCameraActive && !capturedImage) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
-        <div className="mb-6 text-center">
-          <p className="text-gray-600 mb-1">Tire uma foto para se conectar</p>
-          <p className="text-xs text-gray-400">Seja você mesmo, seja real</p>
-        </div>
-        <Button 
-          onClick={onStartCamera}
-          className="rounded-full px-6 bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md"
-        >
-          Iniciar Câmera
-        </Button>
-      </div>
-    );
+    return <IntroSection onStartCamera={onStartCamera} />;
   }
 
   if (isCameraActive) {
@@ -185,30 +167,14 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
               onDecreaseBrightness={decreaseBrightness}
               errorMessage={errorMessage}
             />
-            <canvas ref={canvasRef} className="hidden" width="640" height="480" />
+            <CaptureCanvas ref={canvasRef} />
           </>
         )}
       </div>
     );
   }
 
-  return (
-    <div className="relative w-full h-[75vh]">
-      <img 
-        src={capturedImage || ''} 
-        alt="Captured face" 
-        className="w-full h-full object-cover rounded-2xl"
-      />
-      <Button 
-        variant="destructive" 
-        size="icon"
-        className="absolute top-3 right-3 rounded-full shadow-md"
-        onClick={onReset}
-      >
-        <X className="h-4 w-4" />
-      </Button>
-    </div>
-  );
+  return <CapturedImageView imageUrl={capturedImage || ''} onReset={onReset} />;
 };
 
 export default FaceCaptureCamera;
