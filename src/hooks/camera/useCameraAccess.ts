@@ -51,12 +51,15 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
 
   const initializeCamera = async (constraints: MediaStreamConstraints) => {
     try {
-      console.log("Initializing camera with constraints:", constraints);
+      console.log("Initializing camera with constraints:", JSON.stringify(constraints));
       
       if (streamRef.current) {
         console.log("Cleaning up existing stream before requesting new one");
         cleanupCameraStream(streamRef.current, videoRef.current);
       }
+      
+      // Force user to grant permission via a noticeable UI indicator
+      setIsLoading(true);
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log("Camera stream obtained successfully");
@@ -72,44 +75,58 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
       if (videoRef.current && mountedRef.current) {
         console.log("Setting video source and playing");
         const video = videoRef.current;
+        
+        // Make sure any previous stream is properly disconnected
+        if (video.srcObject) {
+          video.srcObject = null;
+          video.load();
+        }
+        
+        // Set new stream and configure video element
         video.srcObject = stream;
-        video.playsInline = true;
+        video.playsInline = true; 
         video.muted = true;
         video.autoplay = true;
         
         try {
-          // Set an explicit width and height on the video element
+          // Set explicit dimensions to help rendering
           video.width = 640;
           video.height = 480;
           
-          // Explicitly force play
+          console.log("Attempting to play video");
           const playPromise = video.play();
+          
           if (playPromise !== undefined) {
-            playPromise.then(() => {
-              console.log("Video playback started successfully");
+            await playPromise;
+            console.log("Video playback started successfully");
+            
+            // Check if video is already ready
+            if (video.readyState >= 2) {
+              console.log("Video is immediately ready");
+              setIsVideoReady(true);
+            } else {
+              console.log("Waiting for video to be ready, current readyState:", video.readyState);
               
-              // Wait for video metadata to load
-              if (video.readyState === 0) {
-                console.log("Video readyState is 0, waiting for metadata...");
-                video.addEventListener("loadedmetadata", () => {
-                  console.log("Video metadata loaded");
-                  waitForVideoReady(video).then(ready => {
-                    if (ready && mountedRef.current) {
-                      setIsVideoReady(true);
-                    }
-                  });
-                });
-              } else {
-                waitForVideoReady(video).then(ready => {
-                  if (ready && mountedRef.current) {
-                    setIsVideoReady(true);
-                  }
-                });
+              // Set up a timeout to prevent infinite waiting
+              const readyTimeout = setTimeout(() => {
+                console.log("Video ready timeout - forcing ready state");
+                if (mountedRef.current) {
+                  setIsVideoReady(true);
+                }
+              }, 3000);
+              
+              // Wait for video to be ready
+              const isReady = await waitForVideoReady(video);
+              clearTimeout(readyTimeout);
+              
+              if (isReady && mountedRef.current) {
+                console.log("Video is now ready after waiting");
+                setIsVideoReady(true);
               }
-            }).catch(err => {
-              console.error("Error during video playback:", err);
-              toast.error("Erro ao iniciar a câmera. Tente novamente.");
-            });
+            }
+          } else {
+            console.log("Play promise was undefined, setting video ready");
+            setIsVideoReady(true);
           }
         } catch (playError) {
           console.error("Error during video playback:", playError);
@@ -122,6 +139,10 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
     } catch (error) {
       console.error("Error in initializeCamera:", error);
       throw error;
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 

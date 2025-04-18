@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import CameraOverlay from "../CameraOverlay";
@@ -29,6 +29,30 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
   onDecreaseBrightness,
   errorMessage
 }) => {
+  // Force video element to refresh when component mounts
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      console.log("CameraPreview mounted, refreshing video element");
+      
+      // If the video element is already playing, stop it and start again
+      if (videoElement.srcObject) {
+        const currentSrc = videoElement.srcObject;
+        videoElement.srcObject = null;
+        setTimeout(() => {
+          if (videoElement && videoRef.current) {
+            videoElement.srcObject = currentSrc;
+            videoElement.play().catch(err => console.error("Error playing video:", err));
+          }
+        }, 100);
+      }
+    }
+    
+    return () => {
+      console.log("CameraPreview unmounting");
+    };
+  }, []);
+  
   return (
     <div className="relative w-full h-[75vh] bg-black">
       <video 
