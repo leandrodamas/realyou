@@ -5,6 +5,7 @@ import { RadioGroup } from "@/components/ui/radio-group";
 import { PlusCircle } from "lucide-react";
 import { type SubscriptionPlan } from "./types";
 import { PlanCard } from "./PlanCard";
+import { toast } from "sonner";
 
 interface PlanSelectorProps {
   plans: SubscriptionPlan[];
@@ -54,5 +55,6 @@ export const PlanSelector: React.FC<PlanSelectorProps> = ({
           )}
         </div>
       )}
-    </>;
+    </>
+  );
 };
