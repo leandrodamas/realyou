@@ -16,37 +16,64 @@ export const useFaceDetection = ({
 }: UseFaceDetectionProps) => {
   const [faceDetected, setFaceDetected] = useState(false);
   const mountedRef = useRef<boolean>(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear detection interval
+  const clearDetectionInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      clearDetectionInterval();
     };
   }, []);
 
   useEffect(() => {
-    let detectInterval: NodeJS.Timeout;
+    // Clean up previous interval
+    clearDetectionInterval();
     
-    if (isCameraActive && !isInitializing && !isLoading && videoRef.current) {
+    const shouldDetect = isCameraActive && 
+                         !isInitializing && 
+                         !isLoading && 
+                         videoRef.current && 
+                         videoRef.current.readyState >= 2; // HAVE_CURRENT_DATA or better
+    
+    if (shouldDetect) {
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const intervalTime = isMobileDevice ? 800 : 500;
       
-      detectInterval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         if (!videoRef.current || !isCameraActive || !mountedRef.current) {
-          if (detectInterval) clearInterval(detectInterval);
+          clearDetectionInterval();
           return;
         }
-        const detected = Math.random() > 0.2;
-        if (mountedRef.current) {
-          setFaceDetected(detected);
+        
+        try {
+          // In a real implementation, this would run face detection on the video stream
+          // For now, we simulate with random values but with a bias toward true (70% chance)
+          const detected = Math.random() < 0.7;
+          
+          if (mountedRef.current) {
+            setFaceDetected(detected);
+          }
+        } catch (error) {
+          console.error("Face detection error:", error);
+          // Don't update state on errors to avoid flickering
         }
       }, intervalTime);
+    } else if (!shouldDetect && faceDetected) {
+      // Reset face detection when conditions aren't met
+      setFaceDetected(false);
     }
     
-    return () => {
-      if (detectInterval) clearInterval(detectInterval);
-    };
-  }, [isCameraActive, isInitializing, isLoading, videoRef]);
+    return clearDetectionInterval;
+  }, [isCameraActive, isInitializing, isLoading, videoRef, faceDetected]);
 
   return { faceDetected };
 };
