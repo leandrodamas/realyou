@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -32,13 +31,12 @@ const StepContent: React.FC<StepContentProps> = ({
   isCameraActive,
   setIsCameraActive,
 }) => {
-  // Local state to track face capture component status
-  const [faceCaptureReady, setFaceCaptureReady] = useState(false);
-
   // Handle face capture events from FaceCapture component
   const handleFaceCapture = (imageData: string) => {
     setCapturedImage(imageData);
     setIsCameraActive(false);
+    // Call parent's handleCapture to proceed with workflow
+    handleCapture();
   };
 
   return (
@@ -60,13 +58,26 @@ const StepContent: React.FC<StepContentProps> = ({
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl blur opacity-30"></div>
             <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
-              <FaceCapture 
-                onCaptureImage={handleFaceCapture}
-                capturedImage={capturedImage}
-                setCapturedImage={setCapturedImage}
-                isCameraActive={isCameraActive}
-                setIsCameraActive={setIsCameraActive}
-              />
+              {isCameraActive || capturedImage ? (
+                <FaceCapture 
+                  onCaptureImage={handleFaceCapture}
+                  capturedImage={capturedImage}
+                  setCapturedImage={setCapturedImage}
+                  isCameraActive={isCameraActive}
+                  setIsCameraActive={setIsCameraActive}
+                  key={`facecapture-${isCameraActive ? 'active' : 'inactive'}`}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 h-64">
+                  <p className="text-gray-600 mb-4">Tire uma foto para se conectar</p>
+                  <Button 
+                    onClick={handleStartCamera} 
+                    className="rounded-full px-6 bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md"
+                  >
+                    Iniciar Câmera
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

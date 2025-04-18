@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { registerFaceForUser } from "@/services/facialRecognitionService";
@@ -15,6 +15,16 @@ const FaceRegistrationPage: React.FC = () => {
   const [username, setUsername] = useState<string>("");
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  // Cleanup resources when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup camera if active when navigating away
+      if (isCameraActive) {
+        setIsCameraActive(false);
+      }
+    };
+  }, []);
 
   const handleNextStep = async () => {
     if (registrationStep === 1 && !capturedImage) {
@@ -69,8 +79,10 @@ const FaceRegistrationPage: React.FC = () => {
   };
 
   const handleCapture = () => {
-    // This will be handled by the FaceCapture component
+    // Mostly handled by the FaceCapture component now
     // which will call setCapturedImage
+    // Just in case we need to do additional handling
+    setIsCameraActive(false);
   };
 
   const handleReset = () => {
@@ -95,6 +107,7 @@ const FaceRegistrationPage: React.FC = () => {
           handleReset={handleReset}
           isCameraActive={isCameraActive}
           setIsCameraActive={setIsCameraActive}
+          key={`step-content-${registrationStep}-${isCameraActive ? 'camera-active' : 'camera-inactive'}`}
         />
 
         {/* Navigation buttons */}
