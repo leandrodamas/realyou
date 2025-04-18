@@ -6,7 +6,8 @@ let sdkInstance: FacialRecognitionSDK | null = null;
 
 export const getFacialRecognitionSDK = async (): Promise<FacialRecognitionSDK> => {
   if (!sdkInstance) {
-    sdkInstance = new FacialRecognitionSDK(process.env.FACIAL_SDK_API_KEY);
+    // Use a fixed API key for demo instead of process.env which doesn't work in browser context
+    sdkInstance = new FacialRecognitionSDK("demo-key");
     
     try {
       const initialized = await sdkInstance.initialize();
