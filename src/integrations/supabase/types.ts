@@ -235,6 +235,39 @@ export type Database = {
         }
         Relationships: []
       }
+      work_gallery: {
+        Row: {
+          comments: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_path: string
+          likes: number | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          comments?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_path: string
+          likes?: number | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          comments?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_path?: string
+          likes?: number | null
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
