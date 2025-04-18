@@ -3,6 +3,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MatchedPerson } from "./types/MatchedPersonTypes";
+import PersonHeader from "./schedule/PersonHeader";
+import ScheduleList from "./schedule/ScheduleList";
 
 interface ScheduleDialogProps {
   showDialog: boolean;
@@ -25,41 +27,11 @@ const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
         </DialogHeader>
         
         <div className="mt-4 space-y-4">
-          <div className="flex items-center gap-3 pb-4 border-b">
-            <img 
-              src={matchedPerson.avatar} 
-              alt={matchedPerson.name} 
-              className="h-12 w-12 rounded-full object-cover"
-            />
-            <div>
-              <h3 className="font-medium">{matchedPerson.name}</h3>
-              <p className="text-xs text-gray-500">{matchedPerson.profession}</p>
-            </div>
-          </div>
+          <PersonHeader matchedPerson={matchedPerson} />
           
           <div>
             <h4 className="text-sm font-medium mb-3">Disponibilidade Semanal</h4>
-            <div className="space-y-3">
-              {matchedPerson.schedule
-                .filter(day => day.active)
-                .map((day, index) => (
-                <div key={index} className="border-b border-gray-100 pb-2 last:border-0">
-                  <p className="text-sm font-medium">{day.day}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {day.slots.map((slot, slotIndex) => (
-                      <Button
-                        key={slotIndex}
-                        variant="secondary"
-                        className="text-xs h-7 px-2"
-                        size="sm"
-                      >
-                        {slot}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ScheduleList schedule={matchedPerson.schedule} />
           </div>
           
           <div className="flex justify-end">
