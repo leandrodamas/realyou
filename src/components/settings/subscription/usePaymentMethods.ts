@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { type PaymentMethod } from "./types";
-import { type CardData } from "../PaymentMethodDialog";
+import { type CardData } from "../payment/types";
 
 export const usePaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
