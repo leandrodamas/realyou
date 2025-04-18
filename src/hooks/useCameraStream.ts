@@ -16,7 +16,8 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
     let setupTimeout: ReturnType<typeof setTimeout>;
     
     const setupCamera = async () => {
-      if (!mountedRef.current || !isCameraActive) {
+      // Check if component is unmounted or camera should not be active
+      if (!isCameraActive) {
         cleanupCameraStream(streamRef.current, videoRef.current);
         return;
       }
@@ -42,6 +43,7 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
         
         try {
           await initializeCamera(constraints);
+          // Check if component is still mounted before updating state
           if (mountedRef.current) {
             resetError();
             setIsLoading(false);
