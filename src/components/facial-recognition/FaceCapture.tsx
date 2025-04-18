@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -17,18 +17,43 @@ const FaceCapture: React.FC = () => {
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [connectionSent, setConnectionSent] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Create hidden elements for capture
+    const canvas = document.createElement('canvas');
+    canvasRef.current = canvas;
+    canvasRef.current.style.display = 'none';
+    document.body.appendChild(canvas);
+    
+    const video = document.createElement('video');
+    videoRef.current = video;
+    videoRef.current.style.display = 'none';
+    document.body.appendChild(video);
+    
+    return () => {
+      // Cleanup
+      if (canvasRef.current) {
+        document.body.removeChild(canvasRef.current);
+      }
+      if (videoRef.current) {
+        document.body.removeChild(videoRef.current);
+      }
+    };
+  }, []);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
-    // We'll now use the real camera implementation in FaceCaptureCamera
   };
 
   const handleCapture = () => {
-    // Get the captured image from the canvas
     if (canvasRef.current) {
       const imageDataUrl = canvasRef.current.toDataURL('image/png');
+      console.log("Image captured:", imageDataUrl.substring(0, 50) + "...");
       setCapturedImage(imageDataUrl);
+      toast.success("Imagem capturada com sucesso!");
     } else {
+      console.error("Canvas reference not available");
       // Fallback in case canvas isn't available
       setCapturedImage("/placeholder.svg");
     }

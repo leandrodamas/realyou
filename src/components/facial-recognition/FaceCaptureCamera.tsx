@@ -22,23 +22,23 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasError, setHasError] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   // Initialize camera stream when isCameraActive changes
   useEffect(() => {
-    let stream: MediaStream | null = null;
-
     const setupCamera = async () => {
       if (isCameraActive) {
         try {
           // Request access to the user's camera
-          stream = await navigator.mediaDevices.getUserMedia({ 
+          const mediaStream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: "user" }, // Use front camera
             audio: false 
           });
           
           // Connect the stream to the video element
           if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+            videoRef.current.srcObject = mediaStream;
+            setStream(mediaStream);
             setHasError(false);
           }
         } catch (err) {
@@ -49,6 +49,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       } else if (stream) {
         // Stop all tracks when camera is deactivated
         stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
     };
 
@@ -58,6 +59,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
     };
   }, [isCameraActive]);
@@ -80,16 +82,32 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         // Convert canvas to data URL
         const imageDataUrl = canvas.toDataURL('image/png');
         
-        // Stop the camera stream
-        const stream = video.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        video.srcObject = null;
-        
         // Pass the captured image data URL to parent component
+        if (videoRef.current) {
+          videoRef.current.pause();
+        }
+        
+        // Update parent component
         onCapture();
+        
+        // Stop the camera stream after capture - moved to a separate function
+        stopCameraStream();
       }
+    } else {
+      console.error("Video or canvas reference not available");
+      toast.error("Não foi possível capturar a imagem. Tente novamente.");
+    }
+  };
+
+  // Function to stop the camera stream
+  const stopCameraStream = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
 
