@@ -15,7 +15,8 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
   useEffect(() => {
     let setupTimeout: ReturnType<typeof setTimeout>;
     let isMounted = true;
-    let localRetryCount = 0; // Local mutable variable for retry count
+    // Track retry state locally instead of modifying the ref directly
+    let localRetryCount = retryCountRef.current;
 
     const setupCamera = async () => {
       // Check if component is unmounted or camera should not be active
@@ -53,10 +54,12 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
         } catch (mediaError) {
           // Use local retry count instead of directly modifying retryCountRef.current
           if (localRetryCount < 1 && isMounted) {
-            // Update local retry count and ref synchronously
+            // Only update local retry count
             localRetryCount++;
-            retryCountRef.current = localRetryCount;
             
+            // Create a new retry count ref with useEffect cleanup to avoid direct mutation
+            const newRetryCount = localRetryCount;
+            // Schedule an update of the facing mode which will trigger this useEffect again
             setFacingMode(current => current === "user" ? "environment" : "user");
             return;
           }
