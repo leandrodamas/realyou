@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, Bookmark, Share2, Upload, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,27 @@ const ProfileGallery: React.FC = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Get the current authenticated user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    getUser();
+    loadWorkGallery();
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!user) {
+      toast.error("Você precisa estar logado para adicionar trabalhos");
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -49,13 +66,14 @@ const ProfileGallery: React.FC = () => {
         .from('work_gallery')
         .getPublicUrl(filePath);
 
-      // Save metadata to database
+      // Save metadata to database with user_id
       const { error: dbError } = await supabase
         .from('work_gallery')
         .insert({
           image_path: publicUrl,
           title,
-          description
+          description,
+          user_id: user.id // Add the user ID here
         });
 
       if (dbError) throw dbError;
@@ -87,10 +105,6 @@ const ProfileGallery: React.FC = () => {
       toast.error("Erro ao carregar galeria");
     }
   };
-
-  React.useEffect(() => {
-    loadWorkGallery();
-  }, []);
 
   const container = {
     hidden: { opacity: 0 },
