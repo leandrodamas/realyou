@@ -12,9 +12,9 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    mountedRef.current = true;
+    // Instead of trying to modify mountedRef.current directly in the cleanup function,
+    // we'll just use it as a flag for checking component mounted state
     return () => {
-      mountedRef.current = false;
       cleanupCameraStream(streamRef.current, videoRef.current);
     };
   }, []);
