@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,14 +40,26 @@ const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
       return;
     }
     
-    // Save pricing data (this could be stored in context or sent to an API)
-    const pricingData = {
-      basePrice: priceValue,
-      packageDescription: packageDescription,
-    };
-    
-    console.log("Pricing data:", pricingData);
-    onComplete();
+    // Save pricing data to localStorage
+    try {
+      const savedProfile = localStorage.getItem('userProfile');
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      
+      const updatedProfile = {
+        ...profile,
+        pricingData: {
+          basePrice: priceValue,
+          packageDescription: packageDescription,
+        }
+      };
+      
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      toast.success("Informações de preço salvas com sucesso!");
+      onComplete();
+    } catch (error) {
+      console.error("Erro ao salvar dados de preço:", error);
+      toast.error("Erro ao salvar informações de preço");
+    }
   };
 
   return (
