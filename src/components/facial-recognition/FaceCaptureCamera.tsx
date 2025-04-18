@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X } from "lucide-react";
+import { Camera, X, CameraOff } from "lucide-react";
+import { toast } from "sonner";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
@@ -18,19 +19,117 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onCapture,
   onReset,
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hasError, setHasError] = useState(false);
+
+  // Initialize camera stream when isCameraActive changes
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+
+    const setupCamera = async () => {
+      if (isCameraActive) {
+        try {
+          // Request access to the user's camera
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user" }, // Use front camera
+            audio: false 
+          });
+          
+          // Connect the stream to the video element
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            setHasError(false);
+          }
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          setHasError(true);
+          toast.error("Não foi possível acessar sua câmera. Verifique as permissões.");
+        }
+      } else if (stream) {
+        // Stop all tracks when camera is deactivated
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+
+    setupCamera();
+
+    // Cleanup: stop camera stream when component unmounts or camera is deactivated
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraActive]);
+
+  // Function to capture image from the video stream
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw the current video frame to the canvas
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL
+        const imageDataUrl = canvas.toDataURL('image/png');
+        
+        // Stop the camera stream
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        video.srcObject = null;
+        
+        // Pass the captured image data URL to parent component
+        onCapture();
+      }
+    }
+  };
+
   return (
     <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl aspect-square w-full relative overflow-hidden border border-gray-100 shadow-inner">
       {isCameraActive ? (
         <div className="flex flex-col items-center justify-center h-full">
-          {/* Camera view would be shown here in a real implementation */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <p className="text-white">Camera Preview</p>
-          </div>
-          <div className="absolute bottom-4 w-full flex justify-center">
-            <Button onClick={onCapture} className="rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100">
-              <Camera className="h-8 w-8" />
-            </Button>
-          </div>
+          {hasError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
+              <CameraOff className="h-12 w-12 text-white/60 mb-3" />
+              <p className="text-white text-center px-6">Não foi possível acessar sua câmera</p>
+              <p className="text-white/70 text-sm mt-1 text-center px-6">Verifique suas permissões de câmera</p>
+              <Button 
+                variant="outline" 
+                className="mt-4 bg-white text-gray-800" 
+                onClick={onReset}
+              >
+                Voltar
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="absolute inset-0 flex items-center justify-center bg-black">
+                <video 
+                  ref={videoRef} 
+                  className="h-full w-full object-cover"
+                  autoPlay 
+                  playsInline 
+                />
+              </div>
+              <div className="absolute bottom-4 w-full flex justify-center">
+                <Button 
+                  onClick={handleCapture} 
+                  className="rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100">
+                  <Camera className="h-8 w-8" />
+                </Button>
+              </div>
+            </>
+          )}
+          <canvas ref={canvasRef} className="hidden" />
         </div>
       ) : capturedImage ? (
         <div className="relative w-full h-full">

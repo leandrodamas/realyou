@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -16,16 +16,22 @@ const FaceCapture: React.FC = () => {
   const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [connectionSent, setConnectionSent] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
-    // In a real implementation, we would initialize the camera here
-    // and set up facial recognition
+    // We'll now use the real camera implementation in FaceCaptureCamera
   };
 
   const handleCapture = () => {
-    // Simulate capturing an image
-    setCapturedImage("/placeholder.svg");
+    // Get the captured image from the canvas
+    if (canvasRef.current) {
+      const imageDataUrl = canvasRef.current.toDataURL('image/png');
+      setCapturedImage(imageDataUrl);
+    } else {
+      // Fallback in case canvas isn't available
+      setCapturedImage("/placeholder.svg");
+    }
     setIsCameraActive(false);
   };
 
@@ -82,6 +88,8 @@ const FaceCapture: React.FC = () => {
           onCapture={handleCapture}
           onReset={handleReset}
         />
+
+        <canvas ref={canvasRef} className="hidden" />
 
         {capturedImage && !matchedPerson && (
           <div className="mt-6 space-y-3">
