@@ -1,13 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from '@/integrations/supabase/types';
 
-interface Story {
-  id: number;
-  username: string;
-  profilePic: string;
-  viewed: boolean;
-}
+type Story = Database['public']['Tables']['stories']['Row'];
 
 export const useStories = () => {
   const [stories, setStories] = useState<Story[]>([]);
