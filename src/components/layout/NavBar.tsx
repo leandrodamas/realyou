@@ -23,7 +23,7 @@ const NavBar: React.FC = () => {
         </Link>
         <Link to="/face-recognition" className="flex flex-col items-center justify-center">
           <Camera className={`h-6 w-6 ${isActive("/face-recognition") ? "text-whatsapp" : "text-gray-500"}`} />
-          <span className={`text-xs mt-1 ${isActive("/face-recognition") ? "text-whatsapp font-medium" : ""}`}>Add</span>
+          <span className={`text-xs mt-1 ${isActive("/face-recognition") ? "text-whatsapp font-medium" : ""}`}>RealYou</span>
         </Link>
         <Link to="/chats" className="flex flex-col items-center justify-center">
           <MessageSquare className={`h-6 w-6 ${isActive("/chats") ? "text-whatsapp" : "text-gray-500"}`} />
@@ -39,4 +39,3 @@ const NavBar: React.FC = () => {
 };
 
 export default NavBar;
-
