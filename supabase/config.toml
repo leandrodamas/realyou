@@ -1,1 +1,5 @@
+
 project_id = "lzfbljphegenrocnumqy"
+
+[functions.process-transaction]
+verify_jwt = true

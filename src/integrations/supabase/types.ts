@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      service_fee_records: {
+        Row: {
+          amount: number
+          collection_date: string | null
+          destination: string
+          id: string
+          percentage: number
+          status: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          collection_date?: string | null
+          destination?: string
+          id?: string
+          percentage: number
+          status?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          collection_date?: string | null
+          destination?: string
+          id?: string
+          percentage?: number
+          status?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_fee_records_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           created_at: string | null
@@ -30,6 +68,48 @@ export type Database = {
           profilepic?: string | null
           username?: string
           viewed?: boolean | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          net_amount: number
+          provider_id: string
+          service_fee_amount: number
+          service_fee_percentage: number
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          net_amount: number
+          provider_id: string
+          service_fee_amount: number
+          service_fee_percentage: number
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          net_amount?: number
+          provider_id?: string
+          service_fee_amount?: number
+          service_fee_percentage?: number
+          status?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
