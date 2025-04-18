@@ -1,29 +1,14 @@
-
 import React, { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X } from "lucide-react";
-
-interface Story {
-  id: number;
-  username: string;
-  profilePic: string;
-  viewed: boolean;
-}
+import { useStories } from "@/hooks/useStories";
 
 const Stories: React.FC = () => {
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  
-  const stories: Story[] = [
-    { id: 1, username: "You", profilePic: "/placeholder.svg", viewed: false },
-    { id: 2, username: "John", profilePic: "/placeholder.svg", viewed: false },
-    { id: 3, username: "Maria", profilePic: "/placeholder.svg", viewed: true },
-    { id: 4, username: "Alex", profilePic: "/placeholder.svg", viewed: false },
-    { id: 5, username: "Sarah", profilePic: "/placeholder.svg", viewed: true },
-    { id: 6, username: "Robert", profilePic: "/placeholder.svg", viewed: false },
-  ];
+  const [selectedStory, setSelectedStory] = useState<any | null>(null);
+  const { stories, loading, error } = useStories();
 
-  const openStory = (story: Story) => {
+  const openStory = (story: any) => {
     setSelectedStory(story);
   };
 
@@ -31,16 +16,15 @@ const Stories: React.FC = () => {
     setSelectedStory(null);
   };
 
+  if (loading) return <div>Carregando histórias...</div>;
+  if (error) return <div>Erro ao carregar histórias: {error}</div>;
+
   return (
     <>
-      <motion.div 
-        className="py-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
+      {/* Existem duas histórias por padrão: "Você" e outras histórias */}
+      <motion.div className="py-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="pl-4 pb-2">
-          <h2 className="text-lg font-semibold text-gray-800">Stories</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Histórias</h2>
         </div>
         
         <div className="flex overflow-x-auto hide-scrollbar pb-2 pl-4 space-x-4">
