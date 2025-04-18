@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings, ChevronRight } from "lucide-react";
 import FaceCapture from "@/components/facial-recognition/FaceCapture";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import FaceSecurityPrivacy from "@/components/facial-recognition/FaceSecurityPrivacy";
 
 interface StepContentProps {
   step: number;
@@ -38,6 +41,9 @@ const StepContent: React.FC<StepContentProps> = ({
     // Call parent's handleCapture to proceed with workflow
     handleCapture();
   };
+
+  // State for the advanced privacy dialog
+  const [showAdvancedPrivacy, setShowAdvancedPrivacy] = useState(false);
 
   return (
     <>
@@ -159,7 +165,10 @@ const StepContent: React.FC<StepContentProps> = ({
                 </div>
               </div>
 
-              <div className="p-4 flex items-center justify-between">
+              <div 
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                onClick={() => setShowAdvancedPrivacy(true)}
+              >
                 <div>
                   <h3 className="font-medium text-gray-900">Advanced Privacy</h3>
                   <p className="text-sm text-gray-500">More control over your facial data</p>
@@ -168,6 +177,21 @@ const StepContent: React.FC<StepContentProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Advanced Privacy Dialog */}
+          <Dialog open={showAdvancedPrivacy} onOpenChange={setShowAdvancedPrivacy}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Advanced Privacy Settings</DialogTitle>
+                <DialogDescription>
+                  Configure detailed privacy settings for your facial recognition data
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <FaceSecurityPrivacy />
+              </div>
+            </DialogContent>
+          </Dialog>
         </motion.div>
       )}
     </>
