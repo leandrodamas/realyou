@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import ChatsPage from "./pages/ChatsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -20,7 +20,7 @@ const App = () => (
       <TooltipProvider>
         <div className="pb-16"> {/* Added padding bottom to accommodate NavBar */}
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Navigate to="/face-recognition" replace />} />
             <Route path="/chats" element={<ChatsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/face-recognition" element={<FaceRecognitionPage />} />
