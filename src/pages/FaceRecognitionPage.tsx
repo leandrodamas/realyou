@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FaceCapture from "@/components/facial-recognition/FaceCapture";
 import { ArrowLeft, Info } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -15,6 +15,11 @@ import {
 
 const FaceRecognitionPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'connect' | 'howItWorks'>('connect');
+  
+  // Add effect to log page rendering for debugging
+  useEffect(() => {
+    console.log("FaceRecognitionPage rendered");
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -98,12 +103,35 @@ const FaceRecognitionPage: React.FC = () => {
             <h3 className="text-lg font-bold mb-4 text-center">Como Funciona o Reconhecimento Facial</h3>
             
             <div className="space-y-4">
-              {/* Informações de como funciona */}
               <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="bg-purple-100 rounded-full p-2 text-purple-600">1</div>
                 <div>
                   <h4 className="font-medium">Capture sua foto</h4>
                   <p className="text-sm text-gray-600">Use sua câmera para tirar uma foto clara do seu rosto.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                <div className="bg-purple-100 rounded-full p-2 text-purple-600">2</div>
+                <div>
+                  <h4 className="font-medium">Processamento inteligente</h4>
+                  <p className="text-sm text-gray-600">Nossa tecnologia analisa características faciais para encontrar correspondências.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                <div className="bg-purple-100 rounded-full p-2 text-purple-600">3</div>
+                <div>
+                  <h4 className="font-medium">Conexões seguras</h4>
+                  <p className="text-sm text-gray-600">Quando encontramos uma correspondência, a pessoa é notificada e pode escolher se conectar.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                <div className="bg-purple-100 rounded-full p-2 text-purple-600">4</div>
+                <div>
+                  <h4 className="font-medium">Networking profissional</h4>
+                  <p className="text-sm text-gray-600">Amplie sua rede de contatos com profissionais que você já conhece pessoalmente.</p>
                 </div>
               </div>
             </div>
