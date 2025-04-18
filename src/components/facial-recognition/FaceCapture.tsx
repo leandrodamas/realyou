@@ -1,163 +1,91 @@
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { AnimatePresence } from "framer-motion";
-import { MatchedPerson } from "./types/MatchedPersonTypes";
-import FaceCaptureCamera from "./FaceCaptureCamera";
-import MatchedPersonCard from "./MatchedPersonCard";
-import ScheduleDialog from "./ScheduleDialog";
+import { Camera, UserPlus, X } from "lucide-react";
 
 const FaceCapture: React.FC = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [connectionSent, setConnectionSent] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    // Create hidden elements for capture
-    const canvas = document.createElement('canvas');
-    canvasRef.current = canvas;
-    canvasRef.current.style.display = 'none';
-    document.body.appendChild(canvas);
-    
-    const video = document.createElement('video');
-    videoRef.current = video;
-    videoRef.current.style.display = 'none';
-    document.body.appendChild(video);
-    
-    return () => {
-      // Cleanup
-      if (canvasRef.current) {
-        document.body.removeChild(canvasRef.current);
-      }
-      if (videoRef.current) {
-        document.body.removeChild(videoRef.current);
-      }
-    };
-  }, []);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
+    // In a real implementation, we would initialize the camera here
+    // and set up facial recognition
   };
 
   const handleCapture = () => {
-    if (canvasRef.current) {
-      const imageDataUrl = canvasRef.current.toDataURL('image/png');
-      console.log("Image captured:", imageDataUrl.substring(0, 50) + "...");
-      setCapturedImage(imageDataUrl);
-      toast.success("Imagem capturada com sucesso!");
-    } else {
-      console.error("Canvas reference not available");
-      // Fallback in case canvas isn't available
-      setCapturedImage("/placeholder.svg");
-    }
+    // Simulate capturing an image
+    setCapturedImage("/placeholder.svg");
     setIsCameraActive(false);
   };
 
   const handleReset = () => {
     setCapturedImage(null);
     setIsCameraActive(false);
-    setMatchedPerson(null);
-    setIsSearching(false);
-    setConnectionSent(false);
   };
 
   const handleSearch = () => {
-    // Simulate searching for a face match
-    setIsSearching(true);
-    
-    // Simulate a delay for processing
-    setTimeout(() => {
-      setIsSearching(false);
-      setMatchedPerson({
-        name: "Alex Johnson",
-        profession: "Terapeuta",
-        avatar: "/placeholder.svg",
-        schedule: [
-          { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
-          { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
-          { day: "Domingo", slots: [], active: false }
-        ]
-      });
-    }, 2000);
-  };
-
-  const sendConnectionRequest = () => {
-    setConnectionSent(true);
-    toast.success("Solicitação de conexão enviada!");
+    // In a real implementation, this would send the image for facial recognition matching
+    console.log("Searching for face matches...");
+    // Simulate processing
   };
 
   return (
-    <div className="flex flex-col items-center p-6">
-      <div className="w-full">
-        <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Connect with RealYou</span>
-          <Sparkles className="h-5 w-5 text-blue-500" />
-        </h2>
+    <div className="flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <h2 className="text-xl font-bold text-center mb-4">Connect via Face Recognition</h2>
         
-        <FaceCaptureCamera
-          isCameraActive={isCameraActive}
-          capturedImage={capturedImage}
-          onStartCamera={handleStartCamera}
-          onCapture={handleCapture}
-          onReset={handleReset}
-        />
+        <div className="bg-gray-100 rounded-lg aspect-square w-full relative overflow-hidden">
+          {isCameraActive ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              {/* Camera view would be shown here in a real implementation */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black">
+                <p className="text-white">Camera Preview</p>
+              </div>
+              <div className="absolute bottom-4 w-full flex justify-center">
+                <Button onClick={handleCapture} className="rounded-full bg-white text-black">
+                  <Camera className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+          ) : capturedImage ? (
+            <div className="relative w-full h-full">
+              <img 
+                src={capturedImage} 
+                alt="Captured face" 
+                className="w-full h-full object-cover"
+              />
+              <Button 
+                variant="destructive" 
+                size="icon"
+                className="absolute top-2 right-2 rounded-full"
+                onClick={handleReset}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full">
+              <p className="text-gray-500 mb-4">Take a picture to connect</p>
+              <Button onClick={handleStartCamera} className="bg-whatsapp hover:bg-whatsapp-dark">
+                Start Camera
+              </Button>
+            </div>
+          )}
+        </div>
 
-        <canvas ref={canvasRef} className="hidden" />
-
-        {capturedImage && !matchedPerson && (
-          <div className="mt-6 space-y-3">
-            <Button 
-              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md" 
-              onClick={handleSearch}
-              disabled={isSearching}
-            >
-              {isSearching ? (
-                <div className="flex items-center">
-                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                  Procurando...
-                </div>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Encontrar Profissionais com Reconhecimento Facial
-                </>
-              )}
+        {capturedImage && (
+          <div className="mt-4 space-y-2">
+            <Button className="w-full bg-whatsapp hover:bg-whatsapp-dark" onClick={handleSearch}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Find Friends with Face Recognition
             </Button>
-            <p className="text-xs text-gray-500 text-center px-4">
-              Notificaremos as pessoas se encontrarmos uma correspondência, e elas poderão escolher se conectar com você
+            <p className="text-xs text-gray-500 text-center">
+              We'll notify people if we find a match, and they can choose to connect with you
             </p>
           </div>
         )}
-
-        <AnimatePresence>
-          {matchedPerson && (
-            <MatchedPersonCard 
-              matchedPerson={matchedPerson}
-              connectionSent={connectionSent}
-              onShowScheduleDialog={() => setShowScheduleDialog(true)}
-              onSendConnectionRequest={sendConnectionRequest}
-            />
-          )}
-        </AnimatePresence>
       </div>
-
-      <ScheduleDialog 
-        showDialog={showScheduleDialog} 
-        matchedPerson={matchedPerson}
-        onCloseDialog={() => setShowScheduleDialog(false)}
-      />
     </div>
   );
 };

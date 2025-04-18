@@ -8,16 +8,10 @@ import Index from "./pages/Index";
 import ChatsPage from "./pages/ChatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
-import FaceRegistrationPage from "./pages/FaceRegistrationPage";
 import SearchPage from "./pages/SearchPage";
-import AdvancedSearchPage from "./pages/AdvancedSearchPage";
-import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import OnboardingPage from "./pages/OnboardingPage";
-import TimelinePage from "./pages/TimelinePage";
 import NavBar from "./components/layout/NavBar";
 
-// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -26,18 +20,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Router>
-        <div className="pb-20"> {/* Added extra padding bottom to accommodate NavBar and center camera button */}
+        <div className="pb-16"> {/* Added padding bottom to accommodate NavBar */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/chats" element={<ChatsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/face-recognition" element={<FaceRecognitionPage />} />
-            <Route path="/register" element={<FaceRegistrationPage />} />
             <Route path="/search" element={<SearchPage />} />
-            <Route path="/advanced-search" element={<AdvancedSearchPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/timeline" element={<TimelinePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
