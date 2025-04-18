@@ -5,6 +5,7 @@ import { toast } from "sonner";
 export const useCameraStream = (isCameraActive: boolean) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -14,9 +15,9 @@ export const useCameraStream = (isCameraActive: boolean) => {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
-              facingMode: "user",
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
+              facingMode: facingMode,
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
             }, 
             audio: false 
           });
@@ -42,7 +43,11 @@ export const useCameraStream = (isCameraActive: boolean) => {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isCameraActive]);
+  }, [isCameraActive, facingMode]);
 
-  return { videoRef, hasError };
+  const switchCamera = () => {
+    setFacingMode(current => current === "user" ? "environment" : "user");
+  };
+
+  return { videoRef, hasError, switchCamera, facingMode };
 };

@@ -1,7 +1,6 @@
-
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X } from "lucide-react";
+import { Camera, X, FlipHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -26,7 +25,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [faceDetected, setFaceDetected] = useState(false);
-  const { videoRef, hasError } = useCameraStream(isCameraActive);
+  const { videoRef, hasError, switchCamera, facingMode } = useCameraStream(isCameraActive);
 
   const simulateFaceDetection = () => {
     const detectInterval = setInterval(() => {
@@ -53,6 +52,11 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       
       const context = canvas.getContext('2d');
       if (context) {
+        // Flip the image horizontally if using front camera
+        if (facingMode === "user") {
+          context.scale(-1, 1);
+          context.translate(-canvas.width, 0);
+        }
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageDataUrl = canvas.toDataURL('image/png');
         
@@ -72,7 +76,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   if (!isCameraActive && !capturedImage) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
         <div className="mb-6 text-center">
           <p className="text-gray-600 mb-1">Tire uma foto para se conectar</p>
           <p className="text-xs text-gray-400">Seja você mesmo, seja real</p>
@@ -89,23 +93,35 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   if (isCameraActive) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center min-h-[75vh]">
         {hasError ? (
           <CameraError onReset={onReset} />
         ) : (
           <>
-            <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="relative w-full h-[75vh] bg-black">
               <video 
                 ref={videoRef} 
                 className="h-full w-full object-cover"
                 autoPlay 
                 playsInline 
+                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
               />
               
               <CameraOverlay faceDetected={faceDetected} />
               <FaceDetectionStatus faceDetected={faceDetected} />
 
-              <div className="absolute bottom-4 w-full flex justify-center">
+              <div className="absolute top-4 right-4">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-black/50 hover:bg-black/70"
+                  onClick={switchCamera}
+                >
+                  <FlipHorizontal className="h-4 w-4 text-white" />
+                </Button>
+              </div>
+
+              <div className="absolute bottom-4 w-full flex justify-center gap-4">
                 <Button 
                   onClick={handleCapture} 
                   className={`rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100 ${
@@ -131,7 +147,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-[75vh]">
       <img 
         src={capturedImage || ''} 
         alt="Captured face" 
