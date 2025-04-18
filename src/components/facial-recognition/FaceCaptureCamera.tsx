@@ -1,9 +1,9 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
+import { useFaceDetection } from "@/hooks/useFaceDetection";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
 import CameraPreview from "./components/CameraPreview";
@@ -24,12 +24,18 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [faceDetected, setFaceDetected] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [brightness, setBrightness] = useState(1.4);
+
+  const { faceDetected } = useFaceDetection({
+    isCameraActive,
+    isInitializing,
+    isLoading,
+    videoRef
+  });
 
   // Loading progress simulation
   useEffect(() => {
@@ -65,29 +71,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     }
     return () => clearTimeout(timer);
   }, [isCameraActive]);
-
-  // Face detection simulation
-  useEffect(() => {
-    let detectInterval: NodeJS.Timeout;
-    
-    if (isCameraActive && !isInitializing && !isLoading && videoRef.current) {
-      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const intervalTime = isMobileDevice ? 800 : 500;
-      
-      detectInterval = setInterval(() => {
-        if (!videoRef.current || !isCameraActive) {
-          clearInterval(detectInterval);
-          return;
-        }
-        const detected = Math.random() > 0.2;
-        setFaceDetected(detected);
-      }, intervalTime);
-    }
-    
-    return () => {
-      if (detectInterval) clearInterval(detectInterval);
-    };
-  }, [isCameraActive, isInitializing, isLoading, videoRef.current]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && faceDetected) {
