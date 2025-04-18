@@ -42,6 +42,7 @@ const CameraButton: React.FC = () => {
         className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-50"
         animate={isExpanded ? "expanded" : "collapsed"}
         variants={buttonVariants}
+        initial="collapsed"
       >
         <motion.button 
           onClick={toggleExpand}
