@@ -58,14 +58,24 @@ export const useCameraStream = (isCameraActive: boolean) => {
         
         setHasCamera(true);
         
-        // Configurações otimizadas para mobile
+        // Configurações otimizadas para melhor exposição e brilho
         const constraints = {
           audio: false,
           video: {
             facingMode: facingMode,
-            width: { ideal: 640 }, // Reduzido para melhor performance
+            width: { ideal: 640 },
             height: { ideal: 480 },
-            frameRate: { ideal: 24 } // Limitar framerate para economizar recursos
+            frameRate: { ideal: 24 },
+            // Configurações de exposição/brilho - funcionam em alguns dispositivos
+            advanced: [
+              {
+                exposureMode: "continuous",
+                exposureCompensation: 1.5, // Aumentar exposição (se suportado)
+                brightness: 1.5,           // Aumentar brilho (se suportado)
+                contrast: 1.2,             // Aumentar contraste (se suportado)
+                whiteBalanceMode: "continuous"
+              }
+            ]
           }
         };
         
@@ -80,6 +90,37 @@ export const useCameraStream = (isCameraActive: boolean) => {
           // Garantir que o vídeo seja reproduzido com baixa latência
           videoRef.current.playsInline = true;
           videoRef.current.muted = true;
+          
+          // Configurar tracks de vídeo para melhor exposição (se suportado)
+          const videoTrack = stream.getVideoTracks()[0];
+          if (videoTrack) {
+            try {
+              const capabilities = videoTrack.getCapabilities();
+              const settings = videoTrack.getSettings();
+              
+              // Aplicar configurações de exposição se disponíveis
+              if (capabilities.exposureMode && capabilities.exposureCompensation) {
+                const constraints = {
+                  exposureMode: "continuous", 
+                  exposureCompensation: capabilities.exposureCompensation.max * 0.75 // 75% do máximo
+                };
+                await videoTrack.applyConstraints({ advanced: [constraints] });
+              }
+              
+              // Tentar aplicar configurações de brilho para alguns dispositivos
+              if (capabilities.brightness || capabilities.contrast) {
+                await videoTrack.applyConstraints({
+                  advanced: [{
+                    brightness: capabilities.brightness ? capabilities.brightness.max * 0.7 : undefined,
+                    contrast: capabilities.contrast ? capabilities.contrast.max * 0.65 : undefined
+                  }]
+                });
+              }
+            } catch (err) {
+              console.log("Avançado: Não foi possível aplicar configurações avançadas de câmera", err);
+              // Continuar mesmo se as configurações avançadas falharem
+            }
+          }
           
           await videoRef.current.play().catch(error => {
             console.error("Erro ao reproduzir vídeo:", error);

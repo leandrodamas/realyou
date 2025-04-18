@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X, FlipHorizontal, AlertCircle } from "lucide-react";
+import { Camera, X, FlipHorizontal, AlertCircle, SunMedium } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -30,6 +30,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [brightness, setBrightness] = useState(1.4); // Default increased brightness
   
   // Simular progresso de carregamento para feedback visual
   useEffect(() => {
@@ -115,8 +116,15 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
             context.translate(-canvas.width, 0);
           }
           
+          // Aplicar ajustes de brilho/contraste para melhorar imagens escuras
+          context.filter = `brightness(${brightness}) contrast(1.2) saturate(1.1)`;
+          
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.85); // Comprimir para melhor performance
+          
+          // Reset filter after drawing
+          context.filter = 'none';
+          
+          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9); // Aumentar qualidade
           
           // Parar a câmera para liberar recursos
           if (video.srcObject) {
@@ -138,6 +146,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     } else if (!faceDetected) {
       toast.warning("Nenhum rosto detectado. Centralize seu rosto na câmera.");
     }
+  };
+
+  const increaseBrightness = () => {
+    setBrightness(prev => Math.min(prev + 0.2, 2.0));
+    toast.success("Brilho aumentado");
+  };
+
+  const decreaseBrightness = () => {
+    setBrightness(prev => Math.max(prev - 0.2, 1.0));
+    toast.success("Brilho reduzido");
   };
 
   if (!isCameraActive && !capturedImage) {
@@ -186,13 +204,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                 autoPlay 
                 playsInline 
                 muted
-                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
+                style={{ 
+                  transform: facingMode === "user" ? "scaleX(-1)" : "none",
+                  filter: `brightness(${brightness}) contrast(1.2)`
+                }}
               />
               
               <CameraOverlay faceDetected={faceDetected} />
               <FaceDetectionStatus faceDetected={faceDetected} />
 
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 flex flex-col gap-2">
                 <Button
                   variant="secondary"
                   size="icon"
@@ -200,6 +221,25 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                   onClick={switchCamera}
                 >
                   <FlipHorizontal className="h-4 w-4 text-white" />
+                </Button>
+                
+                {/* Brightness controls */}
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-yellow-500/70 hover:bg-yellow-500/90"
+                  onClick={increaseBrightness}
+                >
+                  <SunMedium className="h-4 w-4 text-white" />
+                </Button>
+                
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-gray-700/70 hover:bg-gray-700/90"
+                  onClick={decreaseBrightness}
+                >
+                  <SunMedium className="h-4 w-4 text-white opacity-70" />
                 </Button>
               </div>
 

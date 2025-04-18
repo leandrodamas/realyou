@@ -25,11 +25,15 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    backgroundColor: "#000000", // Fundo preto para melhorar visualização de câmera
+    alwaysUseMediaLightMode: false, // Forçar modo escuro para a câmera
   },
   ios: {
     contentInset: "always",
-    allowsLinkPreview: false
+    allowsLinkPreview: false,
+    backgroundColor: "#000000", // Fundo preto para melhorar visualização de câmera
+    preferredContentMode: "mobile" // Modo otimizado para mobile
   }
 };
 

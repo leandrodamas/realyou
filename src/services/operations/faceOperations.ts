@@ -40,8 +40,14 @@ const resizeImageForMobile = (imageData: string): Promise<string> => {
           return;
         }
         
+        // Aplicar correções de brilho/contraste para melhorar imagens escuras
+        ctx.filter = 'brightness(1.4) contrast(1.2) saturate(1.1)';
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
+        
+        // Reset filter
+        ctx.filter = 'none';
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9)); // Aumentar qualidade
       } catch (err) {
         console.error('Error resizing image:', err);
         resolve(imageData); // Em caso de erro, usa a imagem original
@@ -56,17 +62,57 @@ const resizeImageForMobile = (imageData: string): Promise<string> => {
   });
 };
 
+// Função para melhorar imagens com baixa iluminação
+const enhanceImageBrightness = (imageData: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(imageData);
+          return;
+        }
+        
+        // Aplicar filtros para melhorar iluminação
+        ctx.filter = 'brightness(1.5) contrast(1.2) saturate(1.1)';
+        ctx.drawImage(img, 0, 0);
+        ctx.filter = 'none';
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      } catch (err) {
+        console.error('Error enhancing image:', err);
+        resolve(imageData); // Em caso de erro, retorna a imagem original
+      }
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for enhancement'));
+    };
+    
+    img.src = imageData;
+  });
+};
+
 export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchResult | null> => {
   try {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     
-    // Redimensionar imagem para dispositivos móveis para melhorar performance
-    const optimizedImageData = await resizeImageForMobile(imageData);
+    // Melhorar a imagem antes de processar
+    const enhancedImage = await enhanceImageBrightness(imageData);
+    
+    // Então redimensionar para dispositivos móveis
+    const optimizedImageData = await resizeImageForMobile(enhancedImage);
     
     const sdk = await getFacialRecognitionSDK();
     
     // Em dispositivos móveis, ajustar os parâmetros de detecção para melhor desempenho
-    const confidenceThreshold = isMobile ? 0.55 : 0.6;
+    const confidenceThreshold = isMobile ? 0.5 : 0.6; // Redução do threshold para mobile
     
     // Step 1: Enhanced face detection with stricter confidence threshold
     const detectionResult = await sdk.detectFace(optimizedImageData);
@@ -100,7 +146,7 @@ export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchRe
     }
     
     // Ajustar limiar de confiança para dispositivos móveis
-    const confidenceMatchThreshold = isMobile ? 0.7 : 0.75;
+    const confidenceMatchThreshold = isMobile ? 0.65 : 0.75; // Reduzido para mobile
     
     // Filter matches with low confidence
     if (matchResult.matches.length > 0) {
@@ -109,7 +155,7 @@ export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchRe
         .sort((a, b) => b.confidence - a.confidence) // Sort by confidence
         .map(match => ({
           ...match,
-          avatar: imageData
+          avatar: optimizedImageData // Usar imagem otimizada
         }));
       
       if (matchResult.matches.length > 0) {
@@ -137,17 +183,20 @@ export const registerFaceForUser = async (imageData: string, userId: string): Pr
   try {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     
-    // Otimizar imagem para dispositivos móveis
-    const optimizedImageData = await resizeImageForMobile(imageData);
+    // Melhorar a imagem antes de processar
+    const enhancedImage = await enhanceImageBrightness(imageData);
+    
+    // Então redimensionar para dispositivos móveis
+    const optimizedImageData = await resizeImageForMobile(enhancedImage);
     
     const sdk = await getFacialRecognitionSDK();
     
     // Verificar a qualidade da imagem com limiar ajustado para mobile
-    const qualityThreshold = isMobile ? 0.6 : 0.7;
+    const qualityThreshold = isMobile ? 0.5 : 0.7; // Reduzido para mobile
     const detectionResult = await sdk.detectFace(optimizedImageData);
     
     if (!detectionResult.success || detectionResult.confidence < qualityThreshold) {
-      if (detectionResult.confidence < qualityThreshold && detectionResult.confidence > 0.4) {
+      if (detectionResult.confidence < qualityThreshold && detectionResult.confidence > 0.3) { // Reduzido
         // Se a qualidade estiver baixa mas aceitável, permitir o registro com aviso
         toast.warning("Qualidade da imagem não é ideal, mas tentaremos registrar");
       } else {
