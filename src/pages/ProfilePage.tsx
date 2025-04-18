@@ -1,18 +1,37 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import BusinessCard from "@/components/profile/BusinessCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings } from "lucide-react";
+import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
+import QuickSettingsSection from "@/components/profile/QuickSettingsSection";
+import ProfileTabs from "@/components/profile/ProfileTabs";
+import FloatingActionButton from "@/components/profile/FloatingActionButton";
+import { useLocation } from "react-router-dom";
 
 const ProfilePage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState("posts");
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if there's a tab parameter in the URL
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (tabParam && ["posts", "about", "services", "achievements"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
+
+  const openSettings = (section?: string) => {
+    if (section) {
+      // We could store the active section in localStorage or context
+      // to open the settings directly on that section
+      localStorage.setItem("settingsSection", section);
+    }
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white p-4 flex justify-between items-center border-b">
-        <h1 className="text-xl font-bold">Profile</h1>
-        <Settings className="h-5 w-5 text-gray-500" />
-      </header>
+      <ProfilePageHeader openSettings={openSettings} />
 
       {/* Profile Info */}
       <ProfileHeader 
@@ -24,57 +43,18 @@ const ProfilePage: React.FC = () => {
         skillsCount={12}
       />
 
-      <Tabs defaultValue="posts" className="w-full">
-        <TabsList className="grid grid-cols-3 mx-4 mt-4">
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
-        </TabsList>
-        <TabsContent value="posts" className="p-4">
-          <div className="grid grid-cols-3 gap-1">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div key={item} className="aspect-square bg-gray-200">
-                <img
-                  src="/placeholder.svg"
-                  alt={`Post ${item}`}
-                  className="object-cover w-full h-full"
-                />
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="about" className="px-4">
-          <BusinessCard
-            currentPosition="Senior Software Developer"
-            company="Tech Innovations Inc."
-            location="San Francisco, CA"
-            education="B.S. Computer Science, Stanford University"
-            skills={["React", "TypeScript", "Node.js", "UI/UX Design", "Project Management"]}
-          />
-        </TabsContent>
-        <TabsContent value="skills" className="p-4">
-          <div className="space-y-4">
-            {["Programming", "Design", "Management"].map((category) => (
-              <div key={category} className="bg-white p-4 rounded-lg shadow-sm">
-                <h3 className="font-medium mb-2">{category}</h3>
-                <div className="space-y-2">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="flex justify-between">
-                      <span>Skill {item}</span>
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-whatsapp h-2 rounded-full" 
-                          style={{ width: `${Math.random() * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Quick Settings Access */}
+      <QuickSettingsSection openSettings={openSettings} />
+
+      {/* Interactive Tabs with Animation */}
+      <ProfileTabs 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        openSettings={openSettings}
+      />
+
+      {/* Floating Action Button */}
+      <FloatingActionButton />
     </div>
   );
 };
