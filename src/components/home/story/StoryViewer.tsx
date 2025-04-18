@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -13,12 +13,23 @@ interface StoryViewerProps {
 }
 
 const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
+  // Add cleanup effect to properly handle unmounting
+  useEffect(() => {
+    // Setup effect - could be used for analytics or other side effects
+    
+    // Cleanup function to ensure proper unmounting
+    return () => {
+      // Any cleanup needed when component unmounts
+    };
+  }, []);
+
   return (
     <motion.div 
       className="fixed inset-0 z-50 bg-black"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      key={`story-viewer-${story.id}`}
     >
       <div className="absolute top-0 left-0 right-0 h-1 flex justify-center py-4 z-10">
         <div className="w-[95%] bg-gray-700 rounded-full h-1 overflow-hidden">

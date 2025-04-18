@@ -26,6 +26,14 @@ const Stories: React.FC = () => {
     setStoryCaption("");
   };
 
+  const handleOpenStory = (story: Story) => {
+    setSelectedStory(story);
+  };
+
+  const handleCloseStory = () => {
+    setSelectedStory(null);
+  };
+
   if (loading) return <div>Carregando histórias...</div>;
   if (error) return <div>Erro ao carregar histórias: {error}</div>;
 
@@ -48,17 +56,18 @@ const Stories: React.FC = () => {
               story={story}
               isFirst={story.id === 1}
               onCreateStory={handleCreateStory}
-              onOpenStory={setSelectedStory}
+              onOpenStory={handleOpenStory}
             />
           ))}
         </div>
       </motion.div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedStory && (
           <StoryViewer 
+            key={`viewer-${selectedStory.id}`}
             story={selectedStory}
-            onClose={() => setSelectedStory(null)}
+            onClose={handleCloseStory}
           />
         )}
       </AnimatePresence>
