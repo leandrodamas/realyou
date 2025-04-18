@@ -12,41 +12,26 @@ import LogoutButton from "@/components/settings/LogoutButton";
 import SubscriptionSection from "@/components/settings/SubscriptionSection";
 import { friendCategories } from "@/components/settings/constants/friendCategories";
 import { achievementCategories } from "@/components/settings/constants/achievementCategories";
-import { toast } from "sonner";
+import { useSettings } from "@/hooks/useSettings";
 
 const SettingsPage = () => {
-  const [darkMode, setDarkMode] = React.useState(false);
-  const [storyVisibility, setStoryVisibility] = React.useState("friends");
-  const [photoPrivacy, setPhotoPrivacy] = React.useState(["close-friends", "family"]);
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [profileVisibility, setProfileVisibility] = React.useState("public");
-  const [faceRecPrivacy, setFaceRecPrivacy] = React.useState("friends-only");
-  const [selectedAchievements, setSelectedAchievements] = React.useState(
-    achievementCategories.filter(cat => cat.public).map(cat => cat.id)
-  );
-
-  // Function to handle saving settings
-  const handleSaveSettings = (section: string) => {
-    toast.success(`${section} settings saved successfully!`);
-  };
-
-  // Function to handle checkbox changes for photo privacy
-  const handlePhotoPrivacyChange = (categoryId: string) => {
-    setPhotoPrivacy(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  // Function to handle checkbox changes for achievement visibility
-  const handleAchievementChange = (categoryId: string) => {
-    setSelectedAchievements(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
+  const {
+    darkMode,
+    storyVisibility,
+    photoPrivacy,
+    notificationsEnabled,
+    profileVisibility,
+    faceRecPrivacy,
+    selectedAchievements,
+    setDarkMode,
+    setStoryVisibility,
+    setNotificationsEnabled,
+    setProfileVisibility,
+    setFaceRecPrivacy,
+    handleSaveSettings,
+    handlePhotoPrivacyChange,
+    handleAchievementChange,
+  } = useSettings();
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
