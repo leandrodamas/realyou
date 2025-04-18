@@ -1,13 +1,12 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X, FlipHorizontal, AlertCircle, SunMedium } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 import { useCameraStream } from "@/hooks/useCameraStream";
 import CameraError from "./CameraError";
-import FaceDetectionStatus from "./FaceDetectionStatus";
-import CameraOverlay from "./CameraOverlay";
+import CameraLoading from "./components/CameraLoading";
+import CameraPreview from "./components/CameraPreview";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
@@ -30,9 +29,9 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [brightness, setBrightness] = useState(1.4); // Default increased brightness
-  
-  // Simular progresso de carregamento para feedback visual
+  const [brightness, setBrightness] = useState(1.4);
+
+  // Loading progress simulation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -55,34 +54,31 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     };
   }, [isLoading, isInitializing]);
 
+  // Camera initialization delay
   useEffect(() => {
-    // Adicionar atraso para inicialização da câmera
     let timer: NodeJS.Timeout;
     if (isCameraActive) {
       setIsInitializing(true);
       timer = setTimeout(() => {
         setIsInitializing(false);
-      }, 1500); // Tempo reduzido para melhor UX
+      }, 1500);
     }
     return () => clearTimeout(timer);
   }, [isCameraActive]);
 
-  // Detecção facial simulada mais eficiente para mobile
+  // Face detection simulation
   useEffect(() => {
     let detectInterval: NodeJS.Timeout;
     
     if (isCameraActive && !isInitializing && !isLoading && videoRef.current) {
-      // Detecção mais leve para mobile
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const intervalTime = isMobileDevice ? 800 : 500; // Intervalo maior em dispositivos móveis
+      const intervalTime = isMobileDevice ? 800 : 500;
       
       detectInterval = setInterval(() => {
         if (!videoRef.current || !isCameraActive) {
           clearInterval(detectInterval);
           return;
         }
-        
-        // Simular detecção com mais chances de sucesso
         const detected = Math.random() > 0.2;
         setFaceDetected(detected);
       }, intervalTime);
@@ -98,8 +94,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       try {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        
-        // Usar dimensões menores para melhor performance em mobile
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const scale = isMobile ? 0.7 : 1;
         
@@ -108,31 +102,22 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         
         const context = canvas.getContext('2d');
         if (context) {
-          context.imageSmoothingQuality = 'medium'; // Balanceamento entre qualidade e performance
+          context.imageSmoothingQuality = 'medium';
           
-          // Flip horizontal para câmera frontal
           if (facingMode === "user") {
             context.scale(-1, 1);
             context.translate(-canvas.width, 0);
           }
           
-          // Aplicar ajustes de brilho/contraste para melhorar imagens escuras
-          // Usamos o valor de brightness controlado pelo usuário
           context.filter = `brightness(${brightness}) contrast(1.2) saturate(1.1)`;
-          
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Reset filter after drawing
           context.filter = 'none';
           
-          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9); // Aumentar qualidade
+          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
           
-          // Parar a câmera para liberar recursos
           if (video.srcObject) {
             const stream = video.srcObject as MediaStream;
-            if (stream) {
-              stream.getTracks().forEach(track => track.stop());
-            }
+            stream.getTracks().forEach(track => track.stop());
             video.srcObject = null;
           }
           
@@ -149,14 +134,13 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     }
   };
 
-  // Improved brightness controls with more significant changes for better visibility
   const increaseBrightness = () => {
-    setBrightness(prev => Math.min(prev + 0.3, 2.5)); // Increased step size and max value
+    setBrightness(prev => Math.min(prev + 0.3, 2.5));
     toast.success("Brilho aumentado");
   };
 
   const decreaseBrightness = () => {
-    setBrightness(prev => Math.max(prev - 0.3, 0.8)); // Increased step size, don't go too dark
+    setBrightness(prev => Math.max(prev - 0.3, 0.8));
     toast.success("Brilho reduzido");
   };
 
@@ -179,18 +163,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   if (isCameraActive) {
     if (isInitializing || isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[75vh] bg-gray-900">
-          <div className="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mb-4"></div>
-          <p className="text-white mb-4">Inicializando câmera...</p>
-          <div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${loadingProgress}%` }}
-            ></div>
-          </div>
-        </div>
-      );
+      return <CameraLoading loadingProgress={loadingProgress} />;
     }
 
     return (
@@ -199,95 +172,17 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           <CameraError onReset={onReset} />
         ) : (
           <>
-            <div className="relative w-full h-[75vh] bg-black">
-              <video 
-                ref={videoRef} 
-                className="h-full w-full object-cover"
-                autoPlay 
-                playsInline 
-                muted
-                style={{ 
-                  transform: facingMode === "user" ? "scaleX(-1)" : "none",
-                  filter: `brightness(${brightness}) contrast(1.2)` // Apply brightness directly to video element
-                }}
-              />
-              
-              <CameraOverlay faceDetected={faceDetected} />
-              <FaceDetectionStatus faceDetected={faceDetected} />
-
-              <div className="absolute top-4 right-4 flex flex-col gap-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full bg-black/50 hover:bg-black/70"
-                  onClick={switchCamera}
-                >
-                  <FlipHorizontal className="h-4 w-4 text-white" />
-                </Button>
-                
-                {/* Enhanced Brightness controls with better visual feedback */}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full bg-yellow-500/70 hover:bg-yellow-500/90"
-                  onClick={increaseBrightness}
-                >
-                  <SunMedium className="h-4 w-4 text-white" />
-                </Button>
-                
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full bg-gray-700/70 hover:bg-gray-700/90"
-                  onClick={decreaseBrightness}
-                >
-                  <SunMedium className="h-4 w-4 text-white opacity-70" />
-                </Button>
-
-                {/* Show current brightness level indicator */}
-                <div className="bg-black/30 rounded-md px-2 py-1 text-xs text-white mt-1">
-                  <div className="h-1 bg-gray-600 rounded-full w-8">
-                    <div 
-                      className="h-1 bg-yellow-400 rounded-full" 
-                      style={{width: `${(brightness / 2.5) * 100}%`}}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-8 w-full flex justify-center gap-4">
-                <Button 
-                  onClick={handleCapture} 
-                  className={`rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100 ${
-                    faceDetected ? "pulse-animation" : "opacity-80"
-                  }`}
-                  disabled={!faceDetected}
-                >
-                  <Camera className="h-8 w-8" />
-                </Button>
-              </div>
-
-              <div className="absolute bottom-24 left-0 right-0 flex justify-center">
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-700">
-                  {faceDetected ? "Clique no botão para capturar" : "Posicione seu rosto no centro"}
-                </div>
-              </div>
-              
-              {errorMessage && (
-                <div className="absolute bottom-32 left-0 right-0 flex justify-center">
-                  <div className="bg-red-500/80 text-white px-3 py-1 rounded-md text-xs">
-                    {errorMessage}
-                  </div>
-                </div>
-              )}
-
-              {/* Added helper text for brightness */}
-              <div className="absolute bottom-36 left-0 right-0 flex justify-center">
-                <div className="bg-yellow-500/20 text-yellow-100 px-3 py-1 rounded-md text-xs">
-                  Ajuste o brilho se a imagem estiver escura
-                </div>
-              </div>
-            </div>
+            <CameraPreview
+              videoRef={videoRef}
+              faceDetected={faceDetected}
+              onCapture={handleCapture}
+              brightness={brightness}
+              facingMode={facingMode}
+              onSwitchCamera={switchCamera}
+              onIncreaseBrightness={increaseBrightness}
+              onDecreaseBrightness={decreaseBrightness}
+              errorMessage={errorMessage}
+            />
             <canvas ref={canvasRef} className="hidden" />
           </>
         )}
