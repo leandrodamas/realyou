@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface UseFaceDetectionProps {
   isCameraActive: boolean;
@@ -15,6 +15,14 @@ export const useFaceDetection = ({
   videoRef
 }: UseFaceDetectionProps) => {
   const [faceDetected, setFaceDetected] = useState(false);
+  const mountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let detectInterval: NodeJS.Timeout;
@@ -24,12 +32,14 @@ export const useFaceDetection = ({
       const intervalTime = isMobileDevice ? 800 : 500;
       
       detectInterval = setInterval(() => {
-        if (!videoRef.current || !isCameraActive) {
-          clearInterval(detectInterval);
+        if (!videoRef.current || !isCameraActive || !mountedRef.current) {
+          if (detectInterval) clearInterval(detectInterval);
           return;
         }
         const detected = Math.random() > 0.2;
-        setFaceDetected(detected);
+        if (mountedRef.current) {
+          setFaceDetected(detected);
+        }
       }, intervalTime);
     }
     

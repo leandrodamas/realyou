@@ -9,14 +9,39 @@ export const useCameraStream = (isCameraActive: boolean) => {
   const [hasCamera, setHasCamera] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const mountedRef = useRef<boolean>(true);
 
   // Função para limpar qualquer stream anterior
   const cleanupStream = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      try {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.log("Error stopping tracks:", err);
+      }
       streamRef.current = null;
     }
+    
+    // Limpar o elemento de vídeo
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+      } catch (err) {
+        console.log("Error clearing video srcObject:", err);
+      }
+    }
   };
+
+  useEffect(() => {
+    // Set mounted flag
+    mountedRef.current = true;
+    
+    return () => {
+      // Clean flag on unmount
+      mountedRef.current = false;
+      cleanupStream();
+    };
+  }, []);
 
   useEffect(() => {
     let setupTimeout: ReturnType<typeof setTimeout>;
@@ -24,6 +49,9 @@ export const useCameraStream = (isCameraActive: boolean) => {
     const maxRetries = 3;
 
     const setupCamera = async () => {
+      // Não prosseguir se o componente foi desmontado
+      if (!mountedRef.current) return;
+      
       if (!isCameraActive) {
         cleanupStream();
         return;
@@ -38,9 +66,11 @@ export const useCameraStream = (isCameraActive: boolean) => {
         // Verificar se o MediaDevices é suportado
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           console.error("MediaDevices API não é suportada neste navegador");
-          toast.error("Seu dispositivo não suporta acesso à câmera");
-          setHasError(true);
-          setIsLoading(false);
+          if (mountedRef.current) {
+            toast.error("Seu dispositivo não suporta acesso à câmera");
+            setHasError(true);
+            setIsLoading(false);
+          }
           return;
         }
         
@@ -50,13 +80,17 @@ export const useCameraStream = (isCameraActive: boolean) => {
         
         if (videoDevices.length === 0) {
           console.error("Nenhuma câmera detectada no dispositivo");
-          setHasCamera(false);
-          setHasError(true);
-          setIsLoading(false);
+          if (mountedRef.current) {
+            setHasCamera(false);
+            setHasError(true);
+            setIsLoading(false);
+          }
           return;
         }
         
-        setHasCamera(true);
+        if (mountedRef.current) {
+          setHasCamera(true);
+        }
         
         // Configurações simplificadas sem propriedades avançadas problemáticas
         const constraints: MediaStreamConstraints = {
@@ -64,87 +98,99 @@ export const useCameraStream = (isCameraActive: boolean) => {
           video: {
             facingMode: facingMode,
             width: { ideal: 640 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 30 } // Aumentado para melhor qualidade
+            height: { ideal: 480 }
           }
         };
         
         console.log("Solicitando acesso à câmera com modo:", facingMode);
         
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        // Verificar se o componente ainda está montado
+        if (!mountedRef.current) {
+          // Limpar o stream se o componente foi desmontado
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
         streamRef.current = stream;
         
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          
-          // Garantir que o vídeo seja reproduzido com baixa latência
-          videoRef.current.playsInline = true;
-          videoRef.current.muted = true;
-          
-          // Configurar tracks de vídeo com configurações básicas suportadas
-          const videoTrack = stream.getVideoTracks()[0];
-          if (videoTrack) {
-            try {
-              // Obter informações sobre a configuração atual do vídeo
-              const settings = videoTrack.getSettings();
-              console.log("Configurações atuais da câmera:", settings);
+        if (videoRef.current && mountedRef.current) {
+          try {
+            videoRef.current.srcObject = stream;
+            
+            // Garantir que o vídeo seja reproduzido com baixa latência
+            videoRef.current.playsInline = true;
+            videoRef.current.muted = true;
+
+            // Usar timeout para garantir que o stream esteja pronto
+            await new Promise<void>((resolve, reject) => {
+              const playTimeout = setTimeout(() => {
+                reject(new Error("Tempo limite ao iniciar vídeo"));
+              }, 5000);
               
-              // Aplicar configurações básicas suportadas que não causam erros TypeScript
-              try {
-                await videoTrack.applyConstraints({
-                  width: { ideal: 640 },
-                  height: { ideal: 480 },
-                  frameRate: { ideal: 30 }
-                });
-              } catch (err) {
-                console.log("Não foi possível aplicar configurações básicas:", err);
-                // Continuar mesmo que não seja possível aplicar as configurações
-              }
-            } catch (err) {
-              console.log("Não foi possível obter configurações da câmera", err);
+              const playHandler = () => {
+                clearTimeout(playTimeout);
+                videoRef.current?.removeEventListener("playing", playHandler);
+                resolve();
+              };
+              
+              videoRef.current.addEventListener("playing", playHandler);
+              
+              videoRef.current.play().catch(error => {
+                clearTimeout(playTimeout);
+                videoRef.current?.removeEventListener("playing", playHandler);
+                reject(error);
+              });
+            });
+            
+            console.log("Câmera inicializada com sucesso");
+            if (mountedRef.current) {
+              setHasError(false);
+              setIsLoading(false);
             }
+          } catch (error) {
+            console.error("Erro ao iniciar vídeo:", error);
+            throw new Error(`Falha ao iniciar reprodução de vídeo: ${error}`);
           }
-          
-          await videoRef.current.play().catch(error => {
-            console.error("Erro ao reproduzir vídeo:", error);
-            throw new Error(`Falha ao iniciar reprodução de vídeo: ${error.message}`);
-          });
-          
-          console.log("Câmera inicializada com sucesso");
-          setHasError(false);
         }
       } catch (err: any) {
         console.error("Erro ao acessar câmera:", err);
         
-        if (retryCount < maxRetries) {
+        if (retryCount < maxRetries && mountedRef.current) {
           retryCount++;
           console.log(`Tentativa ${retryCount} de ${maxRetries} para acessar a câmera`);
           
           // Esperar antes de tentar novamente
           setupTimeout = setTimeout(() => {
-            setupCamera();
+            if (mountedRef.current) {
+              setupCamera();
+            }
           }, 1000);
           return;
         }
         
-        setHasError(true);
-        
-        // Fornecer mensagem de erro mais específica
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          toast.error("Permissão para acessar câmera negada");
-        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-          toast.error("Nenhuma câmera detectada no dispositivo");
-          setHasCamera(false);
-        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-          toast.error("Câmera pode estar sendo usada por outro aplicativo");
-        } else {
-          toast.error(`Erro ao acessar câmera: ${err.message || "Erro desconhecido"}`);
+        if (mountedRef.current) {
+          setHasError(true);
+          
+          // Fornecer mensagem de erro mais específica
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            toast.error("Permissão para acessar câmera negada");
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            toast.error("Nenhuma câmera detectada no dispositivo");
+            setHasCamera(false);
+          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            toast.error("Câmera está sendo usada por outro aplicativo");
+          } else {
+            toast.error(`Erro ao acessar câmera: ${err.message || "Erro desconhecido"}`);
+          }
+          
+          setIsLoading(false);
         }
-      } finally {
-        setIsLoading(false);
       }
     };
 
+    // Iniciar a configuração da câmera
     setupCamera();
 
     return () => {
@@ -154,7 +200,9 @@ export const useCameraStream = (isCameraActive: boolean) => {
   }, [isCameraActive, facingMode]);
 
   const switchCamera = () => {
-    setFacingMode(current => current === "user" ? "environment" : "user");
+    if (!isLoading) {
+      setFacingMode(current => current === "user" ? "environment" : "user");
+    }
   };
 
   return { 

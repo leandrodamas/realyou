@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -28,6 +29,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [brightness, setBrightness] = useState(1.4);
+  const mountedRef = useRef<boolean>(true);
   
   const { isInitializing, loadingProgress } = useLoading({ isCameraActive });
   
@@ -37,6 +39,13 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     isLoading,
     videoRef
   });
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && faceDetected) {
@@ -66,19 +75,27 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           
           if (video.srcObject) {
             const stream = video.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-            video.srcObject = null;
+            try {
+              stream.getTracks().forEach(track => track.stop());
+              video.srcObject = null;
+            } catch (err) {
+              console.error("Error stopping tracks on capture:", err);
+            }
           }
           
-          onCapture();
-          toast.success("Imagem capturada com sucesso!");
+          if (mountedRef.current) {
+            onCapture();
+            toast.success("Imagem capturada com sucesso!");
+          }
         }
       } catch (error) {
         console.error("Erro ao capturar imagem:", error);
-        setErrorMessage("Falha ao processar imagem da câmera");
-        toast.error("Erro ao capturar imagem. Tente novamente.");
+        if (mountedRef.current) {
+          setErrorMessage("Falha ao processar imagem da câmera");
+          toast.error("Erro ao capturar imagem. Tente novamente.");
+        }
       }
-    } else if (!faceDetected) {
+    } else if (!faceDetected && mountedRef.current) {
       toast.warning("Nenhum rosto detectado. Centralize seu rosto na câmera.");
     }
   };
