@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CreditCard, Calendar, AlertCircle } from "lucide-react";
@@ -9,6 +8,7 @@ import { PaymentMethodList } from "./subscription/PaymentMethodList";
 import { PlanSelector } from "./subscription/PlanSelector";
 import { usePlans } from "./subscription/usePlans";
 import { usePaymentMethods } from "./subscription/usePaymentMethods";
+import { SubscriptionPlanTest } from "./subscription/SubscriptionPlanTest"; // New import
 
 interface SubscriptionSectionProps {
   fadeIn: any;
@@ -65,49 +65,9 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
         />
       </div>
 
-      {/* Payment methods section */}
+      {/* New Test Component Added */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-medium">Métodos de Pagamento</h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setPaymentDialogOpen(true)}
-          >
-            <CreditCard className="h-4 w-4 mr-1" />
-            Adicionar
-          </Button>
-        </div>
-
-        <PaymentMethodList 
-          paymentMethods={paymentMethods}
-          onRemoveCard={handleRemoveCard}
-          onSetDefaultCard={handleSetDefaultCard}
-          onAddCard={() => setPaymentDialogOpen(true)}
-        />
-        
-        <div className="p-3 bg-amber-50 rounded-lg flex items-start gap-2 border border-amber-200 mt-4">
-          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-          <p className="text-sm text-amber-700">
-            Suas informações de pagamento são armazenadas com segurança e nunca compartilhadas com terceiros.
-          </p>
-        </div>
-      </div>
-
-      {/* Service Fee Information Section */}
-      <div className="p-3 bg-blue-50 rounded-lg flex items-start gap-2 border border-blue-200 mt-4">
-        <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-        <div>
-          <p className="text-sm text-blue-700 font-medium">Taxas de Serviço</p>
-          {plans.map(plan => (
-            <div key={plan.id} className="text-xs text-blue-600 mt-1">
-              {plan.name}: {plan.serviceFee}% de taxa de serviço
-            </div>
-          ))}
-          <p className="text-xs text-blue-500 mt-2">
-            As taxas de serviço são deduzidas automaticamente de cada transação realizada através da plataforma.
-          </p>
-        </div>
+        <SubscriptionPlanTest />
       </div>
 
       <PaymentMethodDialog 
