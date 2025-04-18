@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import PaymentMethodDialog, { CardData } from "./PaymentMethodDialog";
 import { 
   Card,
@@ -79,12 +80,37 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
     }
   ];
 
-  const handleChangePlan = (planId: string) => {
-    if (planId !== "basic") {
-      toast.success(`Plano ${planId === "pro" ? "Profissional" : "Premium"} ativado com sucesso!`);
+  const handleChangePlan = async (planId: string) => {
+    try {
+      if (planId !== "basic") {
+        const selectedPlan = plans.find(p => p.id === planId);
+        if (!selectedPlan) return;
+
+        const { data, error } = await supabase.functions.invoke('create-subscription-plan', {
+          body: {
+            planName: selectedPlan.name,
+            amount: planId === "pro" ? 29.90 : 49.90,
+            currency: "BRL",
+            billingDay: 10,
+            trialPeriodMonths: 1
+          }
+        });
+
+        if (error) throw error;
+
+        // Open Mercado Pago checkout in new window
+        if (data.plan.init_point) {
+          window.open(data.plan.init_point, '_blank');
+        }
+
+        toast.success(`Plano ${selectedPlan.name} selecionado com sucesso!`);
+      }
+      setCurrentPlan(planId);
+      setShowPlans(false);
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      toast.error('Erro ao criar assinatura. Por favor tente novamente.');
     }
-    setCurrentPlan(planId);
-    setShowPlans(false);
   };
 
   const handleAddCard = (cardData: CardData) => {
