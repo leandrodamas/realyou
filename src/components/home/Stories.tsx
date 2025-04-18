@@ -140,16 +140,6 @@ const Stories: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style jsx global>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </>
   );
 };
