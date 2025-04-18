@@ -14,6 +14,7 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
 
   useEffect(() => {
     let setupTimeout: ReturnType<typeof setTimeout>;
+    let isMounted = true; // Local flag to track mounting
     
     const setupCamera = async () => {
       // Check if component is unmounted or camera should not be active
@@ -44,12 +45,12 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
         try {
           await initializeCamera(constraints);
           // Check if component is still mounted before updating state
-          if (mountedRef.current) {
+          if (isMounted) {
             resetError();
             setIsLoading(false);
           }
         } catch (mediaError) {
-          if (retryCountRef.current < 1 && mountedRef.current) {
+          if (retryCountRef.current < 1 && isMounted) {
             retryCountRef.current++;
             setFacingMode(current => current === "user" ? "environment" : "user");
             return;
@@ -58,7 +59,7 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
         }
       } catch (err) {
         console.error("Erro ao acessar câmera:", err);
-        if (mountedRef.current) {
+        if (isMounted) {
           handleCameraError(err);
           setIsLoading(false);
         }
@@ -68,6 +69,7 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
     setupCamera();
     
     return () => {
+      isMounted = false; // Mark as unmounted
       if (setupTimeout) clearTimeout(setupTimeout);
       cleanupCameraStream(streamRef.current, videoRef.current);
     };
@@ -90,3 +92,4 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
     isVideoReady
   };
 };
+
