@@ -6,7 +6,7 @@ export const useVideoFrameAnalysis = () => {
     try {
       const canvas = document.createElement('canvas');
       // Explicitly type the context as CanvasRenderingContext2D
-      const context = canvas.getContext('2d', { willReadFrequency: true });
+      const context = canvas.getContext('2d', { willReadFrequency: true }) as CanvasRenderingContext2D;
       if (!context) return null;
 
       const width = Math.min(video.videoWidth, 200);
