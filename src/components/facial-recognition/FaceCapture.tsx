@@ -10,9 +10,33 @@ import MatchedPersonCard from "./MatchedPersonCard";
 import ScheduleDialog from "./ScheduleDialog";
 import { detectAndMatchFace } from "@/services/facialRecognitionService";
 
-const FaceCapture: React.FC = () => {
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+interface FaceCaptureProps {
+  onCaptureImage?: (imageData: string) => void;
+  capturedImage?: string | null;
+  setCapturedImage?: (image: string | null) => void;
+  isCameraActive?: boolean;
+  setIsCameraActive?: (active: boolean) => void;
+  isRegistrationMode?: boolean;
+}
+
+const FaceCapture: React.FC<FaceCaptureProps> = ({
+  onCaptureImage,
+  capturedImage: externalCapturedImage,
+  setCapturedImage: setExternalCapturedImage,
+  isCameraActive: externalIsCameraActive,
+  setIsCameraActive: setExternalIsCameraActive,
+  isRegistrationMode = false,
+}) => {
+  // Use local or external state based on what's provided
+  const [internalIsCameraActive, setInternalIsCameraActive] = useState(false);
+  const [internalCapturedImage, setInternalCapturedImage] = useState<string | null>(null);
+  
+  // Determine which state to use (external if provided, otherwise internal)
+  const isCameraActive = externalIsCameraActive !== undefined ? externalIsCameraActive : internalIsCameraActive;
+  const setIsCameraActive = setExternalIsCameraActive || setInternalIsCameraActive;
+  const capturedImage = externalCapturedImage !== undefined ? externalCapturedImage : internalCapturedImage;
+  const setCapturedImage = setExternalCapturedImage || setInternalCapturedImage;
+
   const [isSearching, setIsSearching] = useState(false);
   const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
   const [noMatchFound, setNoMatchFound] = useState(false);
@@ -30,9 +54,19 @@ const FaceCapture: React.FC = () => {
     if (canvasRef.current) {
       const imageDataUrl = canvasRef.current.toDataURL('image/png');
       setCapturedImage(imageDataUrl);
+      
+      // If we have an external handler, call it
+      if (onCaptureImage) {
+        onCaptureImage(imageDataUrl);
+      }
     } else {
       // Fallback in case canvas isn't available
-      setCapturedImage("/placeholder.svg");
+      const fallbackImage = "/placeholder.svg";
+      setCapturedImage(fallbackImage);
+      
+      if (onCaptureImage) {
+        onCaptureImage(fallbackImage);
+      }
     }
     setIsCameraActive(false);
   };
@@ -97,11 +131,13 @@ const FaceCapture: React.FC = () => {
   return (
     <div className="flex flex-col items-center p-6">
       <div className="w-full">
-        <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Connect with RealYou</span>
-          <Sparkles className="h-5 w-5 text-blue-500" />
-        </h2>
+        {!isRegistrationMode && (
+          <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-500" />
+            <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Connect with RealYou</span>
+            <Sparkles className="h-5 w-5 text-blue-500" />
+          </h2>
+        )}
         
         <FaceCaptureCamera
           isCameraActive={isCameraActive}
@@ -113,7 +149,7 @@ const FaceCapture: React.FC = () => {
 
         <canvas ref={canvasRef} className="hidden" />
 
-        {capturedImage && !matchedPerson && !noMatchFound && (
+        {capturedImage && !matchedPerson && !noMatchFound && !isRegistrationMode && (
           <div className="mt-6 space-y-3">
             <Button 
               className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md" 

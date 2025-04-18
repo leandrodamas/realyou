@@ -1,7 +1,5 @@
 
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { registerFaceForUser } from "@/services/facialRecognitionService";
@@ -9,7 +7,6 @@ import HeaderComponent from "@/components/face-registration/HeaderComponent";
 import StepIndicator from "@/components/face-registration/StepIndicator";
 import StepContent from "@/components/face-registration/StepContent";
 import SuccessDialog from "@/components/face-registration/SuccessDialog";
-import FaceCapture from "@/components/facial-recognition/FaceCapture";
 
 const FaceRegistrationPage: React.FC = () => {
   const [registrationStep, setRegistrationStep] = useState<number>(1);
@@ -67,6 +64,20 @@ const FaceRegistrationPage: React.FC = () => {
     window.location.href = "/";
   };
 
+  const handleStartCamera = () => {
+    setIsCameraActive(true);
+  };
+
+  const handleCapture = () => {
+    // This will be handled by the FaceCapture component
+    // which will call setCapturedImage
+  };
+
+  const handleReset = () => {
+    setCapturedImage(null);
+    setIsCameraActive(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       <HeaderComponent />
@@ -78,17 +89,26 @@ const FaceRegistrationPage: React.FC = () => {
           username={username}
           setUsername={setUsername}
           capturedImage={capturedImage}
-          handleStartCamera={() => setIsCameraActive(true)}
-          handleCapture={() => {}}
-          handleReset={() => {
-            setCapturedImage(null);
-            setIsCameraActive(false);
-          }}
+          setCapturedImage={setCapturedImage}
+          handleStartCamera={handleStartCamera}
+          handleCapture={handleCapture}
+          handleReset={handleReset}
           isCameraActive={isCameraActive}
+          setIsCameraActive={setIsCameraActive}
         />
 
-        {/* Continue button */}
-        <div className="mt-8">
+        {/* Navigation buttons */}
+        <div className="mt-8 flex flex-col gap-3">
+          {registrationStep > 1 && (
+            <Button
+              variant="outline"
+              onClick={handlePreviousStep}
+              className="w-full rounded-xl border-gray-300"
+            >
+              Voltar
+            </Button>
+          )}
+          
           <Button 
             onClick={handleNextStep}
             className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md py-6"

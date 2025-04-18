@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ interface StepContentProps {
   username: string;
   setUsername: (username: string) => void;
   capturedImage: string | null;
+  setCapturedImage: (image: string | null) => void;
   handleStartCamera: () => void;
   handleCapture: () => void;
   handleReset: () => void;
   isCameraActive: boolean;
+  setIsCameraActive: (active: boolean) => void;
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -23,11 +25,22 @@ const StepContent: React.FC<StepContentProps> = ({
   username,
   setUsername,
   capturedImage,
+  setCapturedImage,
   handleStartCamera,
   handleCapture,
   handleReset,
   isCameraActive,
+  setIsCameraActive,
 }) => {
+  // Local state to track face capture component status
+  const [faceCaptureReady, setFaceCaptureReady] = useState(false);
+
+  // Handle face capture events from FaceCapture component
+  const handleFaceCapture = (imageData: string) => {
+    setCapturedImage(imageData);
+    setIsCameraActive(false);
+  };
+
   return (
     <>
       {step === 1 && (
@@ -43,11 +56,17 @@ const StepContent: React.FC<StepContentProps> = ({
               Your face is your unique identifier on RealYou. Be yourself, be genuine.
             </p>
           </div>
-          {/* FaceCapture component is imported from facial-recognition/FaceCapture */}
+          
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl blur opacity-30"></div>
             <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
-              <FaceCapture />
+              <FaceCapture 
+                onCaptureImage={handleFaceCapture}
+                capturedImage={capturedImage}
+                setCapturedImage={setCapturedImage}
+                isCameraActive={isCameraActive}
+                setIsCameraActive={setIsCameraActive}
+              />
             </div>
           </div>
         </motion.div>
