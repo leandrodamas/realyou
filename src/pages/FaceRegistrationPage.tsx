@@ -19,9 +19,15 @@ const FaceRegistrationPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const handleStartCamera = async () => {
     try {
+      // Stop any existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: "user",
@@ -30,9 +36,12 @@ const FaceRegistrationPage: React.FC = () => {
         }
       });
       
+      streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
+        console.log("Camera started successfully");
       }
       
       setIsCameraActive(true);
@@ -61,9 +70,9 @@ const FaceRegistrationPage: React.FC = () => {
         setCapturedImage(imageDataUrl);
         
         // Stop the camera stream
-        const stream = video.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
         }
         video.srcObject = null;
         setIsCameraActive(false);
@@ -76,6 +85,16 @@ const FaceRegistrationPage: React.FC = () => {
   };
 
   const handleReset = () => {
+    // Stop any active streams when resetting
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
     setCapturedImage(null);
     setIsCameraActive(false);
   };
@@ -124,6 +143,16 @@ const FaceRegistrationPage: React.FC = () => {
       setRegistrationStep(registrationStep - 1);
     }
   };
+  
+  // Make sure to clean up camera stream when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
   const handleFinishRegistration = () => {
     setShowSuccessDialog(false);
