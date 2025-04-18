@@ -58,16 +58,14 @@ export const useCameraStream = (isCameraActive: boolean) => {
         
         setHasCamera(true);
         
-        // Configurações otimizadas para melhor exposição e brilho
-        // Removendo propriedades avançadas não suportadas no tipo MediaTrackConstraints
+        // Configurações simplificadas sem propriedades avançadas problemáticas
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
             facingMode: facingMode,
             width: { ideal: 640 },
             height: { ideal: 480 },
-            frameRate: { ideal: 24 }
-            // Configurações avançadas removidas para resolver erros de TypeScript
+            frameRate: { ideal: 30 } // Aumentado para melhor qualidade
           }
         };
         
@@ -83,31 +81,27 @@ export const useCameraStream = (isCameraActive: boolean) => {
           videoRef.current.playsInline = true;
           videoRef.current.muted = true;
           
-          // Configurar tracks de vídeo para melhor exposição (usando apenas propriedades suportadas)
+          // Configurar tracks de vídeo com configurações básicas suportadas
           const videoTrack = stream.getVideoTracks()[0];
           if (videoTrack) {
             try {
-              // Em vez de tentar aplicar configurações avançadas diretamente,
-              // usaremos configurações de vídeo através de CSS e filtragem via front-end
-              console.log("Utilizando configurações básicas de vídeo");
-              
               // Obter informações sobre a configuração atual do vídeo
               const settings = videoTrack.getSettings();
               console.log("Configurações atuais da câmera:", settings);
               
-              // Podemos aplicar configurações básicas suportadas
+              // Aplicar configurações básicas suportadas que não causam erros TypeScript
               try {
                 await videoTrack.applyConstraints({
                   width: { ideal: 640 },
                   height: { ideal: 480 },
-                  frameRate: { ideal: 24 }
+                  frameRate: { ideal: 30 }
                 });
               } catch (err) {
                 console.log("Não foi possível aplicar configurações básicas:", err);
+                // Continuar mesmo que não seja possível aplicar as configurações
               }
             } catch (err) {
-              console.log("Avançado: Não foi possível aplicar configurações de câmera", err);
-              // Continuar mesmo se as configurações falharem
+              console.log("Não foi possível obter configurações da câmera", err);
             }
           }
           
