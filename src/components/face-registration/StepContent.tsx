@@ -2,7 +2,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Settings, ChevronRight } from "lucide-react";
+import FaceCapture from "@/components/facial-recognition/FaceCapture";
 
 interface StepContentProps {
   step: number;
