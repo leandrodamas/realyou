@@ -13,6 +13,12 @@ interface TransactionData {
   description?: string
 }
 
+// Função para validar UUID
+function isValidUUID(uuid: string) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 Deno.serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -24,6 +30,20 @@ Deno.serve(async (req) => {
 
     // Get the transaction data from the request
     const { userId, providerId, amount, serviceFeePercentage, description } = await req.json() as TransactionData
+
+    // Validar UUIDs
+    if (!isValidUUID(userId) || !isValidUUID(providerId)) {
+      throw new Error('User ID e Provider ID devem ser UUIDs válidos');
+    }
+
+    // Validar outros dados
+    if (amount <= 0) {
+      throw new Error('O valor da transação deve ser maior que zero');
+    }
+
+    if (serviceFeePercentage < 0) {
+      throw new Error('A porcentagem da taxa de serviço não pode ser negativa');
+    }
 
     // Calculate fees
     const serviceFeeAmount = (amount * serviceFeePercentage) / 100
@@ -75,6 +95,8 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Erro na transação:', error.message);
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {

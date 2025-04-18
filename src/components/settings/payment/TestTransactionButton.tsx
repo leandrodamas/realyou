@@ -7,10 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const TestTransactionButton = () => {
   const handleTestTransaction = async () => {
     try {
+      // Usando UUIDs válidos para o teste
       const { data, error } = await supabase.functions.invoke('process-transaction', {
         body: {
-          userId: "test-user",
-          providerId: "test-provider",
+          userId: "00000000-0000-4000-a000-000000000000", // UUID teste estático
+          providerId: "00000000-0000-4000-a000-000000000001", // UUID teste estático
           amount: 1.00, // 1 real
           serviceFeePercentage: 5,
           description: "Transação de teste - R$1,00"
