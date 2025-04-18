@@ -58,7 +58,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         <Button 
           onClick={onCapture} 
           className={`rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100 ${
-            faceDetected ? "pulse-animation" : "opacity-80"
+            faceDetected ? "animate-pulse" : "opacity-80"
           }`}
           disabled={!faceDetected}
         >
@@ -67,7 +67,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
       </div>
 
       <div className="absolute bottom-24 left-0 right-0 flex justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-700">
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1 text-sm text-gray-700">
           {faceDetected ? "Clique no botão para capturar" : "Posicione seu rosto no centro"}
         </div>
       </div>

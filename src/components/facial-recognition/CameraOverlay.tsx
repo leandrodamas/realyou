@@ -21,18 +21,32 @@ const CameraOverlay: React.FC<CameraOverlayProps> = ({ faceDetected }) => {
         </svg>
       </div>
       
+      <motion.div
+        initial={{ opacity: 0.5 }}
+        animate={{ 
+          opacity: faceDetected ? 0.8 : 0.5,
+          borderColor: faceDetected ? "rgb(74, 222, 128)" : "rgba(255, 255, 255, 0.5)" 
+        }}
+        transition={{ duration: 0.3 }}
+        className={`absolute border-2 rounded-full ${faceDetected ? "border-green-400" : "border-white/50"}`}
+        style={{
+          width: "60%",
+          height: "80%",
+          boxShadow: faceDetected 
+            ? "0 0 0 2px rgba(74, 222, 128, 0.3), 0 0 8px rgba(74, 222, 128, 0.5)"
+            : "0 0 0 1px rgba(255, 255, 255, 0.2)"
+        }}
+      />
+      
       {faceDetected && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute border-2 border-green-400 rounded-full"
-          style={{
-            width: "60%",
-            height: "80%",
-            boxShadow: "0 0 0 1px rgba(74, 222, 128, 0.2)",
-          }}
-        />
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="absolute z-20 text-green-400 text-xs font-medium"
+          style={{ bottom: "40%" }}
+        >
+          Rosto detectado com sucesso
+        </motion.div>
       )}
     </div>
   );
