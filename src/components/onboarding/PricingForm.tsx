@@ -1,16 +1,53 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { DollarSign, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 interface PricingFormProps {
   onComplete: () => void;
 }
 
 const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
-  const [priceValue, setPriceValue] = React.useState([150]);
+  const [priceValue, setPriceValue] = useState<number>(150);
+  const [packageDescription, setPackageDescription] = useState<string>("");
+
+  // Handle slider change
+  const handleSliderChange = (values: number[]) => {
+    const newValue = values[0];
+    setPriceValue(newValue);
+  };
+
+  // Handle direct input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    
+    if (isNaN(value)) {
+      setPriceValue(0);
+      return;
+    }
+    
+    // Keep value within bounds
+    const boundedValue = Math.min(Math.max(value, 50), 300);
+    setPriceValue(boundedValue);
+  };
+
+  const handleSubmit = () => {
+    if (packageDescription.trim() === "") {
+      toast.warning("Por favor, adicione uma descrição para o pacote básico");
+      return;
+    }
+    
+    // Save pricing data (this could be stored in context or sent to an API)
+    const pricingData = {
+      basePrice: priceValue,
+      packageDescription: packageDescription,
+    };
+    
+    console.log("Pricing data:", pricingData);
+    onComplete();
+  };
 
   return (
     <div className="space-y-4 p-4 bg-white rounded-lg border">
@@ -39,8 +76,8 @@ const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
             min={50}
             max={300}
             step={5}
-            value={priceValue}
-            onValueChange={setPriceValue}
+            value={[priceValue]}
+            onValueChange={handleSliderChange}
           />
           <div className="mt-4 text-center">
             <span className="text-2xl font-bold text-purple-600">R${priceValue}</span>
@@ -54,7 +91,11 @@ const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Pacote Básico (descrição)
           </label>
-          <Input placeholder="Ex: 1 hora de consultoria" />
+          <Input 
+            placeholder="Ex: 1 hora de consultoria" 
+            value={packageDescription}
+            onChange={(e) => setPackageDescription(e.target.value)}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -62,7 +103,14 @@ const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
           </label>
           <div className="relative">
             <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <Input className="pl-8" placeholder="150" />
+            <Input 
+              className="pl-8" 
+              type="number"
+              min="50"
+              max="300"
+              value={priceValue}
+              onChange={handleInputChange}
+            />
           </div>
         </div>
       </div>
@@ -70,7 +118,7 @@ const PricingForm: React.FC<PricingFormProps> = ({ onComplete }) => {
       <div className="pt-4">
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700"
-          onClick={onComplete}
+          onClick={handleSubmit}
         >
           Continuar
           <ArrowRight className="ml-2 h-4 w-4" />
