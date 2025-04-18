@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useWorkGallery } from "./hooks/useWorkGallery";
 import { UploadWorkDialog } from "./components/UploadWorkDialog";
 import { WorkItem } from "./components/WorkItem";
+import { WorkItemErrorBoundary } from "./components/WorkItemErrorBoundary";
+import { WorkItemSkeleton } from "./components/WorkItemSkeleton";
 
 const ProfileGallery: React.FC = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const { items, reloadGallery } = useWorkGallery();
+  const { items, reloadGallery, isLoading } = useWorkGallery();
 
   const container = {
     hidden: { opacity: 0 },
@@ -39,9 +41,17 @@ const ProfileGallery: React.FC = () => {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        {items.map((item) => (
-          <WorkItem key={item.id} item={item} />
-        ))}
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <WorkItemSkeleton key={index} />
+          ))
+        ) : (
+          items.map((item) => (
+            <WorkItemErrorBoundary key={item.id}>
+              <WorkItem item={item} />
+            </WorkItemErrorBoundary>
+          ))
+        )}
       </motion.div>
 
       <UploadWorkDialog

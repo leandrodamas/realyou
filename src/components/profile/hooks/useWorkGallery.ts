@@ -6,9 +6,11 @@ import { toast } from "sonner";
 
 export const useWorkGallery = () => {
   const [items, setItems] = useState<WorkItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadWorkGallery = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('work_gallery')
         .select('*')
@@ -19,6 +21,8 @@ export const useWorkGallery = () => {
     } catch (error) {
       console.error('Error loading work gallery:', error);
       toast.error("Erro ao carregar galeria");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -28,6 +32,7 @@ export const useWorkGallery = () => {
 
   return {
     items,
+    isLoading,
     reloadGallery: loadWorkGallery
   };
 };
