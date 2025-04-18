@@ -1,13 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { ArrowLeft, Camera, Check, ChevronRight, CircleUser, Settings, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { registerFaceForUser } from "@/services/facialRecognitionService";
 
 const FaceRegistrationPage: React.FC = () => {
   const [registrationStep, setRegistrationStep] = useState<number>(1);
@@ -15,46 +16,106 @@ const FaceRegistrationPage: React.FC = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("");
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleStartCamera = () => {
-    setIsCameraActive(true);
+  const handleStartCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      toast.error("Não foi possível acessar sua câmera. Verifique as permissões.");
+    }
   };
 
   const handleCapture = () => {
-    // Simulate capturing an image - in a real app, this would use the device camera
-    setCapturedImage("/placeholder.svg");
-    setIsCameraActive(false);
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw the current video frame to the canvas
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL
+        const imageDataUrl = canvas.toDataURL('image/png');
+        setCapturedImage(imageDataUrl);
+        
+        // Stop the camera stream
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        video.srcObject = null;
+        setIsCameraActive(false);
+        
+        toast.success("Imagem capturada com sucesso!");
+      }
+    } else {
+      toast.error("Erro ao capturar imagem. Tente novamente.");
+    }
   };
 
   const handleReset = () => {
     setCapturedImage(null);
+    setIsCameraActive(false);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (registrationStep === 1 && !capturedImage) {
-      toast({
-        title: "Face capture required",
-        description: "Please capture your face to continue registration",
-        variant: "destructive",
-      });
+      toast.error("Captura de rosto obrigatória para continuar");
       return;
     }
     
     if (registrationStep === 2 && !username.trim()) {
-      toast({
-        title: "Username required",
-        description: "Please enter a username to continue",
-        variant: "destructive",
-      });
+      toast.error("Nome de usuário obrigatório para continuar");
       return;
     }
     
     if (registrationStep < 3) {
       setRegistrationStep(registrationStep + 1);
     } else {
-      // Registration complete
-      setShowSuccessDialog(true);
+      // Final step - register the face
+      if (capturedImage) {
+        setIsProcessing(true);
+        try {
+          // Generate a temporary user ID - in a real app this would come from your auth system
+          const tempUserId = `user_${Date.now()}`;
+          const success = await registerFaceForUser(capturedImage, tempUserId);
+          
+          if (success) {
+            setShowSuccessDialog(true);
+          } else {
+            toast.error("Falha ao registrar rosto. Tente novamente.");
+          }
+        } catch (error) {
+          console.error("Error registering face:", error);
+          toast.error("Ocorreu um erro ao registrar seu rosto");
+        } finally {
+          setIsProcessing(false);
+        }
+      } else {
+        toast.error("Imagem do rosto não disponível");
+      }
     }
   };
 
@@ -65,7 +126,6 @@ const FaceRegistrationPage: React.FC = () => {
   };
 
   const handleFinishRegistration = () => {
-    // In a real app, this would save the user data to a database
     setShowSuccessDialog(false);
     // Navigate to home page
     window.location.href = "/";
@@ -138,10 +198,12 @@ const FaceRegistrationPage: React.FC = () => {
               <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
                 {isCameraActive ? (
                   <div className="aspect-square w-full relative">
-                    {/* Camera view would be shown here in a real implementation */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black">
-                      <p className="text-white">Camera Preview</p>
-                    </div>
+                    <video 
+                      ref={videoRef}
+                      autoPlay 
+                      playsInline 
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 border-4 border-white opacity-40 rounded-xl flex items-center justify-center">
                       <div className="border-4 border-dotted border-white w-2/3 h-2/3 rounded-full opacity-60"></div>
                     </div>
@@ -292,17 +354,29 @@ const FaceRegistrationPage: React.FC = () => {
           <Button 
             onClick={handleNextStep}
             className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md py-6"
+            disabled={isProcessing}
           >
-            {registrationStep < 3 ? "Continue" : "Complete Setup"}
+            {isProcessing ? (
+              <div className="flex items-center">
+                <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                Processando...
+              </div>
+            ) : registrationStep < 3 ? "Continue" : "Complete Setup"}
           </Button>
         </div>
       </div>
+
+      {/* Hidden canvas for capturing images */}
+      <canvas ref={canvasRef} className="hidden" />
 
       {/* Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center">Welcome to RealYou!</DialogTitle>
+            <DialogDescription className="text-center text-gray-500">
+              Your face has been successfully registered
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center py-6">
             <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
