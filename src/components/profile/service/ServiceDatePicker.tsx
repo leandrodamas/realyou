@@ -7,7 +7,6 @@ import { format, isSameDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ServiceDatePickerProps {
   selectedDate: Date | undefined;

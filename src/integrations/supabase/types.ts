@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      service_bookings: {
+        Row: {
+          booking_date: string
+          client_id: string
+          created_at: string | null
+          end_time: string
+          id: string
+          price_paid: number
+          provider_id: string
+          service_id: string
+          start_time: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_date: string
+          client_id: string
+          created_at?: string | null
+          end_time: string
+          id?: string
+          price_paid: number
+          provider_id: string
+          service_id: string
+          start_time: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_date?: string
+          client_id?: string
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          price_paid?: number
+          provider_id?: string
+          service_id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_pricing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_fee_records: {
         Row: {
           amount: number
@@ -46,6 +96,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_pricing: {
+        Row: {
+          base_price: number
+          created_at: string | null
+          description: string | null
+          duration_minutes: number
+          dynamic_pricing: boolean | null
+          id: string
+          off_peak_price_multiplier: number | null
+          peak_price_multiplier: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          base_price: number
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number
+          dynamic_pricing?: boolean | null
+          id?: string
+          off_peak_price_multiplier?: number | null
+          peak_price_multiplier?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number
+          dynamic_pricing?: boolean | null
+          id?: string
+          off_peak_price_multiplier?: number | null
+          peak_price_multiplier?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      service_schedules: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       stories: {
         Row: {
