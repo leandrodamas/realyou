@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from "react";
 import { cleanupCameraStream } from "../utils/cameraUtils";
 import { toast } from "sonner";
@@ -22,29 +21,56 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
 
   const waitForVideoReady = (video: HTMLVideoElement) => {
     return new Promise<boolean>((resolve) => {
+      // Maximum wait time for video readiness (3 seconds)
+      const maxWaitTime = 3000; 
+      const startTime = Date.now();
+      
+      // If video already has dimensions, it's ready
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        console.log("Video already has dimensions:", video.videoWidth, "x", video.videoHeight);
+        resolve(true);
+        return;
+      }
+      
+      // Function to check if video is ready
       const checkReady = () => {
-        if (video.readyState >= 2) {
-          console.log("Video is ready with dimensions:", video.videoWidth, "x", video.videoHeight);
+        // If video has dimensions, it's ready
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          console.log("Video has dimensions now:", video.videoWidth, "x", video.videoHeight);
           resolve(true);
-        } else {
-          console.log("Video not ready yet, current readyState:", video.readyState);
-          setTimeout(checkReady, 100);
+          return;
         }
+        
+        // If video readyState is at least HAVE_CURRENT_DATA (2), it's ready
+        if (video.readyState >= 2) {
+          console.log("Video is ready with readyState:", video.readyState);
+          resolve(true);
+          return;
+        }
+        
+        // Check if we've exceeded maximum wait time
+        if (Date.now() - startTime > maxWaitTime) {
+          console.log("Video ready timeout exceeded, forcing ready state");
+          resolve(true);
+          return;
+        }
+        
+        // Otherwise, check again in a moment
+        console.log("Video not ready yet, current readyState:", video.readyState);
+        setTimeout(checkReady, 100);
       };
 
-      // Listen for the loadeddata event explicitly
-      video.addEventListener('loadeddata', () => {
-        console.log("Video loadeddata event fired");
-        checkReady();
-      });
+      // Set up event listeners for video readiness
+      const handleVideoReady = () => {
+        console.log("Video ready event fired");
+        resolve(true);
+      };
       
-      // Also listen for the canplay event which might be more reliable
-      video.addEventListener('canplay', () => {
-        console.log("Video canplay event fired");
-        checkReady();
-      });
-
-      // Also check immediately
+      video.addEventListener('loadeddata', handleVideoReady, { once: true });
+      video.addEventListener('loadedmetadata', handleVideoReady, { once: true });
+      video.addEventListener('canplay', handleVideoReady, { once: true });
+      
+      // Also start the polling check
       checkReady();
     });
   };
@@ -90,47 +116,50 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
         
         try {
           // Set explicit dimensions to help rendering
-          video.width = 640;
-          video.height = 480;
+          video.style.width = "100%";
+          video.style.height = "100%";
           
           console.log("Attempting to play video");
           const playPromise = video.play();
           
           if (playPromise !== undefined) {
-            await playPromise;
-            console.log("Video playback started successfully");
-            
-            // Check if video is already ready
-            if (video.readyState >= 2) {
-              console.log("Video is immediately ready");
-              setIsVideoReady(true);
-            } else {
-              console.log("Waiting for video to be ready, current readyState:", video.readyState);
+            playPromise.then(() => {
+              console.log("Video playback started successfully");
               
-              // Set up a timeout to prevent infinite waiting
-              const readyTimeout = setTimeout(() => {
-                console.log("Video ready timeout - forcing ready state");
-                if (mountedRef.current) {
+              // Set a timeout to force video ready state after 3 seconds
+              const forceReadyTimeout = setTimeout(() => {
+                if (mountedRef.current && !isVideoReady) {
+                  console.log("Forcing video ready state after timeout");
                   setIsVideoReady(true);
                 }
               }, 3000);
               
-              // Wait for video to be ready
-              const isReady = await waitForVideoReady(video);
-              clearTimeout(readyTimeout);
+              // Check if video is already ready
+              waitForVideoReady(video).then(() => {
+                clearTimeout(forceReadyTimeout);
+                if (mountedRef.current) {
+                  console.log("Video is ready to display");
+                  setIsVideoReady(true);
+                }
+              });
+            }).catch(error => {
+              console.error("Error during video play:", error);
               
-              if (isReady && mountedRef.current) {
-                console.log("Video is now ready after waiting");
+              // Even if play fails, we should try to set video as ready
+              if (mountedRef.current) {
+                console.log("Setting video ready despite play error");
                 setIsVideoReady(true);
               }
-            }
+            });
           } else {
             console.log("Play promise was undefined, setting video ready");
             setIsVideoReady(true);
           }
         } catch (playError) {
-          console.error("Error during video playback:", playError);
-          toast.error("Erro ao iniciar a câmera. Tente novamente.");
+          console.error("Error during video playback setup:", playError);
+          if (mountedRef.current) {
+            setIsVideoReady(true); // Still set ready to allow UI to progress
+          }
           throw playError;
         }
       }

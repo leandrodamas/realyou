@@ -35,26 +35,47 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
     if (videoElement) {
       console.log("CameraPreview mounted, refreshing video element");
       
-      // If the video element is already playing, stop it and start again
+      // Always try to restart the video element on mount
       if (videoElement.srcObject) {
-        const currentSrc = videoElement.srcObject;
-        videoElement.srcObject = null;
-        setTimeout(() => {
-          if (videoElement && videoRef.current) {
-            videoElement.srcObject = currentSrc;
-            videoElement.play().catch(err => console.error("Error playing video:", err));
-          }
-        }, 100);
+        const stream = videoElement.srcObject as MediaStream;
+        
+        // Force video to play
+        try {
+          videoElement.play().catch(err => {
+            console.error("Error playing video on mount:", err);
+            
+            // If play fails, try reapplying the stream
+            setTimeout(() => {
+              if (videoElement && videoRef.current) {
+                videoElement.srcObject = stream;
+                videoElement.play().catch(e => console.error("Error on retry play:", e));
+              }
+            }, 200);
+          });
+        } catch (err) {
+          console.error("Error during initial play attempt:", err);
+        }
       }
+      
+      // Setup visibility change listener to handle tab changes
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && videoElement.paused && videoElement.srcObject) {
+          videoElement.play().catch(err => console.error("Error playing video on visibility change:", err));
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        console.log("CameraPreview unmounting");
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
-    
-    return () => {
-      console.log("CameraPreview unmounting");
-    };
-  }, []);
+  }, [videoRef]);
   
   return (
     <div className="relative w-full h-[75vh] bg-black">
+      {/* Use inline style display block to ensure video is visible */}
       <video 
         ref={videoRef} 
         className="h-full w-full object-cover"
@@ -62,6 +83,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         playsInline 
         muted
         style={{ 
+          display: 'block',
           transform: facingMode === "user" ? "scaleX(-1)" : "none",
           filter: `brightness(${brightness}) contrast(1.2)`,
           objectFit: "cover"
@@ -110,9 +132,13 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         </div>
       </div>
       
-      {/* Debug info overlay */}
-      <div className="absolute top-4 left-4 bg-black/70 text-white text-xs p-2 rounded">
-        Face: {faceDetected ? "Detected" : "Not detected"} | Mode: {facingMode}
+      {/* Debug info overlay - Show video status */}
+      <div className="absolute top-4 left-4 bg-black/70 text-white text-xs p-2 rounded flex flex-col gap-1">
+        <div>Face: {faceDetected ? "Detected" : "Not detected"} | Mode: {facingMode}</div>
+        <div>
+          Video: {videoRef.current?.readyState || 0}/4 
+          {videoRef.current?.paused ? " (paused)" : " (playing)"}
+        </div>
       </div>
     </div>
   );
