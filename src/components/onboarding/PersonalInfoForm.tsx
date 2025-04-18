@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Camera, ArrowRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface PersonalInfoFormProps {
   onComplete: () => void;
@@ -20,9 +21,17 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
         const profile = JSON.parse(savedProfile);
-        if (profile.username) {
+        if (profile.fullName) {
+          setFullName(profile.fullName);
+        } else if (profile.username) {
+          // Fallback to username if fullName is not available
           setFullName(profile.username);
         }
+        
+        if (profile.title) {
+          setTitle(profile.title);
+        }
+        
         if (profile.profileImage) {
           setProfileImage(profile.profileImage);
         }
@@ -41,23 +50,29 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
   };
 
   const handleSubmit = () => {
+    if (!fullName.trim()) {
+      toast.error("Por favor, preencha seu nome completo");
+      return;
+    }
+    
     // Atualizar o perfil salvo com novos dados
     try {
       const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
-        profile.fullName = fullName;
-        profile.title = title;
-        localStorage.setItem('userProfile', JSON.stringify(profile));
-      } else {
-        localStorage.setItem('userProfile', JSON.stringify({
-          fullName,
-          title,
-          profileImage
-        }));
-      }
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      
+      // Update profile data
+      const updatedProfile = {
+        ...profile,
+        fullName,
+        title,
+        profileImage
+      };
+      
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      toast.success("Informações salvas com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar perfil do usuário:", error);
+      toast.error("Erro ao salvar informações");
     }
     
     onComplete();

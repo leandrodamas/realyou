@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 interface SuccessDialogProps {
   open: boolean;
@@ -17,6 +18,16 @@ interface SuccessDialogProps {
 }
 
 const SuccessDialog: React.FC<SuccessDialogProps> = ({ open, onOpenChange, onFinish }) => {
+  const navigate = useNavigate();
+  
+  const handleFinish = () => {
+    // First call the provided onFinish handler
+    onFinish();
+    
+    // Ensure we navigate to the onboarding page
+    navigate("/onboarding");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -35,7 +46,7 @@ const SuccessDialog: React.FC<SuccessDialogProps> = ({ open, onOpenChange, onFin
           </p>
           <Button 
             className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90"
-            onClick={onFinish}
+            onClick={handleFinish}
           >
             Completar Perfil
           </Button>

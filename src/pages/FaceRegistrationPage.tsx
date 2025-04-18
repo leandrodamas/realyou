@@ -7,8 +7,10 @@ import HeaderComponent from "@/components/face-registration/HeaderComponent";
 import StepIndicator from "@/components/face-registration/StepIndicator";
 import StepContent from "@/components/face-registration/StepContent";
 import SuccessDialog from "@/components/face-registration/SuccessDialog";
+import { useNavigate } from "react-router-dom";
 
 const FaceRegistrationPage: React.FC = () => {
+  const navigate = useNavigate();
   const [registrationStep, setRegistrationStep] = useState<number>(1);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -51,6 +53,7 @@ const FaceRegistrationPage: React.FC = () => {
             localStorage.setItem('userProfile', JSON.stringify({
               userId: tempUserId,
               username: username,
+              fullName: username, // Save username as fullName too for consistent data
               profileImage: capturedImage
             }));
             
@@ -78,7 +81,7 @@ const FaceRegistrationPage: React.FC = () => {
 
   const handleFinishRegistration = () => {
     setShowSuccessDialog(false);
-    window.location.href = "/onboarding";
+    navigate("/onboarding");
   };
 
   const handleStartCamera = () => {
