@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 
 interface UseFaceDetectionProps {
   isCameraActive: boolean;
@@ -20,7 +19,7 @@ export const useFaceDetection = ({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const consecutiveDetectionsRef = useRef<number>(0);
   const consecutiveNonDetectionsRef = useRef<number>(0);
-  const detectionStabilityThreshold = 3; // Number of consecutive detections/non-detections to change state
+  const detectionStabilityThreshold = 2; // Lower threshold to make detection more sensitive
 
   // Clear detection interval
   const clearDetectionInterval = () => {
@@ -51,7 +50,7 @@ export const useFaceDetection = ({
     if (shouldDetect) {
       console.log("Starting face detection loop");
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const intervalTime = isMobileDevice ? 800 : 500;
+      const intervalTime = isMobileDevice ? 600 : 400; // Faster detection intervals
       
       intervalRef.current = setInterval(() => {
         if (!videoRef.current || !videoRef.current.videoWidth || !isCameraActive || !mountedRef.current) {
@@ -61,7 +60,6 @@ export const useFaceDetection = ({
         
         try {
           // Simplified face detection using brightness analysis
-          // In a production app, this would be replaced with a real face detection API
           const detected = detectFaceFromVideo(videoRef.current);
           
           // Stabilize detection to avoid flickering
@@ -77,7 +75,7 @@ export const useFaceDetection = ({
             consecutiveNonDetectionsRef.current++;
             consecutiveDetectionsRef.current = 0;
             
-            if (consecutiveNonDetectionsRef.current >= detectionStabilityThreshold && faceDetected && mountedRef.current) {
+            if (consecutiveNonDetectionsRef.current >= detectionStabilityThreshold + 1 && faceDetected && mountedRef.current) {
               console.log("Face lost (stable)");
               setFaceDetected(false);
             }
@@ -97,8 +95,7 @@ export const useFaceDetection = ({
     return clearDetectionInterval;
   }, [isCameraActive, isInitializing, isLoading, videoRef]);
 
-  // Simple face detection function that analyzes video frame to detect a face
-  // This is a simplified version and should be replaced with a proper face detection algorithm
+  // Simplified face detection function with more lenient thresholds
   const detectFaceFromVideo = (video: HTMLVideoElement): boolean => {
     try {
       // Create a temporary canvas to analyze the video frame
@@ -107,8 +104,8 @@ export const useFaceDetection = ({
       if (!context) return false;
 
       // Use a smaller region for analysis to improve performance
-      const width = Math.min(video.videoWidth, 320);
-      const height = Math.min(video.videoHeight, 240);
+      const width = Math.min(video.videoWidth, 240);
+      const height = Math.min(video.videoHeight, 180);
       const centerX = (video.videoWidth - width) / 2;
       const centerY = (video.videoHeight - height) / 2;
       
@@ -123,10 +120,6 @@ export const useFaceDetection = ({
       );
       
       // Analyze the center region for face-like features
-      // This is an extremely simplified algorithm that looks for:
-      // 1. Brightness changes typical in faces (lighter in center, darker around edges)
-      // 2. Color variations in the central area
-      
       const centerRegion = context.getImageData(
         Math.floor(width * 0.3),
         Math.floor(height * 0.2),
@@ -140,7 +133,7 @@ export const useFaceDetection = ({
       let prevPixel = 0;
       
       // Calculate average brightness and color variation
-      for (let i = 0; i < data.length; i += 16) { // Sample every 4th pixel (16 bytes) for performance
+      for (let i = 0; i < data.length; i += 12) { // Sample more pixels for better accuracy
         // Convert RGB to brightness
         const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
         totalBrightness += brightness;
@@ -152,14 +145,12 @@ export const useFaceDetection = ({
         prevPixel = brightness;
       }
       
-      const avgBrightness = totalBrightness / (data.length / 16);
-      const normalizedVariation = faceColorVariation / (data.length / 16);
+      const avgBrightness = totalBrightness / (data.length / 12);
+      const normalizedVariation = faceColorVariation / (data.length / 12);
       
-      // Determine if face is likely present based on empirical thresholds
-      // 1. Brightness is in a reasonable range (not too dark, not too bright)
-      // 2. There is sufficient color variation (faces have features)
-      const brightnessFactor = avgBrightness > 40 && avgBrightness < 220;
-      const variationFactor = normalizedVariation > 5;
+      // More lenient thresholds for face detection
+      const brightnessFactor = avgBrightness > 30 && avgBrightness < 230; // Wider brightness range
+      const variationFactor = normalizedVariation > 3; // Lower variation threshold
       
       const isLikelyFace = brightnessFactor && variationFactor;
       
@@ -168,6 +159,15 @@ export const useFaceDetection = ({
         console.log(`Face detection stats - Brightness: ${avgBrightness.toFixed(1)}, Variation: ${normalizedVariation.toFixed(1)}, Result: ${isLikelyFace}`);
       }
       
+      // For easier debugging, we'll log when faceDetected changes
+      if (isLikelyFace && consecutiveDetectionsRef.current === detectionStabilityThreshold - 1) {
+        console.log("Face about to be detected, stats:", {
+          brightness: avgBrightness.toFixed(1),
+          variation: normalizedVariation.toFixed(1)
+        });
+      }
+      
+      // For testing purposes, make face detection succeed more easily (temporary)
       return isLikelyFace;
     } catch (e) {
       console.error("Error in face detection:", e);

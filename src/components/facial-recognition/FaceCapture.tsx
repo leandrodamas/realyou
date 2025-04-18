@@ -70,6 +70,19 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
       resetState();
     };
   }, []);
+  
+  // Check for captured image in localStorage when component mounts
+  // This helps recover images between component reloads
+  useEffect(() => {
+    if (!capturedImage && typeof window !== 'undefined') {
+      const tempImage = localStorage.getItem('tempCapturedImage');
+      if (tempImage && setCapturedImage) {
+        console.log("Recovering image from localStorage");
+        setCapturedImage(tempImage);
+        if (onCaptureImage) onCaptureImage(tempImage);
+      }
+    }
+  }, []);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
@@ -77,15 +90,17 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   };
 
   const handleCapture = () => {
-    if (canvasRef.current) {
-      try {
-        const imageDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
-        setCapturedImage(imageDataUrl);
-        if (onCaptureImage) onCaptureImage(imageDataUrl);
-      } catch (error) {
-        console.error("Erro ao processar captura:", error);
+    if (typeof window !== 'undefined') {
+      const tempImage = localStorage.getItem('tempCapturedImage');
+      if (tempImage) {
+        setCapturedImage(tempImage);
+        if (onCaptureImage) onCaptureImage(tempImage);
+        
+        // Clean up after we've used the image
+        localStorage.removeItem('tempCapturedImage');
       }
     }
+    
     setIsCameraActive(false);
   };
 
@@ -93,6 +108,11 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     setCapturedImage(null);
     setIsCameraActive(false);
     setNoMatchFound(false);
+    
+    // Clean up any stored images
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tempCapturedImage');
+    }
   };
 
   return (

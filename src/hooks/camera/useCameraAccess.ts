@@ -46,8 +46,17 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
         videoRef.current.autoplay = true;
         
         try {
-          await videoRef.current.play();
-          console.log("Video playback started successfully");
+          // Force a layout refresh before playing to avoid potential visual glitches
+          setTimeout(async () => {
+            if (videoRef.current) {
+              try {
+                await videoRef.current.play();
+                console.log("Video playback started successfully");
+              } catch (playError) {
+                console.error("Error during video playback:", playError);
+              }
+            }
+          }, 100);
         } catch (playError) {
           console.error("Error during video playback:", playError);
           throw playError;

@@ -94,19 +94,21 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           const imageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
           console.log("Image captured successfully");
           
-          if (video.srcObject) {
-            const stream = video.srcObject as MediaStream;
-            try {
-              stream.getTracks().forEach(track => track.stop());
-              video.srcObject = null;
-            } catch (err) {
-              console.error("Error stopping tracks on capture:", err);
-            }
-          }
+          // Store the captured image in a global variable to make it accessible
+          // This is crucial for debugging - check this in dev tools console
+          (window as any).capturedImage = imageDataUrl;
           
           if (mountedRef.current) {
-            onCapture();
-            toast.success("Imagem capturada com sucesso!");
+            // Send the captured image to the parent component
+            if (typeof onCapture === 'function') {
+              // Store the image data in a ref that parent components can access
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('tempCapturedImage', imageDataUrl);
+              }
+              
+              onCapture();
+              toast.success("Imagem capturada com sucesso!");
+            }
           }
         }
       } catch (error) {
