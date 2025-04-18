@@ -47,6 +47,13 @@ const FaceRegistrationPage: React.FC = () => {
           const success = await registerFaceForUser(capturedImage, tempUserId);
           
           if (success) {
+            // Salvar informações do usuário no localStorage para uso em outras páginas
+            localStorage.setItem('userProfile', JSON.stringify({
+              userId: tempUserId,
+              username: username,
+              profileImage: capturedImage
+            }));
+            
             setShowSuccessDialog(true);
           } else {
             toast.error("Falha ao registrar rosto. Tente novamente.");
@@ -71,7 +78,7 @@ const FaceRegistrationPage: React.FC = () => {
 
   const handleFinishRegistration = () => {
     setShowSuccessDialog(false);
-    window.location.href = "/";
+    window.location.href = "/onboarding";
   };
 
   const handleStartCamera = () => {
