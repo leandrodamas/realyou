@@ -6,4 +6,3 @@ verify_jwt = true
 
 [functions.create-subscription-plan]
 verify_jwt = true
-
