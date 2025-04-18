@@ -22,6 +22,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasError, setHasError] = useState(false);
+  const [localCapturedImage, setLocalCapturedImage] = useState<string | null>(null);
 
   // Initialize camera stream when isCameraActive changes
   useEffect(() => {
@@ -79,6 +80,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         
         // Convert canvas to data URL
         const imageDataUrl = canvas.toDataURL('image/png');
+        setLocalCapturedImage(imageDataUrl);
         
         // Stop the camera stream
         const stream = video.srcObject as MediaStream;
@@ -89,9 +91,15 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         
         // Pass the captured image data URL to parent component
         onCapture();
+        
+        // Let user know capture was successful
+        toast.success("Imagem capturada com sucesso!");
       }
     }
   };
+
+  // Get the image to display - either from local state or from parent props
+  const displayImage = localCapturedImage || capturedImage;
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl aspect-square w-full relative overflow-hidden border border-gray-100 shadow-inner">
@@ -131,10 +139,10 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           )}
           <canvas ref={canvasRef} className="hidden" />
         </div>
-      ) : capturedImage ? (
+      ) : displayImage ? (
         <div className="relative w-full h-full">
           <img 
-            src={capturedImage} 
+            src={displayImage} 
             alt="Captured face" 
             className="w-full h-full object-cover rounded-2xl"
           />

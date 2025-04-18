@@ -20,7 +20,6 @@ const FaceCapture: React.FC = () => {
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
-    // We'll now use the real camera implementation in FaceCaptureCamera
   };
 
   const handleCapture = () => {
@@ -53,7 +52,7 @@ const FaceCapture: React.FC = () => {
       setMatchedPerson({
         name: "Alex Johnson",
         profession: "Terapeuta",
-        avatar: "/placeholder.svg",
+        avatar: capturedImage || "/placeholder.svg", // Use the captured image or fallback
         schedule: [
           { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
           { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
@@ -64,6 +63,7 @@ const FaceCapture: React.FC = () => {
           { day: "Domingo", slots: [], active: false }
         ]
       });
+      toast.success("Reconhecimento facial concluído!");
     }, 2000);
   };
 
