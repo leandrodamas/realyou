@@ -6,6 +6,7 @@ export const useCameraStream = (isCameraActive: boolean) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [hasCamera, setHasCamera] = useState<boolean>(true);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -13,17 +14,37 @@ export const useCameraStream = (isCameraActive: boolean) => {
     const setupCamera = async () => {
       if (isCameraActive) {
         try {
+          // Check if MediaDevices is supported
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("MediaDevices not supported");
+          }
+          
+          // First check if we have cameras available
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          
+          if (videoDevices.length === 0) {
+            setHasCamera(false);
+            throw new Error("No camera detected");
+          }
+          
+          setHasCamera(true);
+          
+          // Request camera access with specific constraints for mobile
           stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
               facingMode: facingMode,
-              width: { ideal: 1920 },
-              height: { ideal: 1080 }
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
             }, 
             audio: false 
           });
           
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(error => {
+              console.error("Error playing video:", error);
+            });
             setHasError(false);
           }
         } catch (err) {
@@ -49,5 +70,5 @@ export const useCameraStream = (isCameraActive: boolean) => {
     setFacingMode(current => current === "user" ? "environment" : "user");
   };
 
-  return { videoRef, hasError, switchCamera, facingMode };
+  return { videoRef, hasError, switchCamera, facingMode, hasCamera };
 };

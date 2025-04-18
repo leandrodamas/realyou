@@ -14,7 +14,16 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       backgroundColor: "#128C7E",
       splashImmersive: true
+    },
+    Permissions: {
+      permissions: ["camera"]
     }
+  },
+  android: {
+    allowMixedContent: true
+  },
+  ios: {
+    contentInset: "always"
   }
 };
 

@@ -1,6 +1,7 @@
-import React, { useRef, useState } from "react";
+
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, X, FlipHorizontal } from "lucide-react";
+import { Camera, X, FlipHorizontal, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -25,7 +26,20 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [faceDetected, setFaceDetected] = useState(false);
-  const { videoRef, hasError, switchCamera, facingMode } = useCameraStream(isCameraActive);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const { videoRef, hasError, switchCamera, facingMode, hasCamera } = useCameraStream(isCameraActive);
+
+  useEffect(() => {
+    // Add a delay for camera initialization
+    let timer: NodeJS.Timeout;
+    if (isCameraActive) {
+      setIsInitializing(true);
+      timer = setTimeout(() => {
+        setIsInitializing(false);
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [isCameraActive]);
 
   const simulateFaceDetection = () => {
     const detectInterval = setInterval(() => {
@@ -40,15 +54,15 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     return () => clearInterval(detectInterval);
   };
 
-  React.useEffect(simulateFaceDetection, [isCameraActive]);
+  React.useEffect(simulateFaceDetection, [isCameraActive, videoRef.current]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && faceDetected) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       
       const context = canvas.getContext('2d');
       if (context) {
@@ -92,9 +106,18 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   }
 
   if (isCameraActive) {
+    if (isInitializing) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[75vh] bg-gray-900">
+          <div className="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mb-4"></div>
+          <p className="text-white">Inicializando câmera...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh]">
-        {hasError ? (
+        {hasError || !hasCamera ? (
           <CameraError onReset={onReset} />
         ) : (
           <>
@@ -104,6 +127,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                 className="h-full w-full object-cover"
                 autoPlay 
                 playsInline 
+                muted
                 style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
               />
               

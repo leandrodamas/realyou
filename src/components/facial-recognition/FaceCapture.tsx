@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import FaceCaptureCamera from "./FaceCaptureCamera";
@@ -44,8 +44,19 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     connectionSent,
     handleSearch,
     sendConnectionRequest,
-    setNoMatchFound
+    setNoMatchFound,
+    setMatchedPerson
   } = useFacialRecognition();
+
+  // Ensure proper cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      // Stop camera if active when navigating away
+      if (isCameraActive) {
+        setIsCameraActive(false);
+      }
+    };
+  }, []);
 
   const handleStartCamera = () => {
     setIsCameraActive(true);
