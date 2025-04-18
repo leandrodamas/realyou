@@ -26,9 +26,9 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
+  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [brightness, setBrightness] = useState(1.4);
+  const [brightness, setBrightness] = useState(1.6);
   const mountedRef = useRef<boolean>(true);
   
   const { isInitializing, loadingProgress } = useLoading({ isCameraActive });
@@ -47,20 +47,40 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     };
   }, []);
 
+  // Debug logging for video element state
+  useEffect(() => {
+    if (videoRef.current && isCameraActive) {
+      console.log("Video element current state:", {
+        readyState: videoRef.current.readyState,
+        paused: videoRef.current.paused,
+        srcObject: videoRef.current.srcObject ? "Set" : "Not set",
+        videoWidth: videoRef.current.videoWidth,
+        videoHeight: videoRef.current.videoHeight
+      });
+    }
+  }, [isCameraActive, isLoading]);
+
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && faceDetected) {
       try {
+        console.log("Capturing image from video stream");
         const video = videoRef.current;
         const canvas = canvasRef.current;
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const scale = isMobile ? 0.7 : 1;
+        const scale = isMobile ? 0.8 : 1;
         
-        canvas.width = (video.videoWidth || 640) * scale;
-        canvas.height = (video.videoHeight || 480) * scale;
+        // Make sure we have video dimensions
+        const videoWidth = video.videoWidth || 640;
+        const videoHeight = video.videoHeight || 480;
+        
+        console.log("Video dimensions:", videoWidth, "x", videoHeight);
+        
+        canvas.width = videoWidth * scale;
+        canvas.height = videoHeight * scale;
         
         const context = canvas.getContext('2d');
         if (context) {
-          context.imageSmoothingQuality = 'medium';
+          context.imageSmoothingQuality = 'high';
           
           if (facingMode === "user") {
             context.scale(-1, 1);
@@ -71,7 +91,8 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
           context.filter = 'none';
           
-          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          console.log("Image captured successfully");
           
           if (video.srcObject) {
             const stream = video.srcObject as MediaStream;
@@ -149,7 +170,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
               onDecreaseBrightness={decreaseBrightness}
               errorMessage={errorMessage}
             />
-            <canvas ref={canvasRef} className="hidden" />
+            <canvas ref={canvasRef} className="hidden" width="640" height="480" />
           </>
         )}
       </div>

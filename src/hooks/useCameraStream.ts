@@ -31,7 +31,11 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
         
         let constraints: MediaStreamConstraints = {
           audio: false,
-          video: { facingMode }
+          video: { 
+            facingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         };
         
         console.log("Solicitando acesso à câmera com modo:", facingMode);

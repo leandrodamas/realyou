@@ -39,7 +39,8 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         muted
         style={{ 
           transform: facingMode === "user" ? "scaleX(-1)" : "none",
-          filter: `brightness(${brightness}) contrast(1.2)`
+          filter: `brightness(${brightness}) contrast(1.2)`,
+          objectFit: "cover"
         }}
       />
       
@@ -83,6 +84,11 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         <div className="bg-yellow-500/20 text-yellow-100 px-3 py-1 rounded-md text-xs">
           Ajuste o brilho se a imagem estiver escura
         </div>
+      </div>
+      
+      {/* Debug info overlay */}
+      <div className="absolute top-4 left-4 bg-black/50 text-white text-xs p-1 rounded">
+        Face: {faceDetected ? "Detected" : "Not detected"} | Mode: {facingMode}
       </div>
     </div>
   );
