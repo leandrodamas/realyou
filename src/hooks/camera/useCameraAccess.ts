@@ -12,9 +12,10 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    // Instead of trying to modify mountedRef.current directly in the cleanup function,
-    // we'll just use it as a flag for checking component mounted state
+    mountedRef.current = true;
+    
     return () => {
+      mountedRef.current = false;
       cleanupCameraStream(streamRef.current, videoRef.current);
     };
   }, []);
@@ -31,12 +32,19 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
         }
       };
 
+      // Listen for the loadeddata event explicitly
       video.addEventListener('loadeddata', () => {
         console.log("Video loadeddata event fired");
         checkReady();
       });
+      
+      // Also listen for the canplay event which might be more reliable
+      video.addEventListener('canplay', () => {
+        console.log("Video canplay event fired");
+        checkReady();
+      });
 
-      // Também verificamos imediatamente
+      // Also check immediately
       checkReady();
     });
   };
@@ -63,19 +71,45 @@ export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "e
       
       if (videoRef.current && mountedRef.current) {
         console.log("Setting video source and playing");
-        videoRef.current.srcObject = stream;
-        videoRef.current.playsInline = true;
-        videoRef.current.muted = true;
-        videoRef.current.autoplay = true;
+        const video = videoRef.current;
+        video.srcObject = stream;
+        video.playsInline = true;
+        video.muted = true;
+        video.autoplay = true;
         
         try {
-          // Tocar o vídeo e aguardar pelo menos 500ms para garantir que o navegador tenha tempo de inicializar
-          await videoRef.current.play();
-          console.log("Video playback started successfully");
+          // Set an explicit width and height on the video element
+          video.width = 640;
+          video.height = 480;
           
-          // Aguardar até que o vídeo esteja pronto para uso
-          if (await waitForVideoReady(videoRef.current)) {
-            setIsVideoReady(true);
+          // Explicitly force play
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log("Video playback started successfully");
+              
+              // Wait for video metadata to load
+              if (video.readyState === 0) {
+                console.log("Video readyState is 0, waiting for metadata...");
+                video.addEventListener("loadedmetadata", () => {
+                  console.log("Video metadata loaded");
+                  waitForVideoReady(video).then(ready => {
+                    if (ready && mountedRef.current) {
+                      setIsVideoReady(true);
+                    }
+                  });
+                });
+              } else {
+                waitForVideoReady(video).then(ready => {
+                  if (ready && mountedRef.current) {
+                    setIsVideoReady(true);
+                  }
+                });
+              }
+            }).catch(err => {
+              console.error("Error during video playback:", err);
+              toast.error("Erro ao iniciar a câmera. Tente novamente.");
+            });
           }
         } catch (playError) {
           console.error("Error during video playback:", playError);

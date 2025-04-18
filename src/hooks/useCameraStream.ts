@@ -57,8 +57,6 @@ export const useCameraStream = (isCameraActive: boolean): CameraStreamState => {
             // Only update local retry count
             localRetryCount++;
             
-            // Create a new retry count ref with useEffect cleanup to avoid direct mutation
-            const newRetryCount = localRetryCount;
             // Schedule an update of the facing mode which will trigger this useEffect again
             setFacingMode(current => current === "user" ? "environment" : "user");
             return;
