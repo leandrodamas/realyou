@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
 import { useFaceDetection } from "@/hooks/useFaceDetection";
+import { useLoading } from "@/hooks/useLoading";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
 import CameraPreview from "./components/CameraPreview";
@@ -24,53 +25,18 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [brightness, setBrightness] = useState(1.4);
-
+  
+  const { isInitializing, loadingProgress } = useLoading({ isCameraActive });
+  
   const { faceDetected } = useFaceDetection({
     isCameraActive,
     isInitializing,
     isLoading,
     videoRef
   });
-
-  // Loading progress simulation
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isLoading || isInitializing) {
-      let progress = 0;
-      interval = setInterval(() => {
-        progress += 5;
-        if (progress > 95) {
-          clearInterval(interval);
-          progress = 95;
-        }
-        setLoadingProgress(progress);
-      }, 100);
-    } else {
-      setLoadingProgress(100);
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isLoading, isInitializing]);
-
-  // Camera initialization delay
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isCameraActive) {
-      setIsInitializing(true);
-      timer = setTimeout(() => {
-        setIsInitializing(false);
-      }, 1500);
-    }
-    return () => clearTimeout(timer);
-  }, [isCameraActive]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && faceDetected) {
