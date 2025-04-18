@@ -1,12 +1,18 @@
+
 import React, { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Camera, Image, Send } from "lucide-react";
 import { useStories } from "@/hooks/useStories";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 
 const Stories: React.FC = () => {
   const [selectedStory, setSelectedStory] = useState<any | null>(null);
   const { stories, loading, error } = useStories();
+  const [isAddingStory, setIsAddingStory] = useState(false);
+  const [storyCaption, setStoryCaption] = useState("");
 
   const openStory = (story: any) => {
     setSelectedStory(story);
@@ -14,6 +20,17 @@ const Stories: React.FC = () => {
 
   const closeStory = () => {
     setSelectedStory(null);
+  };
+
+  const handleCreateStory = () => {
+    setIsAddingStory(true);
+  };
+
+  const handleSubmitStory = () => {
+    // Simulação de envio da história
+    toast.success("História criada com sucesso!");
+    setIsAddingStory(false);
+    setStoryCaption("");
   };
 
   if (loading) return <div>Carregando histórias...</div>;
@@ -37,7 +54,7 @@ const Stories: React.FC = () => {
             >
               <button 
                 className="focus:outline-none"
-                onClick={() => story.id !== 1 && openStory(story)}
+                onClick={() => story.id === 1 ? handleCreateStory() : openStory(story)}
               >
                 <div
                   className={`${
@@ -124,8 +141,61 @@ const Stories: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Interface para criar nova história */}
+      <Sheet open={isAddingStory} onOpenChange={setIsAddingStory}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Criar nova história</SheetTitle>
+          </SheetHeader>
+          
+          <div className="mt-6 space-y-6">
+            <div className="bg-gray-100 rounded-xl aspect-[9/16] flex items-center justify-center relative overflow-hidden">
+              <div className="text-center space-y-2">
+                <Camera className="h-12 w-12 mx-auto text-gray-400" />
+                <p className="text-gray-500 text-sm">Clique para tirar uma foto</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1">
+                <Camera className="mr-2 h-4 w-4" />
+                Câmera
+              </Button>
+              <Button variant="outline" className="flex-1">
+                <Image className="mr-2 h-4 w-4" />
+                Galeria
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              <textarea 
+                className="w-full p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                rows={3}
+                placeholder="Escreva uma legenda..."
+                value={storyCaption}
+                onChange={(e) => setStoryCaption(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <SheetClose asChild>
+                <Button variant="outline" className="flex-1">Cancelar</Button>
+              </SheetClose>
+              <Button 
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-500"
+                onClick={handleSubmitStory}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Publicar
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
 
 export default Stories;
+
