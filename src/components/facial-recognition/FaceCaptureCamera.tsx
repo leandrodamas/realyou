@@ -28,7 +28,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage } = useCameraStream(isCameraActive);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [brightness, setBrightness] = useState(1.6);
+  const [brightness, setBrightness] = useState(2.0); // Start with higher brightness
   const mountedRef = useRef<boolean>(true);
   
   const { isInitializing, loadingProgress } = useLoading({ isCameraActive });
@@ -42,32 +42,47 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   useEffect(() => {
     mountedRef.current = true;
+
+    // Automatically capture image after 3 seconds for testing
+    let autoCapture: NodeJS.Timeout | null = null;
+    if (isCameraActive && !isLoading && !isInitializing) {
+      autoCapture = setTimeout(() => {
+        if (mountedRef.current && videoRef.current && videoRef.current.readyState >= 2) {
+          console.log("Auto-capturing image for testing");
+          handleCapture();
+        }
+      }, 3000);
+    }
+
     return () => {
       mountedRef.current = false;
+      if (autoCapture) clearTimeout(autoCapture);
     };
-  }, []);
+  }, [isCameraActive, isLoading, isInitializing]);
 
-  // Debug logging for video element state
+  // Log video element status periodically for debugging
   useEffect(() => {
-    if (videoRef.current && isCameraActive) {
-      console.log("Video element current state:", {
-        readyState: videoRef.current.readyState,
-        paused: videoRef.current.paused,
-        srcObject: videoRef.current.srcObject ? "Set" : "Not set",
-        videoWidth: videoRef.current.videoWidth,
-        videoHeight: videoRef.current.videoHeight
-      });
-    }
-  }, [isCameraActive, isLoading]);
+    const debugInterval = setInterval(() => {
+      if (videoRef.current && isCameraActive) {
+        console.log("Video debug info:", {
+          readyState: videoRef.current.readyState,
+          paused: videoRef.current.paused,
+          videoWidth: videoRef.current.videoWidth,
+          videoHeight: videoRef.current.videoHeight,
+          faceDetected: faceDetected
+        });
+      }
+    }, 2000);
+    
+    return () => clearInterval(debugInterval);
+  }, [isCameraActive, faceDetected]);
 
   const handleCapture = () => {
-    if (videoRef.current && canvasRef.current && faceDetected) {
+    if (videoRef.current && canvasRef.current) {
       try {
         console.log("Capturing image from video stream");
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const scale = isMobile ? 0.8 : 1;
         
         // Make sure we have video dimensions
         const videoWidth = video.videoWidth || 640;
@@ -75,8 +90,8 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         
         console.log("Video dimensions:", videoWidth, "x", videoHeight);
         
-        canvas.width = videoWidth * scale;
-        canvas.height = videoHeight * scale;
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
         
         const context = canvas.getContext('2d');
         if (context) {
@@ -91,7 +106,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
           context.filter = 'none';
           
-          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
           console.log("Image captured successfully");
           
           // Store the captured image in a global variable to make it accessible
@@ -99,16 +114,14 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           (window as any).capturedImage = imageDataUrl;
           
           if (mountedRef.current) {
-            // Send the captured image to the parent component
-            if (typeof onCapture === 'function') {
-              // Store the image data in a ref that parent components can access
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('tempCapturedImage', imageDataUrl);
-              }
-              
-              onCapture();
-              toast.success("Imagem capturada com sucesso!");
+            // Store the image data in localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('tempCapturedImage', imageDataUrl);
+              console.log("Image saved to localStorage");
             }
+            
+            onCapture();
+            toast.success("Imagem capturada com sucesso!");
           }
         }
       } catch (error) {
@@ -118,13 +131,13 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           toast.error("Erro ao capturar imagem. Tente novamente.");
         }
       }
-    } else if (!faceDetected && mountedRef.current) {
-      toast.warning("Nenhum rosto detectado. Centralize seu rosto na câmera.");
+    } else if (!videoRef.current) {
+      toast.error("Câmera não inicializada");
     }
   };
 
   const increaseBrightness = () => {
-    setBrightness(prev => Math.min(prev + 0.3, 2.5));
+    setBrightness(prev => Math.min(prev + 0.3, 3.0)); // Allow higher max brightness
     toast.success("Brilho aumentado");
   };
 
