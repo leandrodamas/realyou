@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
+import { DeviceDetectionState } from "./types";
 
-export const useDeviceDetection = () => {
+export const useDeviceDetection = (): DeviceDetectionState => {
   const [hasCamera, setHasCamera] = useState<boolean>(true);
 
   const checkCameraAvailability = async () => {

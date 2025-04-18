@@ -1,9 +1,9 @@
-
 import { useRef, useState, useEffect } from "react";
 import { cleanupCameraStream } from "../utils/cameraUtils";
 import { toast } from "sonner";
+import { CameraAccessState } from "./types";
 
-export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "environment") => {
+export const useCameraAccess = (isCameraActive: boolean, facingMode: "user" | "environment"): CameraAccessState => {
   const streamRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mountedRef = useRef<boolean>(true);

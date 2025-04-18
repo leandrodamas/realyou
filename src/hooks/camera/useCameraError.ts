@@ -1,11 +1,11 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { CameraErrorState } from "./types";
 
-export const useCameraError = () => {
+export const useCameraError = (): CameraErrorState => {
   const [hasError, setHasError] = useState(false);
   const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
-  const retryCountRef = useState<number>(0);
+  const retryCountRef = useRef<number>(0);
 
   const handleCameraError = (error: any) => {
     let errorMessage = "Erro desconhecido ao acessar câmera";
