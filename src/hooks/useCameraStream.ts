@@ -59,23 +59,15 @@ export const useCameraStream = (isCameraActive: boolean) => {
         setHasCamera(true);
         
         // Configurações otimizadas para melhor exposição e brilho
-        const constraints = {
+        // Removendo propriedades avançadas não suportadas no tipo MediaTrackConstraints
+        const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
             facingMode: facingMode,
             width: { ideal: 640 },
             height: { ideal: 480 },
-            frameRate: { ideal: 24 },
-            // Configurações de exposição/brilho - funcionam em alguns dispositivos
-            advanced: [
-              {
-                exposureMode: "continuous",
-                exposureCompensation: 1.5, // Aumentar exposição (se suportado)
-                brightness: 1.5,           // Aumentar brilho (se suportado)
-                contrast: 1.2,             // Aumentar contraste (se suportado)
-                whiteBalanceMode: "continuous"
-              }
-            ]
+            frameRate: { ideal: 24 }
+            // Configurações avançadas removidas para resolver erros de TypeScript
           }
         };
         
@@ -91,34 +83,31 @@ export const useCameraStream = (isCameraActive: boolean) => {
           videoRef.current.playsInline = true;
           videoRef.current.muted = true;
           
-          // Configurar tracks de vídeo para melhor exposição (se suportado)
+          // Configurar tracks de vídeo para melhor exposição (usando apenas propriedades suportadas)
           const videoTrack = stream.getVideoTracks()[0];
           if (videoTrack) {
             try {
-              const capabilities = videoTrack.getCapabilities();
+              // Em vez de tentar aplicar configurações avançadas diretamente,
+              // usaremos configurações de vídeo através de CSS e filtragem via front-end
+              console.log("Utilizando configurações básicas de vídeo");
+              
+              // Obter informações sobre a configuração atual do vídeo
               const settings = videoTrack.getSettings();
+              console.log("Configurações atuais da câmera:", settings);
               
-              // Aplicar configurações de exposição se disponíveis
-              if (capabilities.exposureMode && capabilities.exposureCompensation) {
-                const constraints = {
-                  exposureMode: "continuous", 
-                  exposureCompensation: capabilities.exposureCompensation.max * 0.75 // 75% do máximo
-                };
-                await videoTrack.applyConstraints({ advanced: [constraints] });
-              }
-              
-              // Tentar aplicar configurações de brilho para alguns dispositivos
-              if (capabilities.brightness || capabilities.contrast) {
+              // Podemos aplicar configurações básicas suportadas
+              try {
                 await videoTrack.applyConstraints({
-                  advanced: [{
-                    brightness: capabilities.brightness ? capabilities.brightness.max * 0.7 : undefined,
-                    contrast: capabilities.contrast ? capabilities.contrast.max * 0.65 : undefined
-                  }]
+                  width: { ideal: 640 },
+                  height: { ideal: 480 },
+                  frameRate: { ideal: 24 }
                 });
+              } catch (err) {
+                console.log("Não foi possível aplicar configurações básicas:", err);
               }
             } catch (err) {
-              console.log("Avançado: Não foi possível aplicar configurações avançadas de câmera", err);
-              // Continuar mesmo se as configurações avançadas falharem
+              console.log("Avançado: Não foi possível aplicar configurações de câmera", err);
+              // Continuar mesmo se as configurações falharem
             }
           }
           

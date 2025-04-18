@@ -117,6 +117,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           }
           
           // Aplicar ajustes de brilho/contraste para melhorar imagens escuras
+          // Usamos o valor de brightness controlado pelo usuário
           context.filter = `brightness(${brightness}) contrast(1.2) saturate(1.1)`;
           
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -148,13 +149,14 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     }
   };
 
+  // Improved brightness controls with more significant changes for better visibility
   const increaseBrightness = () => {
-    setBrightness(prev => Math.min(prev + 0.2, 2.0));
+    setBrightness(prev => Math.min(prev + 0.3, 2.5)); // Increased step size and max value
     toast.success("Brilho aumentado");
   };
 
   const decreaseBrightness = () => {
-    setBrightness(prev => Math.max(prev - 0.2, 1.0));
+    setBrightness(prev => Math.max(prev - 0.3, 0.8)); // Increased step size, don't go too dark
     toast.success("Brilho reduzido");
   };
 
@@ -206,7 +208,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                 muted
                 style={{ 
                   transform: facingMode === "user" ? "scaleX(-1)" : "none",
-                  filter: `brightness(${brightness}) contrast(1.2)`
+                  filter: `brightness(${brightness}) contrast(1.2)` // Apply brightness directly to video element
                 }}
               />
               
@@ -223,7 +225,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                   <FlipHorizontal className="h-4 w-4 text-white" />
                 </Button>
                 
-                {/* Brightness controls */}
+                {/* Enhanced Brightness controls with better visual feedback */}
                 <Button
                   variant="secondary"
                   size="icon"
@@ -241,6 +243,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                 >
                   <SunMedium className="h-4 w-4 text-white opacity-70" />
                 </Button>
+
+                {/* Show current brightness level indicator */}
+                <div className="bg-black/30 rounded-md px-2 py-1 text-xs text-white mt-1">
+                  <div className="h-1 bg-gray-600 rounded-full w-8">
+                    <div 
+                      className="h-1 bg-yellow-400 rounded-full" 
+                      style={{width: `${(brightness / 2.5) * 100}%`}}
+                    ></div>
+                  </div>
+                </div>
               </div>
 
               <div className="absolute bottom-8 w-full flex justify-center gap-4">
@@ -268,6 +280,13 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Added helper text for brightness */}
+              <div className="absolute bottom-36 left-0 right-0 flex justify-center">
+                <div className="bg-yellow-500/20 text-yellow-100 px-3 py-1 rounded-md text-xs">
+                  Ajuste o brilho se a imagem estiver escura
+                </div>
+              </div>
             </div>
             <canvas ref={canvasRef} className="hidden" />
           </>

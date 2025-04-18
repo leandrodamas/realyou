@@ -28,12 +28,21 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: true,
     backgroundColor: "#000000", // Fundo preto para melhorar visualização de câmera
     alwaysUseMediaLightMode: false, // Forçar modo escuro para a câmera
+    permissions: [
+      "android.permission.CAMERA"
+    ]
   },
   ios: {
     contentInset: "always",
     allowsLinkPreview: false,
     backgroundColor: "#000000", // Fundo preto para melhorar visualização de câmera
-    preferredContentMode: "mobile" // Modo otimizado para mobile
+    preferredContentMode: "mobile", // Modo otimizado para mobile
+    permissions: [
+      {
+        "name": "Camera",
+        "purpose": "Permitir acesso à câmera para reconhecimento facial"
+      }
+    ]
   }
 };
 
