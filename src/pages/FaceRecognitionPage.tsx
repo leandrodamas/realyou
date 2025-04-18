@@ -58,14 +58,6 @@ const FaceRecognitionPage: React.FC = () => {
                   4. Se a pessoa aceitar, vocês serão conectados
                 </p>
               </div>
-
-              <div>
-                <h4 className="font-medium">Privacidade:</h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  Seus dados faciais são criptografados e só utilizados para facilitar conexões.
-                  Você pode remover seus dados a qualquer momento.
-                </p>
-              </div>
             </div>
           </SheetContent>
         </Sheet>
@@ -106,35 +98,12 @@ const FaceRecognitionPage: React.FC = () => {
             <h3 className="text-lg font-bold mb-4 text-center">Como Funciona o Reconhecimento Facial</h3>
             
             <div className="space-y-4">
+              {/* Informações de como funciona */}
               <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="bg-purple-100 rounded-full p-2 text-purple-600">1</div>
                 <div>
                   <h4 className="font-medium">Capture sua foto</h4>
                   <p className="text-sm text-gray-600">Use sua câmera para tirar uma foto clara do seu rosto.</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
-                <div className="bg-blue-100 rounded-full p-2 text-blue-600">2</div>
-                <div>
-                  <h4 className="font-medium">Processamento seguro</h4>
-                  <p className="text-sm text-gray-600">Sua imagem é processada com tecnologia avançada de reconhecimento.</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
-                <div className="bg-purple-100 rounded-full p-2 text-purple-600">3</div>
-                <div>
-                  <h4 className="font-medium">Encontramos correspondências</h4>
-                  <p className="text-sm text-gray-600">Identificamos profissionais com interesses similares.</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
-                <div className="bg-blue-100 rounded-full p-2 text-blue-600">4</div>
-                <div>
-                  <h4 className="font-medium">Conexão mútua</h4>
-                  <p className="text-sm text-gray-600">Ambas as partes precisam aceitar para que ocorra a conexão.</p>
                 </div>
               </div>
             </div>

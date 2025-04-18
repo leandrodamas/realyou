@@ -22,8 +22,9 @@ const FaceCapture: React.FC = () => {
   };
 
   const handleCapture = () => {
-    // Simular captura de imagem
-    setCapturedImage("/placeholder.svg");
+    // Simular captura de imagem com um placeholder
+    const placeholderImage = "/placeholder.svg";
+    setCapturedImage(placeholderImage);
     setIsCameraActive(false);
     toast({
       title: "Imagem capturada com sucesso!",
@@ -37,8 +38,7 @@ const FaceCapture: React.FC = () => {
   };
 
   const handleSearch = () => {
-    // Em uma implementação real, isso enviaria a imagem para correspondência de reconhecimento facial
-    console.log("Searching for face matches...");
+    console.log("Buscando correspondências faciais...");
     toast({
       title: "Buscando correspondências...",
       description: "Procurando pessoas com reconhecimento facial.",
@@ -51,7 +51,7 @@ const FaceCapture: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center justify-center p-4 min-h-screen">
       <div className="w-full max-w-md">
         <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-500" />
@@ -79,7 +79,10 @@ const FaceCapture: React.FC = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-gray-500 mb-4">Tire uma foto para se conectar</p>
-              <Button onClick={handleStartCamera} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
+              <Button 
+                onClick={handleStartCamera} 
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+              >
                 Iniciar Câmera
               </Button>
             </div>
@@ -102,7 +105,6 @@ const FaceCapture: React.FC = () => {
         )}
       </div>
 
-      {/* Dialog para câmera */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -113,7 +115,10 @@ const FaceCapture: React.FC = () => {
               <>
                 <div className="text-white">Visualização da Câmera</div>
                 <div className="absolute bottom-4 w-full flex justify-center">
-                  <Button onClick={handleCapture} className="rounded-full bg-white text-black">
+                  <Button 
+                    onClick={handleCapture} 
+                    className="rounded-full bg-white text-black"
+                  >
                     <Camera className="h-6 w-6" />
                   </Button>
                 </div>
