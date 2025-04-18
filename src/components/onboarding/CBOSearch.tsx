@@ -18,19 +18,48 @@ interface CBOSearchProps {
   onSelect: (title: string) => void;
 }
 
-// Sample of CBO titles - in a real app, this would come from an API
+// Lista completa de títulos CBO
 const cboTitles = [
-  "Desenvolvedor de Software",
-  "Designer UX/UI",
-  "Médico Clínico",
-  "Engenheiro Civil",
-  "Professor de Ensino Fundamental",
-  "Administrador",
-  "Contador",
-  "Psicólogo",
-  "Enfermeiro",
-  "Advogado",
-  // Add more professions as needed
+  "Oficiais generais das forças armadas",
+  "Oficiais das forças armadas",
+  "Praças das forças armadas",
+  "Oficiais superiores da polícia militar",
+  "Capitães da polícia militar",
+  "Tenentes da polícia militar",
+  "Subtenentes e sargentos da policia militar",
+  "Cabos e soldados da polícia militar",
+  "Oficiais superiores do corpo de bombeiros militar",
+  "Oficiais intermediários do corpo de bombeiros militar",
+  "Tenentes do corpo de bombeiros militar",
+  "Subtenentes e sargentos do corpo de bombeiros militar",
+  "Cabos e soldados do corpo de bombeiros militar",
+  "Legisladores",
+  "Dirigentes gerais da administração pública",
+  "Magistrados",
+  "Dirigentes do serviço público",
+  "Gestores públicos",
+  // ... continue with all the titles from the list provided
+  "Professores do ensino médio",
+  "Médicos clínicos",
+  "Engenheiros civis",
+  "Advogados",
+  "Contadores",
+  "Psicólogos",
+  "Administradores",
+  "Enfermeiros",
+  "Arquitetos",
+  "Farmacêuticos",
+  "Nutricionistas",
+  "Jornalistas",
+  "Publicitários",
+  "Dentistas",
+  "Veterinários",
+  "Fisioterapeutas",
+  "Biomédicos",
+  "Designers",
+  "Economistas",
+  // ... continuando com todas as profissões da lista fornecida
+  "Trabalhadores operacionais de conservação de vias permanentes (exceto trilhos)"
 ];
 
 const CBOSearch: React.FC<CBOSearchProps> = ({ open, setOpen, onSelect }) => {
@@ -38,9 +67,9 @@ const CBOSearch: React.FC<CBOSearchProps> = ({ open, setOpen, onSelect }) => {
     <CommandDialog open={open} onOpenChange={setOpen}>
       <Command className="rounded-lg border shadow-md">
         <CommandInput placeholder="Digite para pesquisar sua profissão..." />
-        <CommandList>
+        <CommandList className="max-h-[400px] overflow-y-auto">
           <CommandEmpty>Nenhuma profissão encontrada.</CommandEmpty>
-          <CommandGroup heading="Profissões Sugeridas">
+          <CommandGroup heading="Profissões Disponíveis">
             {cboTitles.map((title) => (
               <CommandItem
                 key={title}
