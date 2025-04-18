@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Plus } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import type { Database } from '@/integrations/supabase/types';
 
@@ -25,7 +24,6 @@ const StoryCard: React.FC<StoryCardProps> = ({ story, isFirst, onCreateStory, on
 
   return (
     <motion.div 
-      key={`story-card-${story.id}`}
       className="flex flex-col items-center"
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.95 }}

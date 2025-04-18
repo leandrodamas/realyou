@@ -52,7 +52,7 @@ const Stories: React.FC = () => {
         <div className="flex overflow-x-auto hide-scrollbar pb-2 pl-4 space-x-4">
           {stories.map((story) => (
             <StoryCard
-              key={story.id}
+              key={`story-${story.id}`}
               story={story}
               isFirst={story.id === 1}
               onCreateStory={handleCreateStory}
@@ -65,7 +65,7 @@ const Stories: React.FC = () => {
       <AnimatePresence mode="wait">
         {selectedStory && (
           <StoryViewer 
-            key={`viewer-${selectedStory.id}`}
+            key={`story-viewer-${selectedStory.id}`}
             story={selectedStory}
             onClose={handleCloseStory}
           />

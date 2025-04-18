@@ -1,6 +1,6 @@
 
-import React, { useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import type { Database } from '@/integrations/supabase/types';
@@ -13,15 +13,22 @@ interface StoryViewerProps {
 }
 
 const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
-  // Add cleanup effect to properly handle unmounting
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Setup and cleanup effect
   useEffect(() => {
-    // Setup effect - could be used for analytics or other side effects
+    // Auto-close the story after 5 seconds
+    progressTimerRef.current = setTimeout(() => {
+      onClose();
+    }, 5000);
     
     // Cleanup function to ensure proper unmounting
     return () => {
-      // Any cleanup needed when component unmounts
+      if (progressTimerRef.current) {
+        clearTimeout(progressTimerRef.current);
+      }
     };
-  }, []);
+  }, [onClose]);
 
   return (
     <motion.div 
@@ -29,7 +36,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      key={`story-viewer-${story.id}`}
     >
       <div className="absolute top-0 left-0 right-0 h-1 flex justify-center py-4 z-10">
         <div className="w-[95%] bg-gray-700 rounded-full h-1 overflow-hidden">
@@ -38,7 +44,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ story, onClose }) => {
             initial={{ width: 0 }}
             animate={{ width: "100%" }}
             transition={{ duration: 5 }}
-            onAnimationComplete={onClose}
           />
         </div>
       </div>
