@@ -6,9 +6,9 @@ import { useLoading } from "@/hooks/useLoading";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
 import CameraPreview from "./components/CameraPreview";
-import IntroSection from "./IntroSection";
-import CapturedImageView from "./CapturedImageView";
-import CaptureCanvas from "./CaptureCanvas";
+import IntroSection from "./components/IntroSection";
+import CapturedImageView from "./components/CapturedImageView";
+import CaptureCanvas from "./components/CaptureCanvas";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
