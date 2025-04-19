@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 const FaceRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
   const [registrationStep, setRegistrationStep] = useState<number>(1);
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("");
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
@@ -21,10 +20,7 @@ const FaceRegistrationPage: React.FC = () => {
   // Cleanup resources when component unmounts
   useEffect(() => {
     return () => {
-      // Cleanup camera if active when navigating away
-      if (isCameraActive) {
-        setIsCameraActive(false);
-      }
+      // Any cleanup if needed
     };
   }, []);
 
@@ -84,22 +80,6 @@ const FaceRegistrationPage: React.FC = () => {
     navigate("/onboarding");
   };
 
-  const handleStartCamera = () => {
-    setIsCameraActive(true);
-  };
-
-  const handleCapture = () => {
-    // Mostly handled by the FaceCapture component now
-    // which will call setCapturedImage
-    // Just in case we need to do additional handling
-    setIsCameraActive(false);
-  };
-
-  const handleReset = () => {
-    setCapturedImage(null);
-    setIsCameraActive(false);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       <HeaderComponent />
@@ -112,12 +92,6 @@ const FaceRegistrationPage: React.FC = () => {
           setUsername={setUsername}
           capturedImage={capturedImage}
           setCapturedImage={setCapturedImage}
-          handleStartCamera={handleStartCamera}
-          handleCapture={handleCapture}
-          handleReset={handleReset}
-          isCameraActive={isCameraActive}
-          setIsCameraActive={setIsCameraActive}
-          key={`step-content-${registrationStep}-${isCameraActive ? 'camera-active' : 'camera-inactive'}`}
         />
 
         {/* Navigation buttons */}

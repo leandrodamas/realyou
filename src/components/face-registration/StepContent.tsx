@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import FaceCapture from "@/components/facial-recognition/FaceCapture";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import FaceSecurityPrivacy from "@/components/facial-recognition/FaceSecurityPrivacy";
+import FaceRegistration from "@/components/facial-recognition/FaceRegistration";
 
 interface StepContentProps {
   step: number;
@@ -14,11 +12,11 @@ interface StepContentProps {
   setUsername: (username: string) => void;
   capturedImage: string | null;
   setCapturedImage: (image: string | null) => void;
-  handleStartCamera: () => void;
-  handleCapture: () => void;
-  handleReset: () => void;
-  isCameraActive: boolean;
-  setIsCameraActive: (active: boolean) => void;
+  handleStartCamera?: () => void;
+  handleCapture?: () => void;
+  handleReset?: () => void;
+  isCameraActive?: boolean;
+  setIsCameraActive?: (active: boolean) => void;
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -27,14 +25,7 @@ const StepContent: React.FC<StepContentProps> = ({
   setUsername,
   capturedImage,
   setCapturedImage,
-  handleStartCamera,
-  handleCapture,
-  handleReset,
-  isCameraActive,
-  setIsCameraActive,
 }) => {
-  const [showAdvancedPrivacy, setShowAdvancedPrivacy] = useState(false);
-
   return (
     <>
       {step === 1 && (
@@ -53,14 +44,10 @@ const StepContent: React.FC<StepContentProps> = ({
           
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl blur opacity-30"></div>
-            <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
-              <FaceCapture 
-                onCaptureImage={setCapturedImage}
-                capturedImage={capturedImage}
-                setCapturedImage={setCapturedImage}
-                isCameraActive={isCameraActive}
-                setIsCameraActive={setIsCameraActive}
-                isRegistrationMode={true}
+            <div className="relative bg-white rounded-xl shadow-xl overflow-hidden p-4">
+              <FaceRegistration 
+                onImageCaptured={setCapturedImage}
+                defaultImage={capturedImage}
               />
             </div>
           </div>
@@ -146,21 +133,6 @@ const StepContent: React.FC<StepContentProps> = ({
           </div>
         </motion.div>
       )}
-
-      {/* Advanced Privacy Dialog */}
-      <Dialog open={showAdvancedPrivacy} onOpenChange={setShowAdvancedPrivacy}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Configurações Avançadas de Privacidade</DialogTitle>
-            <DialogDescription>
-              Configure as configurações detalhadas de privacidade dos seus dados biométricos
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <FaceSecurityPrivacy />
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
