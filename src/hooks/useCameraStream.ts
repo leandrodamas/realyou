@@ -90,7 +90,7 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
           video: {
             facingMode,
             width: { ideal: 1280 },
-            height: { ideal: the 720 }
+            height: { ideal: 720 }
           }
         };
 
