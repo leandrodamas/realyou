@@ -7,9 +7,9 @@ import FeatureCards from "@/components/home/FeatureCards";
 import WelcomeBanner from "@/components/home/WelcomeBanner";
 import CameraButton from "@/components/home/CameraButton";
 import Stories from "@/components/home/Stories";
+import ForYouHeader from "@/components/home/ForYouHeader";
 
 const Index: React.FC = () => {
-  // Efeito de rolagem suave quando o componente monta
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -34,10 +34,7 @@ const Index: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          <div className="px-4 mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">For You</h2>
-            <button className="text-sm font-medium text-purple-600">See All</button>
-          </div>
+          <ForYouHeader />
           <Feed />
         </motion.div>
       </div>
