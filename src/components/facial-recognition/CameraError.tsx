@@ -1,27 +1,46 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CameraOff, RefreshCw, Settings, AlertTriangle } from "lucide-react";
+import { CameraOff, RefreshCcw, Settings, AlertTriangle, X } from "lucide-react";
 
 interface CameraErrorProps {
   onReset: () => void;
   errorMessage?: string | null;
+  errorType?: string | null;
+  retryCount?: number;
 }
 
-const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
+const CameraError: React.FC<CameraErrorProps> = ({ 
+  onReset, 
+  errorMessage, 
+  errorType,
+  retryCount = 0
+}) => {
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isChrome = /Chrome/i.test(navigator.userAgent);
   const isFirefox = /Firefox/i.test(navigator.userAgent);
+  const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
   
   // Determine if it's a mobile device for better tips
   const isMobile = isAndroid || isIOS;
   
   // Check if error is related to camera being in use
-  const isCameraInUse = errorMessage && 
-    (errorMessage.includes("already in use") || 
-     errorMessage.includes("being used") ||
-     errorMessage.includes("NotReadableError"));
+  const isCameraInUse = errorType === "NotReadableError" || 
+    (errorMessage && (
+      errorMessage.includes("already in use") || 
+      errorMessage.includes("being used") ||
+      errorMessage.includes("NotReadableError") ||
+      errorMessage.includes("Could not start video source")
+    ));
+
+  // Check if max retries has been reached
+  const isMaxRetriesReached = retryCount >= 3;
+  
+  // Handle complete page refresh
+  const handleHardReset = () => {
+    window.location.reload();
+  };
   
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
@@ -32,6 +51,7 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
         {isCameraInUse ? (
           <p className="text-yellow-300 font-medium">
             A câmera está sendo usada por outro aplicativo
+            {retryCount > 0 && ` (Tentativa ${retryCount}/3)`}
           </p>
         ) : (
           <p>Verifique se você deu permissão para a câmera nas configurações do seu dispositivo</p>
@@ -47,10 +67,19 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
           </div>
         )}
         
-        {isMobile && (
-          <div className="flex items-center justify-center gap-2 bg-red-500/20 p-2 rounded-md">
-            <AlertTriangle className="h-4 w-4 text-red-300" />
+        {isMaxRetriesReached && (
+          <div className="flex items-center justify-center gap-2 bg-red-500/20 p-2 rounded-md mt-2">
+            <X className="h-4 w-4 text-red-300" />
             <p className="text-red-300 text-xs font-medium">
+              Várias tentativas de acesso falharam. Tente reiniciar a página ou o navegador.
+            </p>
+          </div>
+        )}
+        
+        {isMobile && (
+          <div className="flex items-center justify-center gap-2 bg-blue-500/20 p-2 rounded-md">
+            <AlertTriangle className="h-4 w-4 text-blue-300" />
+            <p className="text-blue-300 text-xs font-medium">
               Em dispositivos móveis, é necessário conceder permissão explícita para a câmera
             </p>
           </div>
@@ -68,6 +97,12 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
             No Firefox, clique no ícone de cadeado na barra de endereço para gerenciar permissões
           </p>
         )}
+        
+        {isSafari && (
+          <p className="text-xs text-white/60">
+            No Safari, acesse Preferências &gt; Websites &gt; Câmera para gerenciar permissões
+          </p>
+        )}
       </div>
       
       <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -76,9 +111,20 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
           className="bg-white/10 text-white border-white/20 hover:bg-white/20" 
           onClick={onReset}
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCcw className="h-4 w-4 mr-2" />
           Tentar novamente
         </Button>
+        
+        {isMaxRetriesReached && (
+          <Button 
+            variant="destructive" 
+            className="w-full"
+            onClick={handleHardReset}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Reiniciar página completa
+          </Button>
+        )}
         
         {isAndroid && (
           <a href="app-settings:" target="_blank" rel="noopener noreferrer">

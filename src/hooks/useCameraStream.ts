@@ -13,10 +13,12 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     hasCamera,
     isLoading,
     errorMessage,
+    errorType,
     lastErrorMessage,
     facingMode,
     setFacingMode,
-    isVideoReady
+    isVideoReady,
+    retryCountRef
   } = useCameraState(isCameraActive);
 
   // Initialize camera and check availability
@@ -52,7 +54,9 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     isLoading,
     errorMessage,
     lastErrorMessage,
+    errorType,
     isVideoReady,
-    faceDetected
+    faceDetected,
+    retryCount: retryCountRef.current
   };
 };

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCcw, FlipHorizontal, X } from "lucide-react";
@@ -17,10 +18,12 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     hasError,
     errorMessage,
     lastErrorMessage,
+    errorType,
     facingMode,
     switchCamera,
     faceDetected,
-    isVideoReady
+    isVideoReady,
+    retryCount
   } = useCameraStream(true);
 
   useEffect(() => {
@@ -73,12 +76,14 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     }
   };
   
-  // Show camera error
+  // Show camera error with enhanced props
   if (hasError) {
     return (
       <CameraError 
         onReset={() => window.location.reload()} 
         errorMessage={errorMessage || lastErrorMessage}
+        errorType={errorType}
+        retryCount={retryCount}
       />
     );
   }
@@ -95,6 +100,14 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
           Aguarde um momento para a câmera inicializar. 
           Se essa tela persistir por mais de 15 segundos, verifique as permissões da câmera.
         </p>
+        <Button 
+          variant="outline" 
+          onClick={onCancel}
+          className="mt-6 text-white border-white/30 hover:bg-white/10"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Cancelar
+        </Button>
       </div>
     );
   }

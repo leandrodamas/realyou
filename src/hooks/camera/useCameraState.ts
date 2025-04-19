@@ -9,10 +9,12 @@ export const useCameraState = (isCameraActive: boolean) => {
   const [hasCamera, setHasCamera] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [faceDetected, setFaceDetected] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const retryCountRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export const useCameraState = (isCameraActive: boolean) => {
     setHasError,
     errorMessage,
     setErrorMessage,
+    errorType,
+    setErrorType,
     lastErrorMessage,
     setLastErrorMessage,
     facingMode,
@@ -44,6 +48,7 @@ export const useCameraState = (isCameraActive: boolean) => {
     faceDetected,
     setFaceDetected,
     isVideoReady,
-    setIsVideoReady
+    setIsVideoReady,
+    retryCountRef
   };
 };

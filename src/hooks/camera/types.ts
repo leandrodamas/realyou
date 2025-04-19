@@ -19,11 +19,13 @@ export interface CameraAccessState {
 export interface CameraErrorState {
   hasError: boolean;
   lastErrorMessage: string | null;
+  errorType: string | null;
   retryCountRef: RefObject<number>;
   handleCameraError: (error: any) => void;
   resetError: () => void;
   incrementRetryCount: () => void;
   resetRetryCount: () => void;
+  hasReachedMaxRetries: () => boolean;
 }
 
 export interface CameraStreamState {
@@ -35,6 +37,8 @@ export interface CameraStreamState {
   isLoading: boolean;
   errorMessage: string | null;
   lastErrorMessage: string | null;  
+  errorType: string | null;
   isVideoReady: boolean;
   faceDetected: boolean;
+  retryCount: number;
 }
