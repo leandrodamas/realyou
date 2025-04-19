@@ -7,39 +7,34 @@ import { isMobileDevice, getDeviceConfidenceThreshold, getMatchConfidenceThresho
 
 export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchResult | null> => {
   try {
-    // Melhorar a imagem antes de processar
+    // Optimize image quality
     const enhancedImage = await enhanceImageBrightness(imageData);
-    
-    // Então redimensionar para dispositivos móveis
     const optimizedImageData = await resizeImageForMobile(enhancedImage);
     
     const sdk = await getFacialRecognitionSDK();
     
-    // Step 1: Enhanced face detection with stricter confidence threshold
+    // Profile photo analysis instead of real-time face detection
     const detectionResult = await sdk.detectFace(optimizedImageData);
     if (!detectionResult.success || !detectionResult.faceId) {
-      console.error("Face detection failed:", detectionResult.error);
-      toast.error(isMobileDevice() ? 
-        "Não foi possível detectar um rosto" : 
-        "Não foi possível detectar um rosto na imagem"
-      );
+      console.error("Profile photo analysis failed:", detectionResult.error);
+      toast.error("Não foi possível analisar a foto de perfil");
       return null;
     }
     
-    // Ajustar feedback baseado na confiança
+    // Quality feedback based on confidence
     const confidenceThreshold = getDeviceConfidenceThreshold();
     if (!isMobileDevice()) {
       if (detectionResult.confidence < confidenceThreshold) {
-        toast.error("Qualidade da imagem muito baixa. Tente em um ambiente mais iluminado.");
+        toast.error("Qualidade da imagem muito baixa. Use uma foto com melhor iluminação.");
         return null;
       } else if (detectionResult.confidence < 0.7) {
-        toast.warning("Qualidade da imagem não é ideal. Tente novamente com melhor iluminação.");
+        toast.warning("Qualidade da foto não é ideal. Considere usar uma foto com melhor iluminação.");
       } else if (detectionResult.confidence > 0.9) {
-        toast.success("Qualidade da imagem excelente!");
+        toast.success("Qualidade da foto excelente!");
       }
     }
     
-    // Step 2: Enhanced face matching
+    // Find matches based on profile photo
     const matchResult = await sdk.matchFace(detectionResult.faceId);
     
     if (!matchResult.success) {
@@ -47,7 +42,7 @@ export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchRe
       return null;
     }
     
-    // Filter matches with low confidence
+    // Filter matches by confidence threshold
     if (matchResult.matches.length > 0) {
       matchResult.matches = matchResult.matches
         .filter(match => match.confidence > getMatchConfidenceThreshold())
@@ -71,46 +66,45 @@ export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchRe
     
     return matchResult;
   } catch (error) {
-    console.error("Error in facial recognition process:", error);
-    toast.error("Erro no processo de reconhecimento facial");
+    console.error("Error in profile photo analysis:", error);
+    toast.error("Erro no processo de análise de foto");
     return null;
   }
 };
 
 export const registerFaceForUser = async (imageData: string, userId: string): Promise<boolean> => {
   try {
-    // Melhorar a imagem antes de processar
+    // Enhance image quality before processing
     const enhancedImage = await enhanceImageBrightness(imageData);
-    
-    // Então redimensionar para dispositivos móveis
     const optimizedImageData = await resizeImageForMobile(enhancedImage);
     
     const sdk = await getFacialRecognitionSDK();
     
-    // Verificar a qualidade da imagem com limiar ajustado para mobile
+    // Check image quality with adjusted threshold for mobile
     const qualityThreshold = isMobileDevice() ? 0.5 : 0.7;
     const detectionResult = await sdk.detectFace(optimizedImageData);
     
     if (!detectionResult.success || detectionResult.confidence < qualityThreshold) {
       if (detectionResult.confidence < qualityThreshold && detectionResult.confidence > 0.3) {
-        toast.warning("Qualidade da imagem não é ideal, mas tentaremos registrar");
+        toast.warning("Qualidade da foto não é ideal, mas tentaremos registrar");
       } else {
-        toast.error("A qualidade da imagem não é boa o suficiente para registro");
+        toast.error("A qualidade da foto não é boa o suficiente para registro");
         return false;
       }
     }
     
+    // Register the profile photo
     const success = await sdk.registerFace(optimizedImageData, userId);
     if (success) {
-      toast.success("Rosto registrado com sucesso!");
+      toast.success("Foto de perfil registrada com sucesso!");
     } else {
-      toast.error("Não foi possível registrar o rosto");
+      toast.error("Não foi possível registrar a foto de perfil");
     }
     
     return success;
   } catch (error) {
-    console.error("Error registering face:", error);
-    toast.error("Erro ao registrar rosto");
+    console.error("Error registering profile photo:", error);
+    toast.error("Erro ao registrar foto de perfil");
     return false;
   }
 };

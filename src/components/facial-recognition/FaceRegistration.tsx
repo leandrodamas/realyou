@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import FaceCamera from "./FaceCamera";
-import CapturedImage from "./CapturedImage";
+import ProfileImageUpload from "@/components/onboarding/ProfileImageUpload";
 
 interface FaceRegistrationProps {
   onImageCaptured: (imageData: string) => void;
@@ -15,96 +14,53 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   onImageCaptured,
   defaultImage = null
 }) => {
-  const [showCamera, setShowCamera] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(defaultImage);
-  const [cameraKey, setCameraKey] = useState<number>(0); // Key for forcing camera remount
+  const [profileImage, setProfileImage] = useState<string | null>(defaultImage);
   
-  // Check for existing camera permissions
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.permissions) {
-      navigator.permissions.query({ name: 'camera' as PermissionName })
-        .then(permissionStatus => {
-          console.log("Camera permission status:", permissionStatus.state);
-        })
-        .catch(error => {
-          console.log("Error checking camera permission:", error);
-        });
-    }
-  }, []);
-  
-  const handleCapture = (imageData: string) => {
-    setCapturedImage(imageData);
-    setShowCamera(false);
+  const handleImageChange = (imageData: string) => {
+    setProfileImage(imageData);
+    onImageCaptured(imageData);
   };
   
-  const handleConfirm = () => {
-    if (capturedImage) {
-      onImageCaptured(capturedImage);
-      toast.success("Foto salva com sucesso");
-    }
-  };
-  
-  const handleRetake = () => {
-    setShowCamera(true);
-  };
-  
-  const handleRestartCamera = () => {
-    setCameraKey(prevKey => prevKey + 1);
-    toast.info("Reiniciando câmera...");
-  };
-  
-  if (showCamera) {
-    return (
-      <div className="relative">
-        <FaceCamera
-          key={cameraKey}
-          onCapture={handleCapture}
-          onCancel={() => setShowCamera(false)}
-        />
-        <div className="absolute top-2 right-2">
+  // Initial state - prompt to upload/take photo
+  return (
+    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg min-h-[300px]">
+      {profileImage ? (
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+            <img 
+              src={profileImage} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           <Button 
-            variant="outline" 
-            size="sm"
-            className="bg-black/30 text-white border-white/30 hover:bg-black/50"
-            onClick={handleRestartCamera}
+            variant="outline"
+            onClick={() => setProfileImage(null)}
+            className="text-sm"
           >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            Reiniciar
+            <RefreshCw className="h-3 w-3 mr-2" />
+            Escolher outra foto
           </Button>
         </div>
-      </div>
-    );
-  }
-  
-  if (capturedImage) {
-    return (
-      <CapturedImage
-        imageData={capturedImage}
-        onRetake={handleRetake}
-        onConfirm={handleConfirm}
-      />
-    );
-  }
-  
-  // Initial state - prompt to take photo
-  return (
-    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg h-[400px]">
-      <div className="text-gray-400 mb-4">
-        <Camera size={48} />
-      </div>
-      <h3 className="text-lg font-medium mb-2">Foto de Perfil</h3>
-      <p className="text-gray-500 text-center mb-4">
-        Capture uma foto clara do seu rosto para seu perfil
-      </p>
-      <div className="space-y-2">
-        <Button onClick={() => setShowCamera(true)} className="w-full">
-          Iniciar Câmera
-        </Button>
-        
-        <p className="text-xs text-gray-400 text-center mt-2">
-          Esta foto será usada para seu perfil e para que outros usuários possam te encontrar
-        </p>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="mx-auto flex justify-center text-gray-400 mb-4">
+              <Camera size={48} />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Foto de Perfil</h3>
+            <p className="text-gray-500 text-center mb-4">
+              Adicione uma foto clara para seu perfil
+            </p>
+          </div>
+          
+          <ProfileImageUpload 
+            profileImage={profileImage}
+            fullName=""
+            onChange={handleImageChange}
+          />
+        </div>
+      )}
     </div>
   );
 };

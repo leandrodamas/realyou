@@ -21,6 +21,12 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Image size validation (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("A imagem deve ter menos de 5MB");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageDataUrl = reader.result as string;

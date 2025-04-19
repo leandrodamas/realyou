@@ -24,7 +24,7 @@ const SearchButton: React.FC<SearchButtonProps> = ({ isSearching, onClick }) => 
         ) : (
           <>
             <UserPlus className="mr-2 h-4 w-4" />
-            Encontrar Profissionais com Reconhecimento Facial
+            Buscar Usuários por Foto de Perfil
           </>
         )}
       </Button>

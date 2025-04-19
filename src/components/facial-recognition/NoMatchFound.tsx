@@ -20,8 +20,8 @@ const NoMatchFound: React.FC<NoMatchFoundProps> = ({ onReset }) => {
         <h3 className="font-medium">Nenhuma correspondência encontrada</h3>
       </div>
       <p className="text-sm text-orange-600 mt-2">
-        Não encontramos ninguém com esse rosto em nossa base de dados.
-        Tente novamente com iluminação melhor ou ângulo diferente.
+        Não encontramos ninguém com essa foto em nossa base de dados.
+        Tente novamente com outra foto ou ângulo diferente.
       </p>
       <Button 
         variant="outline" 

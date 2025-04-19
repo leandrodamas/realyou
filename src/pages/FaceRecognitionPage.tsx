@@ -19,7 +19,7 @@ const FaceRecognitionPage: React.FC = () => {
         <Link to="/" className="mr-4 rounded-full hover:bg-gray-100 p-2 transition-colors">
           <ArrowLeft className="h-5 w-5 text-gray-700" />
         </Link>
-        <h1 className="text-xl font-medium bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Face Recognition</h1>
+        <h1 className="text-xl font-medium bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Busca por Foto</h1>
         <Button
           variant="ghost"
           size="sm"
@@ -67,28 +67,28 @@ const FaceRecognitionPage: React.FC = () => {
           
           <TabsContent value="info" className="focus:outline-none">
             <div className="bg-white rounded-xl p-6 shadow-md space-y-4">
-              <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Como usar o Reconhecimento Facial</h3>
+              <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Como usar a Busca por Foto</h3>
               
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
                     <span className="text-purple-600 font-medium">1</span>
                   </div>
-                  <p className="text-sm text-gray-600">Posicione seu rosto na frente da câmera e garanta boa iluminação</p>
+                  <p className="text-sm text-gray-600">Tire uma foto clara em um ambiente bem iluminado</p>
                 </div>
                 
                 <div className="flex gap-3">
                   <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
                     <span className="text-purple-600 font-medium">2</span>
                   </div>
-                  <p className="text-sm text-gray-600">Capture uma foto clara do seu rosto pressionando o botão da câmera</p>
+                  <p className="text-sm text-gray-600">Utilize a foto para procurar outros usuários</p>
                 </div>
                 
                 <div className="flex gap-3">
                   <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
                     <span className="text-purple-600 font-medium">3</span>
                   </div>
-                  <p className="text-sm text-gray-600">O app buscará correspondências com outros usuários do RealYou</p>
+                  <p className="text-sm text-gray-600">O app analisará a foto e buscará correspondências com usuários do RealYou</p>
                 </div>
                 
                 <div className="flex gap-3">

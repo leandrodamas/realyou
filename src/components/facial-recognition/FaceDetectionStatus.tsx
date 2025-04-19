@@ -22,7 +22,7 @@ const FaceDetectionStatus: React.FC<FaceDetectionStatusProps> = ({ faceDetected 
         ) : (
           <>
             <Camera className="h-5 w-5 animate-pulse" />
-            <span className="font-medium">Posicione seu rosto</span>
+            <span className="font-medium">Posicione para foto</span>
           </>
         )}
       </div>

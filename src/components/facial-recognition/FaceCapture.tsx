@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import FaceCaptureCamera from "./FaceCaptureCamera";
@@ -26,10 +26,9 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   setIsCameraActive: setExternalIsCameraActive,
   isRegistrationMode = false,
 }) => {
-  const [internalIsCameraActive, setInternalIsCameraActive] = React.useState(false);
-  const [internalCapturedImage, setInternalCapturedImage] = React.useState<string | null>(null);
-  const [showScheduleDialog, setShowScheduleDialog] = React.useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [internalIsCameraActive, setInternalIsCameraActive] = useState(false);
+  const [internalCapturedImage, setInternalCapturedImage] = useState<string | null>(null);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 
   // Determine which state to use (external if provided, otherwise internal)
   const isCameraActive = externalIsCameraActive !== undefined ? externalIsCameraActive : internalIsCameraActive;
@@ -49,7 +48,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     resetState
   } = useFacialRecognition();
 
-  // Garantir limpeza correta quando componente é desmontado
+  // Cleanup on component unmount
   useEffect(() => {
     return () => {
       if (isCameraActive) {
@@ -64,7 +63,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     if (!capturedImage && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setCapturedImage) {
-        console.log("Recuperando imagem do localStorage");
+        console.log("Retrieving image from localStorage");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
       }
@@ -83,7 +82,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
         
-        // Limpar após uso
+        // Clear after use
         localStorage.removeItem('tempCapturedImage');
       }
     }
@@ -96,7 +95,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     setIsCameraActive(false);
     setNoMatchFound(false);
     
-    // Limpar imagens armazenadas
+    // Clear stored images
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tempCapturedImage');
     }
@@ -109,7 +108,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
           <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-              Encontre conexões com fotos
+              Encontre conexões com fotos de perfil
             </span>
             <Sparkles className="h-5 w-5 text-blue-500" />
           </h2>
@@ -122,8 +121,6 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
           onCapture={handleCapture}
           onReset={handleReset}
         />
-
-        <canvas ref={canvasRef} className="hidden" />
 
         {capturedImage && !matchedPerson && !noMatchFound && !isRegistrationMode && (
           <SearchButton 

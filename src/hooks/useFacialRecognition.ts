@@ -2,35 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
-
-// Simulação da busca por correspondências usando fotos
-// Em um ambiente real, isto seria substituído por chamadas para uma API de comparação de fotos
-const mockPhotoSearch = async (photoData: string): Promise<MatchedPerson | null> => {
-  // Simular processamento
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // 70% de chance de encontrar uma correspondência para demonstração
-  const matchFound = Math.random() > 0.3;
-  
-  if (matchFound) {
-    return {
-      name: "Alex Johnson",
-      profession: "Terapeuta",
-      avatar: photoData, // Usar a foto capturada
-      schedule: [
-        { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-        { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-        { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-        { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-        { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
-        { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
-        { day: "Domingo", slots: [], active: false }
-      ]
-    };
-  }
-  
-  return null;
-};
+import { detectAndMatchFace } from "@/services/facialRecognitionService";
 
 export const useFacialRecognition = () => {
   const [isSearching, setIsSearching] = useState(false);
@@ -50,9 +22,9 @@ export const useFacialRecognition = () => {
     };
   }, []);
 
-  const handleSearch = async (capturedImage: string) => {
-    if (!capturedImage) {
-      toast.error("Nenhuma imagem capturada para análise");
+  const handleSearch = async (profileImage: string) => {
+    if (!profileImage) {
+      toast.error("Nenhuma imagem para análise");
       return;
     }
     
@@ -63,18 +35,36 @@ export const useFacialRecognition = () => {
     const currentAttempt = ++searchAttemptRef.current;
     
     try {
-      toast.info("Analisando foto...");
+      toast.info("Analisando foto de perfil...");
       
-      // Simulação da busca por correspondência baseada em foto
-      const match = await mockPhotoSearch(capturedImage);
+      // Simulate profile photo analysis with a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Verificar se esta é ainda a última tentativa de pesquisa
+      // Verify this is still the latest search attempt
       if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
         return;
       }
       
-      if (match) {
-        setMatchedPerson(match);
+      // 70% chance to find a match for demonstration
+      const matchFound = Math.random() > 0.3;
+      
+      if (matchFound) {
+        const person: MatchedPerson = {
+          name: "Alex Johnson",
+          profession: "Terapeuta",
+          avatar: profileImage, // Use the uploaded profile image
+          schedule: [
+            { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+            { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+            { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+            { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+            { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
+            { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
+            { day: "Domingo", slots: [], active: false }
+          ]
+        };
+        
+        setMatchedPerson(person);
         toast.success("Correspondência encontrada com sucesso!");
       } else {
         setNoMatchFound(true);
