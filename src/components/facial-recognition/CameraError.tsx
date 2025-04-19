@@ -5,14 +5,23 @@ import { CameraOff, RefreshCw, Settings, AlertTriangle } from "lucide-react";
 
 interface CameraErrorProps {
   onReset: () => void;
+  errorMessage?: string | null;
 }
 
-const CameraError: React.FC<CameraErrorProps> = ({ onReset }) => {
+const CameraError: React.FC<CameraErrorProps> = ({ onReset, errorMessage }) => {
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isChrome = /Chrome/i.test(navigator.userAgent);
+  const isFirefox = /Firefox/i.test(navigator.userAgent);
   
-  // Determinar se é um dispositivo mobile para melhorar dicas
+  // Determine if it's a mobile device for better tips
   const isMobile = isAndroid || isIOS;
+  
+  // Check if error is related to camera being in use
+  const isCameraInUse = errorMessage && 
+    (errorMessage.includes("already in use") || 
+     errorMessage.includes("being used") ||
+     errorMessage.includes("NotReadableError"));
   
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
@@ -20,7 +29,23 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset }) => {
       <h3 className="text-white font-medium mb-1">Câmera não disponível</h3>
       
       <div className="text-white/70 text-sm mt-1 text-center px-6 mb-6 space-y-2">
-        <p>Verifique se você deu permissão para a câmera nas configurações do seu dispositivo</p>
+        {isCameraInUse ? (
+          <p className="text-yellow-300 font-medium">
+            A câmera está sendo usada por outro aplicativo
+          </p>
+        ) : (
+          <p>Verifique se você deu permissão para a câmera nas configurações do seu dispositivo</p>
+        )}
+        
+        {/* Specific instructions based on error type */}
+        {isCameraInUse && (
+          <div className="flex items-center justify-center gap-2 bg-yellow-500/20 p-2 rounded-md">
+            <AlertTriangle className="h-4 w-4 text-yellow-300" />
+            <p className="text-yellow-300 text-xs font-medium">
+              Feche outros aplicativos ou guias do navegador que possam estar usando a câmera
+            </p>
+          </div>
+        )}
         
         {isMobile && (
           <div className="flex items-center justify-center gap-2 bg-red-500/20 p-2 rounded-md">
@@ -29,6 +54,19 @@ const CameraError: React.FC<CameraErrorProps> = ({ onReset }) => {
               Em dispositivos móveis, é necessário conceder permissão explícita para a câmera
             </p>
           </div>
+        )}
+        
+        {/* Browser-specific tips */}
+        {isChrome && (
+          <p className="text-xs text-white/60">
+            No Chrome, verifique o ícone da câmera na barra de endereço para gerenciar permissões
+          </p>
+        )}
+        
+        {isFirefox && (
+          <p className="text-xs text-white/60">
+            No Firefox, clique no ícone de cadeado na barra de endereço para gerenciar permissões
+          </p>
         )}
       </div>
       

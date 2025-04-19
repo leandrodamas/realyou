@@ -22,6 +22,8 @@ export interface CameraErrorState {
   retryCountRef: RefObject<number>;
   handleCameraError: (error: any) => void;
   resetError: () => void;
+  incrementRetryCount: () => void;
+  resetRetryCount: () => void;
 }
 
 export interface CameraStreamState {

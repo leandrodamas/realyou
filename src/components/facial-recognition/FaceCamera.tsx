@@ -1,8 +1,8 @@
-
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCcw, FlipHorizontal, X } from "lucide-react";
 import { useCameraStream } from "@/hooks/useCameraStream";
+import CameraError from "./CameraError";
 
 interface FaceCameraProps {
   onCapture: (imageData: string) => void;
@@ -16,6 +16,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     hasCamera,
     hasError,
     errorMessage,
+    lastErrorMessage,
     facingMode,
     switchCamera,
     faceDetected,
@@ -23,8 +24,8 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
   } = useCameraStream(true);
 
   useEffect(() => {
-    // Forçar uma atualização do componente após 2 segundos
-    // Isso ajuda alguns navegadores que precisam de uma segunda tentativa para iniciar a câmera
+    // Force a component update after 2 seconds
+    // This helps some browsers that need a second attempt to start the camera
     const forceRefreshTimeout = setTimeout(() => {
       const videoElement = videoRef.current;
       if (videoElement && videoElement.paused && videoElement.srcObject) {
@@ -45,7 +46,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       const video = videoRef.current;
       const canvas = document.createElement('canvas');
       
-      // Use as dimensões do vídeo ou valores padrão
+      // Use video dimensions or default values
       const width = video.videoWidth || 640;
       const height = video.videoHeight || 480;
       
@@ -55,16 +56,16 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       const context = canvas.getContext('2d');
       if (!context) return;
       
-      // Espelhar a imagem se estiver usando a câmera frontal
+      // Mirror the image if using the front camera
       if (facingMode === "user") {
         context.translate(width, 0);
         context.scale(-1, 1);
       }
       
-      // Capturar frame do vídeo
+      // Capture frame from video
       context.drawImage(video, 0, 0, width, height);
       
-      // Converter para URL de dados
+      // Convert to data URL
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
       onCapture(imageData);
     } catch (error) {
@@ -72,29 +73,17 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     }
   };
   
-  // Mostrar erro da câmera
+  // Show camera error
   if (hasError) {
     return (
-      <div className="flex flex-col items-center justify-center bg-gray-900 text-white rounded-lg p-6 h-[400px]">
-        <div className="text-red-400 mb-3">
-          <X size={48} />
-        </div>
-        <h3 className="text-xl font-bold mb-2">Erro na câmera</h3>
-        <p className="text-gray-300 text-center mb-4">{errorMessage || "Não foi possível acessar a câmera"}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button onClick={() => window.location.reload()}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Tentar novamente
-          </Button>
-        </div>
-      </div>
+      <CameraError 
+        onReset={() => window.location.reload()} 
+        errorMessage={errorMessage || lastErrorMessage}
+      />
     );
   }
   
-  // Mostrar estado de carregamento mas com um timer para evitar ficar preso
+  // Show loading state but with a timer to avoid getting stuck
   if (isLoading || !isVideoReady) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-900 rounded-lg p-6 h-[400px]">
@@ -110,7 +99,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     );
   }
   
-  // Nenhuma câmera encontrada
+  // No camera found
   if (!hasCamera) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-900 text-white rounded-lg p-6 h-[400px]">
@@ -124,7 +113,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
   
   return (
     <div className="relative bg-black rounded-lg overflow-hidden h-[400px]">
-      {/* Elemento de vídeo com estilização correta */}
+      {/* Video element with correct styling */}
       <video 
         ref={videoRef}
         className="h-full w-full object-cover"
@@ -136,21 +125,21 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         muted
       />
       
-      {/* Indicador de detecção facial */}
+      {/* Face detection indicator */}
       <div className="absolute inset-0 pointer-events-none">
         <div className={`border-4 rounded-full w-64 h-64 mx-auto mt-12 transition-all ${
           faceDetected ? "border-green-500 scale-105" : "border-white/30"
         }`} />
       </div>
       
-      {/* Mensagem de status */}
+      {/* Status message */}
       <div className="absolute bottom-24 left-0 right-0 flex justify-center">
         <div className="bg-black/60 text-white rounded-full px-4 py-2">
           {faceDetected ? "Rosto detectado! Clique para capturar" : "Posicione seu rosto no centro"}
         </div>
       </div>
       
-      {/* Controles */}
+      {/* Controls */}
       <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-between">
         <Button variant="ghost" className="text-white" onClick={onCancel}>
           Cancelar
@@ -169,7 +158,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         </Button>
       </div>
 
-      {/* Status de Debug - Remover em produção */}
+      {/* Debug Status - Remove in production */}
       <div className="absolute top-2 left-2 bg-black/50 text-white text-xs p-1 rounded">
         {videoRef.current ? 
           `Video: ${videoRef.current.readyState}/4 ${videoRef.current.paused ? '(pausado)' : '(tocando)'}` : 
