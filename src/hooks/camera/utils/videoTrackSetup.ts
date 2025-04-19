@@ -3,10 +3,11 @@ import { AdvancedMediaTrackConstraint } from '../types/cameraConstraints';
 
 export const setupVideoTrack = async (track: MediaStreamTrack): Promise<void> => {
   try {
+    // Use type assertion to tell TypeScript this is valid
     await track.applyConstraints({
       advanced: [
-        { autoFocus: true } as AdvancedMediaTrackConstraint,
-        { exposureMode: "continuous" } as AdvancedMediaTrackConstraint
+        { autoFocus: true } as unknown as MediaTrackConstraintSet,
+        { exposureMode: "continuous" } as unknown as MediaTrackConstraintSet
       ]
     });
   } catch (e) {

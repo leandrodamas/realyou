@@ -1,7 +1,7 @@
 
 interface PlatformConfig {
   audio: false;
-  video: MediaTrackConstraints;
+  video: MediaTrackConstraints | boolean;
 }
 
 const createIOSConfig = (facingMode: string = 'user'): PlatformConfig => ({
@@ -23,7 +23,10 @@ const createAndroidConfig = (facingMode: string = 'user', isFirefox: boolean = f
 });
 
 export const getPlatformConfigurations = (baseConstraints: MediaStreamConstraints): PlatformConfig[] => {
-  const facingMode = (baseConstraints.video as MediaTrackConstraints)?.facingMode || 'user';
+  const facingMode = typeof baseConstraints.video === 'object' && baseConstraints.video !== null 
+    ? (baseConstraints.video as MediaTrackConstraints).facingMode as string || 'user'
+    : 'user';
+  
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isFirefox = /Firefox/i.test(navigator.userAgent);
@@ -64,11 +67,11 @@ export const getPlatformConfigurations = (baseConstraints: MediaStreamConstraint
   ];
 
   if (isIOS) {
-    configs.unshift(createIOSConfig(facingMode));
+    configs.unshift(createIOSConfig(facingMode as string));
   } else if (isAndroid) {
-    configs.unshift(createAndroidConfig(facingMode, isFirefox));
+    configs.unshift(createAndroidConfig(facingMode as string, isFirefox));
     if (isFirefox) {
-      configs.unshift(createAndroidConfig(facingMode, true));
+      configs.unshift(createAndroidConfig(facingMode as string, true));
     }
   }
 

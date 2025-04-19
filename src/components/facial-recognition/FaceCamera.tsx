@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
+import { Button } from "@/components/ui/button";
 import CameraError from "./CameraError";
 import CameraPreview from "./components/CameraPreview";
 
