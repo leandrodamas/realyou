@@ -1,139 +1,37 @@
 
 import { RefObject } from "react";
 import { cleanupCameraStream } from "../../utils/cameraUtils";
-
-// Extended type definition for the advanced camera constraints
-interface AdvancedMediaTrackConstraint {
-  // Standard properties plus custom ones
-  autoFocus?: boolean;
-  exposureMode?: string;
-  [key: string]: any; // Allow any other properties for flexibility
-}
+import { getPlatformConfigurations } from "./platformConfigurations";
+import { setupVideoTrack, logTrackDetails } from "./videoTrackSetup";
+import { StreamInitializerOptions } from "../types/cameraConstraints";
 
 export const initializeVideoStream = async (
   constraints: MediaStreamConstraints,
   videoRef: RefObject<HTMLVideoElement>,
   mountedRef: RefObject<boolean>
 ): Promise<MediaStream | null> => {
-  console.log("Inicializando câmera com configurações:", JSON.stringify(constraints));
+  console.log("Initializing camera with settings:", JSON.stringify(constraints));
   
-  // Force use of exact deviceId if available
   if ((constraints.video as MediaTrackConstraints)?.deviceId) {
-    console.log("Usando deviceId específico para câmera");
+    console.log("Using specific deviceId for camera");
   }
   
-  // Define configurações para tentativas múltiplas
-  const attemptConfigurations = [
-    // Configuração 1: configurações fornecidas pelo usuário
-    constraints,
-    
-    // Configuração 2: configurações simplificadas mas mantendo o facingMode
-    {
-      audio: false,
-      video: {
-        facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user'
-      }
-    },
-    
-    // Configuração 3: configuração básica com menor resolução
-    {
-      audio: false,
-      video: {
-        facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user',
-        width: { ideal: 640 },
-        height: { ideal: 480 }
-      }
-    },
-    
-    // Configuração 4: resolução muito baixa para dispositivos com limitações
-    {
-      audio: false,
-      video: {
-        facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user',
-        width: { ideal: 320 },
-        height: { ideal: 240 }
-      }
-    },
-    
-    // Configuração 5: tenta qualquer câmera disponível
-    {
-      audio: false,
-      video: {}
-    },
-    
-    // Configuração 6: última tentativa - configurações mínimas
-    {
-      audio: false,
-      video: true
-    }
-  ];
+  const attemptConfigurations = getPlatformConfigurations(constraints);
   
   try {
-    // Primeiro, limpar qualquer stream anterior
     if (videoRef.current && videoRef.current.srcObject) {
       const oldStream = videoRef.current.srcObject as MediaStream;
       cleanupCameraStream(oldStream, videoRef.current);
     }
 
-    // Detectar o tipo de dispositivo para configurações específicas
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isMobile = isIOS || isAndroid;
-    const isFirefox = /Firefox/i.test(navigator.userAgent);
-    const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
-    const isChrome = /Chrome/i.test(navigator.userAgent);
-    
-    // Adicionar configurações específicas para navegadores problemáticos
-    if (isIOS && isSafari) {
-      // iOS Safari tem problemas específicos
-      attemptConfigurations.unshift({
-        audio: false,
-        video: {
-          facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user',
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 }
-        }
-      });
-    } else if (isAndroid) {
-      // Android tem necessidades específicas
-      attemptConfigurations.unshift({
-        audio: false,
-        video: {
-          facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user',
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 }
-        }
-      });
-      
-      if (isFirefox) {
-        // Firefox no Android tem problemas específicos
-        attemptConfigurations.unshift({
-          audio: false,
-          video: {
-            facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user',
-            width: { ideal: 320, max: 640 },
-            height: { ideal: 240, max: 480 }
-          }
-        });
-      }
-    }
-    
-    // Forçar permissões em contexto de toque em dispositivos móveis
-    if (isMobile) {
-      // Em iOS/Android, recomenda-se solicitar permissão após um toque do usuário
-      // Este código será executado pelo nosso fluxo que garante um toque antes
-      console.log("Solicitando permissões em contexto de interação em dispositivo móvel");
-    }
-    
-    // Tentar obter lista de dispositivos antes (pode ajudar a "acordar" as APIs)
+    // Try to get device list first
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log(`Dispositivos de vídeo disponíveis: ${videoDevices.length}`);
+      console.log(`Available video devices: ${videoDevices.length}`);
       
-      // Tentar usar o dispositivo correto se houver mais de um
       if (videoDevices.length > 0 && !(constraints.video as MediaTrackConstraints)?.deviceId) {
-        console.log("Adicionando configuração com deviceId específico");
+        console.log("Adding configuration with specific deviceId");
         const preferredDevice = videoDevices[0].deviceId;
         attemptConfigurations.unshift({
           audio: false,
@@ -144,18 +42,18 @@ export const initializeVideoStream = async (
         });
       }
     } catch (err) {
-      console.warn("Erro ao enumerar dispositivos:", err);
+      console.warn("Error enumerating devices:", err);
     }
 
-    // Tentar cada configuração até uma funcionar
     let lastError = null;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
     for (let i = 0; i < attemptConfigurations.length; i++) {
       const config = attemptConfigurations[i];
       
       try {
-        console.log(`Tentativa ${i + 1}/${attemptConfigurations.length} com configuração:`, JSON.stringify(config));
+        console.log(`Attempt ${i + 1}/${attemptConfigurations.length} with configuration:`, JSON.stringify(config));
         
-        // Para dispositivos móveis, adicionar pequeno atraso pode ajudar
         if (isMobile && i > 0) {
           await new Promise(r => setTimeout(r, 300));
         }
@@ -163,74 +61,36 @@ export const initializeVideoStream = async (
         const stream = await navigator.mediaDevices.getUserMedia(config);
         
         if (!mountedRef.current) {
-          console.log("Componente desmontado, limpando stream");
+          console.log("Component unmounted, cleaning stream");
           stream.getTracks().forEach(track => track.stop());
           return null;
         }
         
-        console.log(`Stream obtido com sucesso na tentativa ${i + 1}`);
+        console.log(`Stream obtained successfully on attempt ${i + 1}`);
         const videoTracks = stream.getVideoTracks();
         
         if (videoTracks.length > 0) {
-          console.log("Detalhes da track de vídeo:", {
-            label: videoTracks[0].label,
-            id: videoTracks[0].id,
-            enabled: videoTracks[0].enabled,
-            readyState: videoTracks[0].readyState
-          });
-          
-          // Tentar aplicar restrições adicionais que podem ajudar em alguns dispositivos
-          try {
-            // Cast para any para contornar as limitações do TypeScript
-            // com propriedades avançadas de constraints que variam entre navegadores
-            await videoTracks[0].applyConstraints({
-              advanced: [
-                { 
-                  // A tipagem do TypeScript não inclui estas propriedades avançadas
-                  // mas elas são suportadas por muitos navegadores
-                  autoFocus: true 
-                } as AdvancedMediaTrackConstraint,
-                { 
-                  exposureMode: "continuous" 
-                } as AdvancedMediaTrackConstraint
-              ]
-            });
-          } catch (e) {
-            // Ignora erros em applyConstraints pois nem todos dispositivos suportam
-            console.log("Constraints adicionais não suportadas:", e);
-          }
-        }
-        
-        // For iOS, add an extra debugging step
-        if (isIOS) {
-          const tracks = stream.getVideoTracks();
-          console.log(`iOS camera tracks:`, tracks.length, tracks.map(t => t.label));
-          
-          // Force a small delay to let iOS camera initialize properly
-          await new Promise(r => setTimeout(r, 500));
+          logTrackDetails(videoTracks[0]);
+          await setupVideoTrack(videoTracks[0]);
         }
         
         return stream;
       } catch (error) {
-        console.log(`Erro na tentativa ${i + 1}:`, error);
+        console.log(`Error on attempt ${i + 1}:`, error);
         lastError = error;
-        
-        // Wait a moment before trying the next configuration
         await new Promise(r => setTimeout(r, 300));
         
-        // Check if component is still mounted
         if (!mountedRef.current) {
-          console.log("Componente desmontado durante tentativas");
+          console.log("Component unmounted during attempts");
           return null;
         }
       }
     }
     
-    // Se chegou até aqui, todas as tentativas falharam
-    console.error("Todas as tentativas de acessar a câmera falharam. Último erro:", lastError);
+    console.error("All attempts to access camera failed. Last error:", lastError);
     throw lastError || new Error("Failed to access camera after multiple attempts");
   } catch (error: any) {
-    console.error("Erro ao obter mídia do usuário:", error);
+    console.error("Error getting user media:", error);
     throw error;
   }
 };
