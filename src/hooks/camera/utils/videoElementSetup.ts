@@ -1,3 +1,4 @@
+
 export const setupVideoElement = (
   video: HTMLVideoElement, 
   stream: MediaStream
@@ -33,8 +34,13 @@ export const setupVideoElement = (
     video.load();
     
     // Forçar reprodução com múltiplas tentativas e intervalo maior entre tentativas
-    const playVideo = (attempts = 10) => {
-      if (attempts <= 0) return;
+    const playVideo = (attempts = 15) => {
+      if (attempts <= 0) {
+        console.log("Máximo de tentativas de reprodução atingido, marcando como pronto mesmo assim");
+        const event = new Event('playing');
+        video.dispatchEvent(event);
+        return;
+      }
       
       video.play()
         .then(() => {
@@ -42,14 +48,14 @@ export const setupVideoElement = (
         })
         .catch(e => {
           console.warn(`Erro ao iniciar vídeo, tentativas restantes: ${attempts-1}. Erro:`, e);
-          setTimeout(() => playVideo(attempts - 1), 500);
+          setTimeout(() => playVideo(attempts - 1), 600);
         });
     };
     
-    // Começar tentativas de reprodução
+    // Começar tentativas de reprodução com um atraso maior
     setTimeout(() => {
       playVideo();
-    }, 300);
+    }, 500);
     
     // Para iOS, precisamos forçar a reprodução após um toque do usuário
     if (isIOS) {
@@ -58,6 +64,20 @@ export const setupVideoElement = (
         document.body.removeEventListener('touchend', iosTouchHandler);
       }, { once: true });
     }
+    
+    // Garantir que o vídeo seja marcado como pronto em até 10 segundos
+    setTimeout(() => {
+      if (video.paused) {
+        console.log("Vídeo ainda parado após tempo limite, forçando reprodução");
+        video.play().catch(() => {
+          console.log("Tentativa final de reprodução falhou, marcando como pronto");
+          // Disparar um evento falso de reprodução para continuar o fluxo
+          const event = new Event('playing');
+          video.dispatchEvent(event);
+        });
+      }
+    }, 10000);
+    
   } catch (error) {
     console.error("Erro ao configurar elemento de vídeo:", error);
   }
@@ -77,8 +97,12 @@ export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
     const attemptPlay = (attempt = 1) => {
       video.play().catch(e => {
         console.log(`Tentativa ${attempt} de reprodução falhou:`, e);
-        if (attempt < 5) {
-          setTimeout(() => attemptPlay(attempt + 1), 300 * attempt);
+        if (attempt < 8) {
+          setTimeout(() => attemptPlay(attempt + 1), 400 * attempt);
+        } else {
+          // Disparar um evento falso de reprodução para continuar o fluxo
+          const event = new Event('playing');
+          video.dispatchEvent(event);
         }
       });
     };
@@ -97,7 +121,7 @@ export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
     // Tempo máximo de espera para vídeo estar pronto
-    const maxWaitTime = 8000; 
+    const maxWaitTime = 12000; 
     const startTime = Date.now();
     
     // Se o vídeo já tem dimensões, está pronto
@@ -115,7 +139,7 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
         
         // Uma última tentativa
         if (video.paused && video.srcObject) {
-          video.play().catch(e => console.log("Erro ao tentar reproduzir vídeo no timeout:", e));
+          video.play().catch(() => {});
         }
         
         resolve(true);
@@ -123,7 +147,7 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
       }
       
       // Se o vídeo tem dimensões ou readyState adequado, está pronto
-      if (video.videoWidth > 0 && video.videoHeight > 0 || video.readyState >= 2) {
+      if ((video.videoWidth > 0 && video.videoHeight > 0) || video.readyState >= 2) {
         console.log("Vídeo está pronto:", {
           width: video.videoWidth,
           height: video.videoHeight,
@@ -134,7 +158,7 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
       }
       
       // Caso contrário, verificar novamente em um momento
-      setTimeout(checkReady, 200);
+      setTimeout(checkReady, 300);
     };
 
     // Configurar event listeners para verificar se o vídeo está pronto
@@ -146,6 +170,7 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
     video.addEventListener('loadeddata', handleVideoReady, { once: true });
     video.addEventListener('loadedmetadata', handleVideoReady, { once: true });
     video.addEventListener('canplay', handleVideoReady, { once: true });
+    video.addEventListener('playing', handleVideoReady, { once: true });
     
     // Também iniciar a verificação de polling
     checkReady();

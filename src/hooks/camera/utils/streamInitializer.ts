@@ -9,6 +9,47 @@ export const initializeVideoStream = async (
 ): Promise<MediaStream | null> => {
   console.log("Inicializando câmera com configurações:", JSON.stringify(constraints));
   
+  // Define configurações para tentativas múltiplas
+  const attemptConfigurations = [
+    // Configuração 1: configurações fornecidas pelo usuário
+    constraints,
+    
+    // Configuração 2: configurações simplificadas
+    {
+      audio: false,
+      video: true
+    },
+    
+    // Configuração 3: configuração básica com facingMode
+    {
+      audio: false,
+      video: {
+        facingMode: (constraints.video as any)?.facingMode || 'user'
+      }
+    },
+    
+    // Configuração 4: resolução baixa para dispositivos com limitações
+    {
+      audio: false,
+      video: {
+        facingMode: (constraints.video as any)?.facingMode || 'user',
+        width: { ideal: 320 },
+        height: { ideal: 240 }
+      }
+    },
+    
+    // Configuração 5: apenas especificação de dispositivo
+    {
+      audio: false,
+      video: {}
+    },
+    
+    // Configuração 6: última tentativa - configurações mínimas
+    {
+      video: true
+    }
+  ];
+  
   try {
     // Primeiro, limpar qualquer stream anterior
     if (videoRef.current && videoRef.current.srcObject) {
@@ -21,54 +62,35 @@ export const initializeVideoStream = async (
     const isAndroid = /Android/i.test(navigator.userAgent);
     const isMobile = isIOS || isAndroid;
     
-    // Usar configurações mais simples para tentar primeiro
-    let simplifiedConstraints: MediaStreamConstraints = {
-      audio: false,
-      video: true
-    };
+    if (isIOS) {
+      // iOS necessita de configurações específicas
+      attemptConfigurations.unshift({
+        audio: false,
+        video: {
+          facingMode: (constraints.video as any)?.facingMode || 'user',
+          width: { ideal: 320, max: 640 },
+          height: { ideal: 240, max: 480 }
+        }
+      });
+    } else if (isAndroid) {
+      // Android necessita de configurações específicas
+      attemptConfigurations.unshift({
+        audio: false,
+        video: {
+          facingMode: (constraints.video as any)?.facingMode || 'user'
+        }
+      });
+    }
     
-    console.log("Tentando inicializar câmera com configurações básicas:", JSON.stringify(simplifiedConstraints));
-    
-    try {
-      // Primeiro tentar com configurações básicas
-      const stream = await navigator.mediaDevices.getUserMedia(simplifiedConstraints);
-      
-      if (!mountedRef.current) {
-        console.log("Componente desmontado, limpando stream");
-        stream.getTracks().forEach(track => track.stop());
-        return null;
-      }
-      
-      console.log("Stream obtido com sucesso usando configurações básicas");
-      return stream;
-    } catch (basicError) {
-      console.log("Falha na configuração básica, tentando com configurações específicas:", basicError);
-      
-      // Se falhar, tentar com configurações específicas para o dispositivo
-      let deviceSpecificConstraints: MediaStreamConstraints = constraints;
-      
-      if (isIOS) {
-        deviceSpecificConstraints = {
-          audio: false,
-          video: {
-            facingMode: 'user',
-            width: { ideal: 320, max: 640 },
-            height: { ideal: 240, max: 480 }
-          }
-        };
-      } else if (isAndroid) {
-        deviceSpecificConstraints = {
-          audio: false,
-          video: {
-            facingMode: 'user'
-          }
-        };
-      }
-      
-      console.log("Tentando com configurações específicas do dispositivo:", JSON.stringify(deviceSpecificConstraints));
+    // Tentar cada configuração até uma funcionar
+    let lastError = null;
+    for (let i = 0; i < attemptConfigurations.length; i++) {
+      const config = attemptConfigurations[i];
       
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(deviceSpecificConstraints);
+        console.log(`Tentativa ${i + 1}/${attemptConfigurations.length} com configuração:`, JSON.stringify(config));
+        
+        const stream = await navigator.mediaDevices.getUserMedia(config);
         
         if (!mountedRef.current) {
           console.log("Componente desmontado, limpando stream");
@@ -76,29 +98,36 @@ export const initializeVideoStream = async (
           return null;
         }
         
-        console.log("Stream obtido com sucesso usando configurações específicas do dispositivo");
-        return stream;
-      } catch (specificError) {
-        console.log("Falha nas configurações específicas, tentando configurações mínimas", specificError);
+        console.log(`Stream obtido com sucesso na tentativa ${i + 1}`);
         
-        // Última tentativa com configurações mínimas
-        const minimalConstraints: MediaStreamConstraints = {
-          audio: false,
-          video: true
-        };
-        
-        const stream = await navigator.mediaDevices.getUserMedia(minimalConstraints);
-        
-        if (!mountedRef.current) {
-          console.log("Componente desmontado, limpando stream");
-          stream.getTracks().forEach(track => track.stop());
-          return null;
+        // For iOS, add an extra debugging step
+        if (isIOS) {
+          const tracks = stream.getVideoTracks();
+          console.log(`iOS camera tracks:`, tracks.length, tracks.map(t => t.label));
+          
+          // Force a small delay to let iOS camera initialize properly
+          await new Promise(r => setTimeout(r, 500));
         }
         
-        console.log("Stream obtido com sucesso usando configurações mínimas");
         return stream;
+      } catch (error) {
+        console.log(`Erro na tentativa ${i + 1}:`, error);
+        lastError = error;
+        
+        // Wait a moment before trying the next configuration
+        await new Promise(r => setTimeout(r, 300));
+        
+        // Check if component is still mounted
+        if (!mountedRef.current) {
+          console.log("Componente desmontado durante tentativas");
+          return null;
+        }
       }
     }
+    
+    // Se chegou até aqui, todas as tentativas falharam
+    console.error("Todas as tentativas de acessar a câmera falharam. Último erro:", lastError);
+    throw lastError || new Error("Failed to access camera after multiple attempts");
   } catch (error: any) {
     console.error("Erro ao obter mídia do usuário:", error);
     

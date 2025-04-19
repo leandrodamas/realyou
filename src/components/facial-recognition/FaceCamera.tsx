@@ -1,9 +1,10 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCcw, FlipHorizontal, X } from "lucide-react";
 import { useCameraStream } from "@/hooks/useCameraStream";
 import CameraError from "./CameraError";
+import { toast } from "sonner";
 
 interface FaceCameraProps {
   onCapture: (imageData: string) => void;
@@ -26,7 +27,15 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     retryCount
   } = useCameraStream(true);
 
+  // Reference to track component mounting state
+  const mountedRef = useRef(true);
+  // Track manual camera restart attempts
+  const restartAttemptsRef = useRef(0);
+
   useEffect(() => {
+    mountedRef.current = true;
+    
+    // Identify device for platform-specific handling
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
     
@@ -57,15 +66,36 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         // Try to play if paused but has source
         if (videoElement.paused && videoElement.srcObject) {
           console.log("Auto-play attempt for paused video");
-          videoElement.play().catch(() => {});
+          videoElement.play().catch(() => {
+            // If play fails multiple times, suggest page reload
+            if (mountedRef.current && !isLoading && restartAttemptsRef.current > 3) {
+              toast.error("Problema ao iniciar vídeo. Tente recarregar a página.", {
+                duration: 5000,
+                id: "camera-restart-error"
+              });
+            }
+          });
+          restartAttemptsRef.current++;
         }
       }
-    }, 2000);
+    }, 3000);
     
     // Handle iOS specific behavior
     if (isIOS) {
       // For iOS we need to handle touch events to trigger video playback
       document.body.addEventListener('touchend', handleIOSTouch);
+      
+      // iOS often needs a direct element click, add a hidden button that gets clicked
+      const iosHelper = document.createElement('button');
+      iosHelper.style.position = 'fixed';
+      iosHelper.style.opacity = '0';
+      iosHelper.style.pointerEvents = 'none';
+      document.body.appendChild(iosHelper);
+      
+      setTimeout(() => {
+        iosHelper.click();
+        document.body.removeChild(iosHelper);
+      }, 1000);
     }
     
     // Handle Android specific behavior
@@ -87,12 +117,40 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       }, 1000);
     }
     
+    // Request wakelock to prevent screen from sleeping
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator) {
+        try {
+          // @ts-ignore - WakeLock may not be in all TS definitions
+          const wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Wake lock is active');
+          return wakeLock;
+        } catch (err) {
+          console.log('Wake lock request failed:', err);
+          return null;
+        }
+      }
+      return null;
+    };
+    
+    // Try to get wake lock
+    let wakeLockObj: any = null;
+    requestWakeLock().then(lock => {
+      wakeLockObj = lock;
+    });
+    
     return () => {
+      mountedRef.current = false;
       clearTimeout(forceRefreshTimeout);
       clearInterval(periodicCheckInterval);
       
       if (isIOS) {
         document.body.removeEventListener('touchend', handleIOSTouch);
+      }
+      
+      // Release wake lock if we have one
+      if (wakeLockObj) {
+        wakeLockObj.release().catch(() => {});
       }
     };
   }, []);
@@ -107,7 +165,10 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
   };
   
   const handleCapture = () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      toast.error("Câmera não está disponível");
+      return;
+    }
     
     try {
       const video = videoRef.current;
@@ -117,11 +178,19 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       const width = video.videoWidth || 640;
       const height = video.videoHeight || 480;
       
+      if (!width || !height) {
+        toast.error("Vídeo sem dimensões. Tente reiniciar a câmera.");
+        return;
+      }
+      
       canvas.width = width;
       canvas.height = height;
       
       const context = canvas.getContext('2d');
-      if (!context) return;
+      if (!context) {
+        toast.error("Não foi possível criar contexto de captura");
+        return;
+      }
       
       // Mirror the image if using the front camera
       if (facingMode === "user") {
@@ -137,13 +206,18 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       // Convert to data URL with higher quality
       const imageData = canvas.toDataURL('image/jpeg', 0.92);
       onCapture(imageData);
+      
+      // Log success
+      console.log("Imagem capturada com sucesso:", width, "x", height);
     } catch (error) {
       console.error("Error capturing image:", error);
+      toast.error("Erro ao capturar imagem");
     }
   };
   
   // Função para recarregar completamente a página
   const handleFullReload = () => {
+    toast.info("Reiniciando câmera...");
     window.location.reload();
   };
   

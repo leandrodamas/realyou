@@ -36,22 +36,41 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           setIsLoading(false);
           setIsVideoReady(true);
         }
-      }, 10000);
+      }, 15000); // Extended timeout
 
       // Determinar se estamos em um dispositivo móvel para ajustar as configurações
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       
-      // Configurações simplificadas
+      // Configurações adaptadas para plataforma
       let constraints: MediaStreamConstraints = {
         audio: false,
         video: {
-          facingMode,
-          width: { ideal: isMobile ? 640 : 1280 },
-          height: { ideal: isMobile ? 480 : 720 }
+          facingMode
         }
       };
+      
+      // Add resolution constraints based on device
+      if (isMobile) {
+        if (isIOS) {
+          (constraints.video as MediaTrackConstraints).width = { ideal: 640, max: 1280 };
+          (constraints.video as MediaTrackConstraints).height = { ideal: 480, max: 720 };
+        } else {
+          // Android
+          (constraints.video as MediaTrackConstraints).width = { ideal: 640 };
+          (constraints.video as MediaTrackConstraints).height = { ideal: 480 };
+        }
+      } else {
+        // Desktop
+        (constraints.video as MediaTrackConstraints).width = { ideal: 1280 };
+        (constraints.video as MediaTrackConstraints).height = { ideal: 720 };
+      }
 
       console.log("Tentativa de inicialização da câmera com configurações:", JSON.stringify(constraints));
+      
+      // Force a small delay before initializing camera
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
       
       // Limpar timeouts se o stream foi obtido com sucesso
@@ -60,7 +79,12 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       if (stream && videoRef.current && mountedRef.current) {
         console.log("Stream da câmera obtido com sucesso");
         streamRef.current = stream;
+        
+        // Configurar o elemento de vídeo com o stream
         setupVideoElement(videoRef.current, stream);
+        
+        // Para iOS, adicionar um pequeno atraso adicional
+        const setupDelay = isIOS ? 800 : 500;
         
         // Adicionar um pequeno atraso antes de atualizar o estado
         setTimeout(() => {
@@ -68,8 +92,14 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
             console.log("Configurando video como pronto");
             setIsVideoReady(true);
             setIsLoading(false);
+            
+            // Forçar refresh da interface
+            if (videoRef.current) {
+              const event = new Event('resize');
+              window.dispatchEvent(event);
+            }
           }
-        }, 500);
+        }, setupDelay);
       }
     } catch (error: any) {
       console.error("Erro de acesso à câmera:", error);
@@ -108,6 +138,24 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       }
     };
   }, [isCameraActive, facingMode]);
+  
+  // Adicionar um efeito para tentar reiniciar a câmera se ela não iniciar
+  useEffect(() => {
+    if (isCameraActive) {
+      // Verificar se a câmera inicializou corretamente após algum tempo
+      const checkCameraTimeout = setTimeout(() => {
+        const video = videoRef.current;
+        if (video && (!video.srcObject || video.readyState === 0) && mountedRef.current) {
+          console.log("Câmera não inicializada corretamente, tentando reiniciar");
+          startCamera();
+        }
+      }, 5000);
+      
+      return () => {
+        clearTimeout(checkCameraTimeout);
+      };
+    }
+  }, [isCameraActive, startCamera]);
 
   return;
 };
