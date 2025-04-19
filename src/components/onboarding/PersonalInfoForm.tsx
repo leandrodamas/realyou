@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Camera, ArrowRight } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import ProfileImageUpload from "./ProfileImageUpload";
 
 interface PersonalInfoFormProps {
   onComplete: () => void;
@@ -13,9 +13,7 @@ interface PersonalInfoFormProps {
 const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
   const [fullName, setFullName] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Carregar informações do usuário do localStorage se disponíveis
   useEffect(() => {
     try {
       const savedProfile = localStorage.getItem('userProfile');
@@ -36,31 +34,21 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageDataUrl = reader.result as string;
-        setProfileImage(imageDataUrl);
-
-        try {
-          const savedProfile = localStorage.getItem('userProfile');
-          const profile = savedProfile ? JSON.parse(savedProfile) : {};
-          
-          const updatedProfile = {
-            ...profile,
-            profileImage: imageDataUrl
-          };
-          
-          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-          toast.success("Foto de perfil atualizada!");
-        } catch (error) {
-          console.error("Erro ao salvar imagem de perfil:", error);
-          toast.error("Não foi possível salvar a foto");
-        }
+  const handleProfileImageChange = (imageData: string) => {
+    setProfileImage(imageData);
+    try {
+      const savedProfile = localStorage.getItem('userProfile');
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      
+      const updatedProfile = {
+        ...profile,
+        profileImage: imageData
       };
-      reader.readAsDataURL(file);
+      
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+    } catch (error) {
+      console.error("Erro ao salvar imagem de perfil:", error);
+      toast.error("Não foi possível salvar a foto");
     }
   };
 
@@ -105,42 +93,11 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         />
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Foto de Perfil
-        </label>
-        <div className="flex items-center space-x-3">
-          {profileImage ? (
-            <Avatar className="w-16 h-16">
-              <AvatarImage src={profileImage} alt="Perfil" />
-              <AvatarFallback>
-                {fullName ? fullName.charAt(0).toUpperCase() : "U"}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-              <Camera className="h-6 w-6 text-gray-400" />
-            </div>
-          )}
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            accept="image/*"
-            className="hidden" 
-            onChange={handleFileChange}
-          />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {profileImage ? "Alterar Foto" : "Fazer Upload"}
-          </Button>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Uma boa foto de perfil aumenta as chances de conexões em 80%
-        </p>
-      </div>
+      <ProfileImageUpload
+        profileImage={profileImage}
+        fullName={fullName}
+        onChange={handleProfileImageChange}
+      />
       
       <div className="pt-4">
         <Button 
