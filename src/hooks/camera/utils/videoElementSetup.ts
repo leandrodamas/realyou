@@ -1,4 +1,3 @@
-
 export const setupVideoElement = (
   video: HTMLVideoElement, 
   stream: MediaStream
@@ -15,8 +14,6 @@ export const setupVideoElement = (
     
     // Configurar stream e todos os atributos importantes
     video.srcObject = stream;
-    video.width = 640;
-    video.height = 480;
     video.style.width = "100%";
     video.style.height = "100%";
     video.setAttribute("playsinline", "true");
@@ -35,8 +32,8 @@ export const setupVideoElement = (
     // Garantir que o vídeo seja carregado
     video.load();
     
-    // Forçar reprodução com múltiplas tentativas
-    const playVideo = (attempts = 5) => {
+    // Forçar reprodução com múltiplas tentativas e intervalo maior entre tentativas
+    const playVideo = (attempts = 10) => {
       if (attempts <= 0) return;
       
       video.play()
@@ -45,12 +42,14 @@ export const setupVideoElement = (
         })
         .catch(e => {
           console.warn(`Erro ao iniciar vídeo, tentativas restantes: ${attempts-1}. Erro:`, e);
-          setTimeout(() => playVideo(attempts - 1), 200);
+          setTimeout(() => playVideo(attempts - 1), 500);
         });
     };
     
     // Começar tentativas de reprodução
-    playVideo();
+    setTimeout(() => {
+      playVideo();
+    }, 300);
     
     // Para iOS, precisamos forçar a reprodução após um toque do usuário
     if (isIOS) {

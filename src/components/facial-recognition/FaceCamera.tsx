@@ -27,8 +27,10 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
   } = useCameraStream(true);
 
   useEffect(() => {
-    // Force a component update after 2 seconds
-    // This helps some browsers that need a second attempt to start the camera
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    // Force a component update to refresh video element
     const forceRefreshTimeout = setTimeout(() => {
       const videoElement = videoRef.current;
       if (videoElement && videoElement.paused && videoElement.srcObject) {
@@ -37,27 +39,72 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
           console.error("Error during forced video play:", err)
         );
       }
-    }, 2000);
+    }, 1000);
     
-    // Adicionar agitação periódica para iOS
-    let iosIntervalId: NodeJS.Timeout | null = null;
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    if (isIOS) {
-      iosIntervalId = setInterval(() => {
-        const videoElement = videoRef.current;
-        if (videoElement && videoElement.paused && videoElement.srcObject) {
-          console.log("iOS periodic video check - attempting to play");
+    // Add periodic checks to ensure video is playing
+    const periodicCheckInterval = setInterval(() => {
+      const videoElement = videoRef.current;
+      if (videoElement) {
+        // Log video state for debugging
+        console.log("Video state check:", {
+          paused: videoElement.paused,
+          readyState: videoElement.readyState,
+          srcObject: !!videoElement.srcObject,
+          width: videoElement.videoWidth,
+          height: videoElement.videoHeight
+        });
+        
+        // Try to play if paused but has source
+        if (videoElement.paused && videoElement.srcObject) {
+          console.log("Auto-play attempt for paused video");
           videoElement.play().catch(() => {});
         }
-      }, 2000);
+      }
+    }, 2000);
+    
+    // Handle iOS specific behavior
+    if (isIOS) {
+      // For iOS we need to handle touch events to trigger video playback
+      document.body.addEventListener('touchend', handleIOSTouch);
+    }
+    
+    // Handle Android specific behavior
+    if (isAndroid) {
+      // For Android we need repeated attempts
+      let androidAttempts = 0;
+      const androidInterval = setInterval(() => {
+        androidAttempts++;
+        const videoElement = videoRef.current;
+        if (videoElement && !videoElement.videoWidth && androidAttempts < 5) {
+          console.log("Android camera retry attempt", androidAttempts);
+          
+          if (videoElement.srcObject) {
+            videoElement.play().catch(() => {});
+          }
+        } else {
+          clearInterval(androidInterval);
+        }
+      }, 1000);
     }
     
     return () => {
       clearTimeout(forceRefreshTimeout);
-      if (iosIntervalId) clearInterval(iosIntervalId);
+      clearInterval(periodicCheckInterval);
+      
+      if (isIOS) {
+        document.body.removeEventListener('touchend', handleIOSTouch);
+      }
     };
   }, []);
+  
+  // Helper function for iOS touch handler
+  const handleIOSTouch = () => {
+    const videoElement = videoRef.current;
+    if (videoElement && videoElement.paused && videoElement.srcObject) {
+      console.log("iOS touch triggered video play attempt");
+      videoElement.play().catch(() => {});
+    }
+  };
   
   const handleCapture = () => {
     if (!videoRef.current) return;
@@ -120,26 +167,28 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
           <Camera size={36} className="text-white" />
         </div>
         <p className="text-white">Iniciando câmera...</p>
-        <p className="text-white/70 text-xs mt-2">
+        <p className="text-white/70 text-xs mt-2 text-center px-4">
           Aguarde um momento para a câmera inicializar. 
-          Se essa tela persistir por mais de 15 segundos, verifique as permissões da câmera.
+          Se essa tela persistir, tente permitir acesso à câmera nas configurações do seu dispositivo.
         </p>
-        <Button 
-          variant="outline" 
-          onClick={handleFullReload}
-          className="mt-4 text-white border-white/30 hover:bg-white/10"
-        >
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Reiniciar câmera
-        </Button>
-        <Button 
-          variant="outline" 
-          onClick={onCancel}
-          className="mt-2 text-white border-white/30 hover:bg-white/10"
-        >
-          <X className="h-4 w-4 mr-2" />
-          Cancelar
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={handleFullReload}
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Reiniciar câmera
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={onCancel}
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancelar
+          </Button>
+        </div>
       </div>
     );
   }

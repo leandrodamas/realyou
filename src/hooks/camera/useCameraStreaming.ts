@@ -19,6 +19,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
   const startCamera = useCallback(async () => {
     if (!isCameraActive) return;
 
+    console.log("Iniciando câmera com facingMode:", facingMode);
     setIsLoading(true);
     setIsVideoReady(false);
 
@@ -26,17 +27,8 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     resetRetryCount();
 
     let timeoutId: NodeJS.Timeout;
-    let shortTimeoutId: NodeJS.Timeout;
     
     try {
-      // Set a short timeout to ensure the UI shows loading state
-      shortTimeoutId = setTimeout(() => {
-        if (mountedRef.current) {
-          console.log("Timeout inicial de inicialização da câmera - configurando vídeo como pronto");
-          setIsVideoReady(true);
-        }
-      }, 3000);
-
       // Set a longer timeout for final fallback
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
@@ -44,55 +36,25 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           setIsLoading(false);
           setIsVideoReady(true);
         }
-      }, 8000);
+      }, 10000);
 
-      // Adicionar um pequeno atraso para garantir que o UI seja atualizado
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       // Determinar se estamos em um dispositivo móvel para ajustar as configurações
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isAndroid = /Android/i.test(navigator.userAgent);
       
-      // Configurar constraints específicas para o dispositivo
+      // Configurações simplificadas
       let constraints: MediaStreamConstraints = {
         audio: false,
         video: {
           facingMode,
-          width: { ideal: isMobile ? 320 : 640 },
-          height: { ideal: isMobile ? 240 : 480 }
+          width: { ideal: isMobile ? 640 : 1280 },
+          height: { ideal: isMobile ? 480 : 720 }
         }
       };
-      
-      // Ajustes específicos para iOS
-      if (isIOS) {
-        constraints = {
-          audio: false,
-          video: {
-            facingMode,
-            width: { ideal: 320, max: 640 },
-            height: { ideal: 240, max: 480 }
-          }
-        };
-      }
-      
-      // Ajustes específicos para Android
-      if (isAndroid) {
-        constraints = {
-          audio: false,
-          video: {
-            width: { ideal: 640, max: 1280 },
-            height: { ideal: 480, max: 720 },
-            facingMode
-          }
-        };
-      }
 
-      console.log("Inicializando câmera com configurações:", JSON.stringify(constraints));
+      console.log("Tentativa de inicialização da câmera com configurações:", JSON.stringify(constraints));
       const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
       
       // Limpar timeouts se o stream foi obtido com sucesso
-      clearTimeout(shortTimeoutId);
       clearTimeout(timeoutId);
       
       if (stream && videoRef.current && mountedRef.current) {
@@ -100,10 +62,14 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
         streamRef.current = stream;
         setupVideoElement(videoRef.current, stream);
         
-        if (mountedRef.current) {
-          setIsVideoReady(true);
-          setIsLoading(false);
-        }
+        // Adicionar um pequeno atraso antes de atualizar o estado
+        setTimeout(() => {
+          if (mountedRef.current) {
+            console.log("Configurando video como pronto");
+            setIsVideoReady(true);
+            setIsLoading(false);
+          }
+        }, 500);
       }
     } catch (error: any) {
       console.error("Erro de acesso à câmera:", error);
@@ -116,6 +82,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
 
   useEffect(() => {
     if (isCameraActive) {
+      console.log("useCameraStreaming: Iniciando câmera");
       startCamera();
     }
     
