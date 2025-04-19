@@ -15,18 +15,35 @@ export const useCameraInitialization = (isCameraActive: boolean) => {
   useEffect(() => {
     const checkCamera = async () => {
       try {
+        console.log("Verificando disponibilidade de câmeras...");
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        setHasCamera(videoDevices.length > 0);
-        console.log(`Found ${videoDevices.length} cameras:`, videoDevices.map(d => d.label || "unnamed camera"));
+        const hasCamera = videoDevices.length > 0;
+        
+        console.log(`Encontradas ${videoDevices.length} câmeras:`, videoDevices.map(d => d.label || "câmera sem nome"));
+        setHasCamera(hasCamera);
+        
+        if (!hasCamera) {
+          console.error("Nenhuma câmera detectada no dispositivo");
+          handleCameraError({
+            name: "NoCameraError",
+            message: "Nenhuma câmera detectada neste dispositivo"
+          });
+        }
       } catch (error) {
-        console.error("Error checking camera:", error);
+        console.error("Erro ao verificar câmera:", error);
         setHasCamera(false);
+        handleCameraError({
+          name: "DeviceEnumerationError", 
+          message: "Não foi possível acessar as câmeras do dispositivo"
+        });
       }
     };
     
-    checkCamera();
-  }, []);
+    if (isCameraActive) {
+      checkCamera();
+    }
+  }, [isCameraActive, setHasCamera, handleCameraError]);
 
   return { videoRef, mountedRef };
 };

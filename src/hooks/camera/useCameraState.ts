@@ -13,7 +13,7 @@ export const useCameraState = (isCameraActive: boolean) => {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const mountedRef = useRef<boolean>(true);
   
-  // Use the camera error hook directly
+  // Usar hook de erro da câmera diretamente
   const {
     hasError,
     errorMessage,
@@ -46,7 +46,7 @@ export const useCameraState = (isCameraActive: boolean) => {
     hasCamera,
     setHasCamera,
     hasError,
-    setHasError: resetError,
+    resetError,
     errorMessage,
     errorType,
     lastErrorMessage,
@@ -57,6 +57,8 @@ export const useCameraState = (isCameraActive: boolean) => {
     setFaceDetected,
     isVideoReady,
     setIsVideoReady,
-    retryCountRef
+    retryCountRef,
+    resetRetryCount,
+    incrementRetryCount
   };
 };

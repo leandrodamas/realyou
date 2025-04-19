@@ -11,7 +11,9 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     setIsLoading,
     handleCameraError,
     setIsVideoReady,
-    facingMode
+    facingMode,
+    retryCountRef,
+    resetRetryCount
   } = useCameraState(isCameraActive);
 
   useEffect(() => {
@@ -24,10 +26,13 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       setIsLoading(true);
       setIsVideoReady(false);
 
+      // Reset retry counter when trying new camera access
+      resetRetryCount();
+
       // Set a short timeout to ensure the UI shows loading state
       shortTimeoutId = setTimeout(() => {
         if (mountedRef.current) {
-          console.log("First camera initialization timeout - setting video ready");
+          console.log("Timeout inicial de inicialização da câmera - configurando vídeo como pronto");
           setIsVideoReady(true);
         }
       }, 3000);
@@ -35,13 +40,16 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       // Set a longer timeout for final fallback
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
-          console.log("Final camera initialization timeout - forcing ready state");
+          console.log("Timeout final de inicialização da câmera - forçando estado de pronto");
           setIsLoading(false);
           setIsVideoReady(true);
         }
       }, 6000);
 
       try {
+        // Adicionar um pequeno atraso para garantir que o UI seja atualizado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
@@ -51,11 +59,11 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           }
         };
 
-        console.log("Initializing camera with constraints:", JSON.stringify(constraints));
+        console.log("Inicializando câmera com configurações:", JSON.stringify(constraints));
         const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
         
         if (stream && videoRef.current && mountedRef.current) {
-          console.log("Camera stream obtained successfully");
+          console.log("Stream da câmera obtido com sucesso");
           streamRef.current = stream;
           setupVideoElement(videoRef.current, stream);
           
@@ -65,7 +73,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           }
         }
       } catch (error: any) {
-        console.error("Camera access error:", error);
+        console.error("Erro de acesso à câmera:", error);
         if (mountedRef.current) {
           handleCameraError(error);
           setIsLoading(false);
@@ -73,7 +81,9 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       }
     };
 
-    startCamera();
+    if (isCameraActive) {
+      startCamera();
+    }
     
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
