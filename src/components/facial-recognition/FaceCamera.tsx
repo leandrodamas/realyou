@@ -39,7 +39,24 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       }
     }, 2000);
     
-    return () => clearTimeout(forceRefreshTimeout);
+    // Adicionar agitação periódica para iOS
+    let iosIntervalId: NodeJS.Timeout | null = null;
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    if (isIOS) {
+      iosIntervalId = setInterval(() => {
+        const videoElement = videoRef.current;
+        if (videoElement && videoElement.paused && videoElement.srcObject) {
+          console.log("iOS periodic video check - attempting to play");
+          videoElement.play().catch(() => {});
+        }
+      }, 2000);
+    }
+    
+    return () => {
+      clearTimeout(forceRefreshTimeout);
+      if (iosIntervalId) clearInterval(iosIntervalId);
+    };
   }, []);
   
   const handleCapture = () => {
@@ -65,22 +82,29 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         context.scale(-1, 1);
       }
       
-      // Capture frame from video
+      // Capture frame from video with enhanced brightness
+      context.filter = "brightness(1.2) contrast(1.1)";
       context.drawImage(video, 0, 0, width, height);
+      context.filter = "none";
       
-      // Convert to data URL
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      // Convert to data URL with higher quality
+      const imageData = canvas.toDataURL('image/jpeg', 0.92);
       onCapture(imageData);
     } catch (error) {
       console.error("Error capturing image:", error);
     }
   };
   
+  // Função para recarregar completamente a página
+  const handleFullReload = () => {
+    window.location.reload();
+  };
+  
   // Show camera error with enhanced props
   if (hasError) {
     return (
       <CameraError 
-        onReset={() => window.location.reload()} 
+        onReset={handleFullReload} 
         errorMessage={errorMessage || lastErrorMessage}
         errorType={errorType}
         retryCount={retryCount}
@@ -102,8 +126,16 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         </p>
         <Button 
           variant="outline" 
+          onClick={handleFullReload}
+          className="mt-4 text-white border-white/30 hover:bg-white/10"
+        >
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Reiniciar câmera
+        </Button>
+        <Button 
+          variant="outline" 
           onClick={onCancel}
-          className="mt-6 text-white border-white/30 hover:bg-white/10"
+          className="mt-2 text-white border-white/30 hover:bg-white/10"
         >
           <X className="h-4 w-4 mr-2" />
           Cancelar
@@ -171,11 +203,24 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         </Button>
       </div>
 
-      {/* Debug Status - Remove in production */}
-      <div className="absolute top-2 left-2 bg-black/50 text-white text-xs p-1 rounded">
+      {/* Debug Status */}
+      <div className="absolute top-2 right-2 bg-black/50 text-white text-xs p-1 rounded">
         {videoRef.current ? 
-          `Video: ${videoRef.current.readyState}/4 ${videoRef.current.paused ? '(pausado)' : '(tocando)'}` : 
-          'Video: não inicializado'}
+          `Status: ${videoRef.current.readyState}/4 ${videoRef.current.paused ? '(pausado)' : '(rodando)'}` : 
+          'Não inicializado'}
+      </div>
+      
+      {/* Camera reload button */}
+      <div className="absolute top-2 left-2">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-white hover:bg-black/30" 
+          onClick={handleFullReload}
+        >
+          <RefreshCcw className="h-4 w-4 mr-1" />
+          Reiniciar
+        </Button>
       </div>
     </div>
   );
