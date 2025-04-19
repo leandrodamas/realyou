@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useCameraState } from "./camera/useCameraState";
 import { initializeVideoStream, setupVideoElement, waitForVideoReady } from "./camera/utils/cameraOperations";
+import { useFaceDetection } from "./face-detection/useFaceDetection";
 import type { CameraStreamState } from "./camera/types";
 
 export const useCameraStream = (isCameraActive: boolean = true): CameraStreamState => {
@@ -19,11 +20,17 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     setErrorMessage,
     facingMode,
     setFacingMode,
-    faceDetected,
-    setFaceDetected,
     isVideoReady,
     setIsVideoReady
   } = useCameraState(isCameraActive);
+
+  const { faceDetected } = useFaceDetection({
+    isCameraActive,
+    isInitializing: false,
+    isLoading,
+    videoRef,
+    isVideoReady
+  });
 
   useEffect(() => {
     const checkCamera = async () => {

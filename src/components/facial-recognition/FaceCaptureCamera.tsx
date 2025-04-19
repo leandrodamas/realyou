@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
-import { useFaceDetection } from "@/hooks/useFaceDetection";
+import { useFaceDetection } from "@/hooks/face-detection/useFaceDetection";
 import { useLoading } from "@/hooks/useLoading";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
