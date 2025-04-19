@@ -9,6 +9,7 @@ export const useCameraState = (isCameraActive: boolean) => {
   const [hasCamera, setHasCamera] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [faceDetected, setFaceDetected] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -36,6 +37,8 @@ export const useCameraState = (isCameraActive: boolean) => {
     setHasError,
     errorMessage,
     setErrorMessage,
+    lastErrorMessage,
+    setLastErrorMessage,
     facingMode,
     setFacingMode,
     faceDetected,
