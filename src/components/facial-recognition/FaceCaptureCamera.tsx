@@ -63,7 +63,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   useEffect(() => {
     const debugInterval = setInterval(() => {
-      if (videoRef.current && isCameraActive) {
+      if (videoRef.current) {
         console.log("Video debug info:", {
           readyState: videoRef.current.readyState,
           paused: videoRef.current.paused,
