@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -7,9 +6,9 @@ import { useLoading } from "@/hooks/useLoading";
 import CameraError from "./CameraError";
 import CameraLoading from "./components/CameraLoading";
 import CameraPreview from "./components/CameraPreview";
-import IntroSection from "./components/IntroSection";
-import CapturedImageView from "./components/CapturedImageView";
-import CaptureCanvas from "./components/CaptureCanvas";
+import IntroSection from "./IntroSection";
+import CapturedImageView from "./CapturedImageView";
+import CaptureCanvas from "./CaptureCanvas";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
@@ -27,8 +26,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, lastErrorMessage, isVideoReady } = useCameraStream(isCameraActive);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, errorMessage, lastErrorMessage, isVideoReady } = useCameraStream(isCameraActive);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   

@@ -31,6 +31,7 @@ export interface CameraStreamState {
   facingMode: "user" | "environment";
   hasCamera: boolean;
   isLoading: boolean;
-  lastErrorMessage: string | null;
+  lastErrorMessage: string | null;  // Added this property
   isVideoReady: boolean;
+  faceDetected: boolean;  // Make sure this is returned by useCameraStream
 }

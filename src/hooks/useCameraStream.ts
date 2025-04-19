@@ -12,6 +12,7 @@ interface CameraStreamState {
   switchCamera: () => void;
   faceDetected: boolean;
   isVideoReady: boolean;
+  lastErrorMessage: string | null; // Added this property
 }
 
 export const useCameraStream = (isCameraActive: boolean = true): CameraStreamState => {
@@ -228,6 +229,7 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     facingMode,
     switchCamera,
     faceDetected,
-    isVideoReady
+    isVideoReady,
+    lastErrorMessage: errorMessage // Use errorMessage for lastErrorMessage
   };
 };
