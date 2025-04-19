@@ -1,4 +1,3 @@
-
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
     const maxWaitTime = 5000;
