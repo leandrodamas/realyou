@@ -7,8 +7,7 @@ export const useCameraInitialization = (isCameraActive: boolean) => {
     videoRef,
     setHasCamera,
     setIsLoading,
-    setHasError,
-    setErrorMessage,
+    resetError,
     setIsVideoReady,
     mountedRef
   } = useCameraState(isCameraActive);
