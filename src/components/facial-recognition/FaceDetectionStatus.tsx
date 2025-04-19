@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Move, CheckCircle2 } from "lucide-react";
+import { Camera, CheckCircle2 } from "lucide-react";
 
 interface FaceDetectionStatusProps {
   faceDetected: boolean;
@@ -11,18 +11,18 @@ const FaceDetectionStatus: React.FC<FaceDetectionStatusProps> = ({ faceDetected 
     <div className="absolute top-6 left-0 right-0 flex justify-center z-20">
       <div className={`px-4 py-2 rounded-full text-base flex items-center gap-2 shadow-xl ${
         faceDetected 
-          ? "bg-green-500 text-white animate-pulse" 
+          ? "bg-green-500 text-white" 
           : "bg-yellow-500 text-white"
       }`}>
         {faceDetected ? (
           <>
             <CheckCircle2 className="h-5 w-5" />
-            <span className="font-medium">Rosto detectado</span>
+            <span className="font-medium">Pronto para capturar</span>
           </>
         ) : (
           <>
-            <Move className="h-5 w-5 animate-pulse" />
-            <span className="font-medium">Centralize seu rosto</span>
+            <Camera className="h-5 w-5 animate-pulse" />
+            <span className="font-medium">Posicione seu rosto</span>
           </>
         )}
       </div>

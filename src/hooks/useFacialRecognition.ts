@@ -1,8 +1,36 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { detectAndMatchFace } from "@/services/facialRecognitionService";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
+
+// Simulação da busca por correspondências usando fotos
+// Em um ambiente real, isto seria substituído por chamadas para uma API de comparação de fotos
+const mockPhotoSearch = async (photoData: string): Promise<MatchedPerson | null> => {
+  // Simular processamento
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // 70% de chance de encontrar uma correspondência para demonstração
+  const matchFound = Math.random() > 0.3;
+  
+  if (matchFound) {
+    return {
+      name: "Alex Johnson",
+      profession: "Terapeuta",
+      avatar: photoData, // Usar a foto capturada
+      schedule: [
+        { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+        { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+        { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+        { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
+        { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
+        { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
+        { day: "Domingo", slots: [], active: false }
+      ]
+    };
+  }
+  
+  return null;
+};
 
 export const useFacialRecognition = () => {
   const [isSearching, setIsSearching] = useState(false);
@@ -35,65 +63,32 @@ export const useFacialRecognition = () => {
     const currentAttempt = ++searchAttemptRef.current;
     
     try {
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      toast.info("Analisando foto...");
       
-      // Em dispositivos móveis, mostrar um toast de status intermediário
-      if (isMobile) {
-        toast.info("Analisando imagem...", {
-          duration: 2000
-        });
-      }
-      
-      // Tempo variável de espera para dispositivos móveis vs desktop
-      const timeoutDuration = isMobile ? 2500 : 1500;
-      
-      // Usar um timeout para garantir que o toast seja exibido
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const matchResult = await detectAndMatchFace(capturedImage);
+      // Simulação da busca por correspondência baseada em foto
+      const match = await mockPhotoSearch(capturedImage);
       
       // Verificar se esta é ainda a última tentativa de pesquisa
       if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
         return;
       }
       
-      if (matchResult && matchResult.success) {
-        if (matchResult.matches.length > 0) {
-          const bestMatch = matchResult.matches[0];
-          setMatchedPerson({
-            name: bestMatch.name,
-            profession: bestMatch.profession,
-            avatar: bestMatch.avatar,
-            schedule: bestMatch.schedule || []
-          });
-          
-          // Pequeno atraso antes de mostrar o toast de sucesso para melhor UX
-          setTimeout(() => {
-            if (isMounted.current) {
-              toast.success("Reconhecimento facial concluído!");
-            }
-          }, 300);
-        } else {
-          setNoMatchFound(true);
-          toast.info("Nenhuma correspondência encontrada");
-        }
+      if (match) {
+        setMatchedPerson(match);
+        toast.success("Correspondência encontrada com sucesso!");
       } else {
-        setHasError(true);
-        toast.error(isMobile ? 
-          "Falha no reconhecimento. Tente com melhor iluminação." : 
-          "Falha no reconhecimento facial. Tente novamente."
-        );
         setNoMatchFound(true);
+        toast.info("Nenhuma correspondência encontrada");
       }
     } catch (error) {
-      console.error("Error during face recognition:", error);
+      console.error("Erro durante a busca por foto:", error);
       
       if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
         return;
       }
       
       setHasError(true);
-      toast.error("Ocorreu um erro durante o reconhecimento facial");
+      toast.error("Ocorreu um erro durante a busca por correspondência");
       setNoMatchFound(true);
     } finally {
       if (isMounted.current && currentAttempt === searchAttemptRef.current) {

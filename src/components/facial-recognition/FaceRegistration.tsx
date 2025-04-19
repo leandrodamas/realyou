@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import FaceCamera from "./FaceCamera";
-import CapturedImage from "./CapturedImage";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import FaceCamera from "./FaceCamera";
+import CapturedImage from "./CapturedImage";
 
 interface FaceRegistrationProps {
   onImageCaptured: (imageData: string) => void;
@@ -25,21 +25,12 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       navigator.permissions.query({ name: 'camera' as PermissionName })
         .then(permissionStatus => {
           console.log("Camera permission status:", permissionStatus.state);
-          
-          // Log permission changes
-          permissionStatus.onchange = () => {
-            console.log("Camera permission changed to:", permissionStatus.state);
-            if (permissionStatus.state === 'granted' && showCamera) {
-              // Force camera remount if permissions just got granted
-              handleRestartCamera();
-            }
-          };
         })
         .catch(error => {
           console.log("Error checking camera permission:", error);
         });
     }
-  }, [showCamera]);
+  }, []);
   
   const handleCapture = (imageData: string) => {
     setCapturedImage(imageData);
@@ -49,6 +40,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   const handleConfirm = () => {
     if (capturedImage) {
       onImageCaptured(capturedImage);
+      toast.success("Foto salva com sucesso");
     }
   };
   
@@ -57,7 +49,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   };
   
   const handleRestartCamera = () => {
-    // Força a remontagem do componente da câmera
     setCameraKey(prevKey => prevKey + 1);
     toast.info("Reiniciando câmera...");
   };
@@ -66,7 +57,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     return (
       <div className="relative">
         <FaceCamera
-          key={cameraKey} // Using key to force remount when needed
+          key={cameraKey}
           onCapture={handleCapture}
           onCancel={() => setShowCamera(false)}
         />
@@ -101,9 +92,9 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       <div className="text-gray-400 mb-4">
         <Camera size={48} />
       </div>
-      <h3 className="text-lg font-medium mb-2">Reconhecimento Facial</h3>
+      <h3 className="text-lg font-medium mb-2">Foto de Perfil</h3>
       <p className="text-gray-500 text-center mb-4">
-        Capture uma foto do seu rosto para autenticação
+        Capture uma foto clara do seu rosto para seu perfil
       </p>
       <div className="space-y-2">
         <Button onClick={() => setShowCamera(true)} className="w-full">
@@ -111,7 +102,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
         </Button>
         
         <p className="text-xs text-gray-400 text-center mt-2">
-          Se tiver problemas com a câmera, verifique as permissões nas configurações do seu navegador
+          Esta foto será usada para seu perfil e para que outros usuários possam te encontrar
         </p>
       </div>
     </div>

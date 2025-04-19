@@ -30,18 +30,6 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   const [internalCapturedImage, setInternalCapturedImage] = React.useState<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = React.useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isHeavyDevice, setIsHeavyDevice] = React.useState(false);
-
-  // Determinar se o dispositivo é um dispositivo móvel de baixo desempenho
-  useEffect(() => {
-    const userAgent = navigator.userAgent;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
-    const isOldAndroid = /Android 4.|Android 5.|Android 6./i.test(userAgent);
-    const isLowPerformanceIOS = /iPhone OS 9_|iPhone OS 10_|iPhone OS 11_/i.test(userAgent) && 
-                               !/iPhone X|iPhone 8|iPhone 11|iPhone 12|iPhone 13|iPhone 14/i.test(userAgent);
-    
-    setIsHeavyDevice(isMobile && (isOldAndroid || isLowPerformanceIOS));
-  }, []);
 
   // Determine which state to use (external if provided, otherwise internal)
   const isCameraActive = externalIsCameraActive !== undefined ? externalIsCameraActive : internalIsCameraActive;
@@ -72,12 +60,11 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   }, []);
   
   // Check for captured image in localStorage when component mounts
-  // This helps recover images between component reloads
   useEffect(() => {
     if (!capturedImage && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setCapturedImage) {
-        console.log("Recovering image from localStorage");
+        console.log("Recuperando imagem do localStorage");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
       }
@@ -96,7 +83,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
         
-        // Clean up after we've used the image
+        // Limpar após uso
         localStorage.removeItem('tempCapturedImage');
       }
     }
@@ -109,7 +96,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     setIsCameraActive(false);
     setNoMatchFound(false);
     
-    // Clean up any stored images
+    // Limpar imagens armazenadas
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tempCapturedImage');
     }
@@ -118,19 +105,13 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   return (
     <div className="flex flex-col items-center p-4 sm:p-6">
       <div className="w-full">
-        {!isRegistrationMode && !isHeavyDevice && (
+        {!isRegistrationMode && (
           <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-              Connect with RealYou
+              Encontre conexões com fotos
             </span>
             <Sparkles className="h-5 w-5 text-blue-500" />
-          </h2>
-        )}
-        
-        {!isRegistrationMode && isHeavyDevice && (
-          <h2 className="text-lg font-bold text-center mb-2">
-            Connect with RealYou
           </h2>
         )}
         
@@ -167,8 +148,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Só renderizar o diálogo de agenda quando necessário */}
-      {showScheduleDialog && (
+      {showScheduleDialog && matchedPerson && (
         <ScheduleDialog 
           showDialog={showScheduleDialog} 
           matchedPerson={matchedPerson}
