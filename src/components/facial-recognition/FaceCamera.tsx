@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCcw, FlipHorizontal, X } from "lucide-react";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -21,6 +21,22 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     faceDetected,
     isVideoReady
   } = useCameraStream(true);
+
+  useEffect(() => {
+    // Force a refresh of the component after 2 seconds
+    // This helps some browsers that need a second attempt to start the camera
+    const forceRefreshTimeout = setTimeout(() => {
+      const videoElement = videoRef.current;
+      if (videoElement && videoElement.paused && videoElement.srcObject) {
+        console.log("Attempting to restart paused video");
+        videoElement.play().catch(err => 
+          console.error("Error during forced video play:", err)
+        );
+      }
+    }, 2000);
+    
+    return () => clearTimeout(forceRefreshTimeout);
+  }, []);
   
   const handleCapture = () => {
     if (!videoRef.current) return;
@@ -78,7 +94,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     );
   }
   
-  // Show loading state
+  // Show loading state but with a timer to prevent being stuck
   if (isLoading || !isVideoReady) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-900 rounded-lg p-6 h-[400px]">
@@ -86,6 +102,9 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
           <Camera size={36} className="text-white" />
         </div>
         <p className="text-white">Iniciando câmera...</p>
+        <p className="text-white/70 text-xs mt-2">
+          Se essa tela persistir, verifique as permissões da câmera
+        </p>
       </div>
     );
   }

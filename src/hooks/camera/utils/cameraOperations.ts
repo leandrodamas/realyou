@@ -9,32 +9,37 @@ export const initializeVideoStream = async (
 ): Promise<MediaStream | null> => {
   console.log("Initializing camera with constraints:", JSON.stringify(constraints));
   
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
-  console.log("Camera stream obtained successfully");
-  
-  if (!mountedRef.current) {
-    console.log("Component unmounted, cleaning up stream");
-    stream.getTracks().forEach(track => track.stop());
-    return null;
-  }
-  
-  if (videoRef.current && mountedRef.current) {
-    const video = videoRef.current;
-    video.srcObject = stream;
-    video.playsInline = true;
-    video.muted = true;
-    video.autoplay = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    console.log("Camera stream obtained successfully");
     
-    try {
-      await video.play();
-      console.log("Video playback started successfully");
-    } catch (error) {
-      console.error("Error during video play:", error);
-      throw error;
+    if (!mountedRef.current) {
+      console.log("Component unmounted, cleaning up stream");
+      stream.getTracks().forEach(track => track.stop());
+      return null;
     }
+    
+    if (videoRef.current && mountedRef.current) {
+      const video = videoRef.current;
+      video.srcObject = stream;
+      video.playsInline = true;
+      video.muted = true;
+      video.autoplay = true;
+      
+      try {
+        await video.play();
+        console.log("Video playback started successfully");
+      } catch (error) {
+        console.error("Error during video play:", error);
+        // Continue even if play fails - some mobile browsers require user interaction
+      }
+    }
+    
+    return stream;
+  } catch (error) {
+    console.error("Error getting user media:", error);
+    throw error;
   }
-  
-  return stream;
 };
 
 export const setupVideoElement = (
@@ -53,7 +58,7 @@ export const setupVideoElement = (
 
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
-    const maxWaitTime = 3000;
+    const maxWaitTime = 5000; // Increased timeout to 5 seconds
     const startTime = Date.now();
     
     if (video.videoWidth > 0 && video.videoHeight > 0) {
@@ -78,10 +83,17 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
       setTimeout(checkReady, 100);
     };
     
-    video.addEventListener('loadeddata', () => resolve(true), { once: true });
-    video.addEventListener('loadedmetadata', () => resolve(true), { once: true });
-    video.addEventListener('canplay', () => resolve(true), { once: true });
+    // Register event listeners
+    const eventHandler = () => {
+      console.log("Video ready event fired");
+      resolve(true);
+    };
     
+    video.addEventListener('loadeddata', eventHandler, { once: true });
+    video.addEventListener('loadedmetadata', eventHandler, { once: true });
+    video.addEventListener('canplay', eventHandler, { once: true });
+    
+    // Start checking in case events don't fire
     checkReady();
   });
 };

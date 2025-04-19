@@ -48,6 +48,8 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
   }, []);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const startCamera = async () => {
       if (!isCameraActive) {
         return;
@@ -57,6 +59,16 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
       setHasError(false);
       setErrorMessage(null);
       setIsVideoReady(false);
+
+      // Set a timeout to force the camera to be considered ready after 10 seconds
+      // This prevents users from being stuck in loading state
+      timeoutId = setTimeout(() => {
+        if (mountedRef.current && isLoading) {
+          console.log("Camera initialization timeout - forcing ready state");
+          setIsLoading(false);
+          setIsVideoReady(true);
+        }
+      }, 10000);
 
       try {
         const constraints: MediaStreamConstraints = {
@@ -90,6 +102,10 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     };
 
     startCamera();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [isCameraActive, facingMode]);
 
   const switchCamera = () => {
