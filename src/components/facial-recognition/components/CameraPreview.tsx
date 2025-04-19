@@ -44,13 +44,21 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
           videoElement.play().catch(err => {
             console.error("Error playing video on mount:", err);
             
-            // If play fails, try reapplying the stream
-            setTimeout(() => {
-              if (videoElement && videoRef.current) {
+            // Try multiple times to play the video
+            const retryPlay = (attempts = 3, delay = 300) => {
+              if (attempts <= 0 || !videoElement || !videoRef.current) return;
+              
+              setTimeout(() => {
+                console.log(`Retry play attempt ${4-attempts}`);
                 videoElement.srcObject = stream;
-                videoElement.play().catch(e => console.error("Error on retry play:", e));
-              }
-            }, 200);
+                videoElement.play().catch(e => {
+                  console.error(`Error on retry play attempt ${4-attempts}:`, e);
+                  retryPlay(attempts - 1, delay);
+                });
+              }, delay);
+            };
+            
+            retryPlay();
           });
         } catch (err) {
           console.error("Error during initial play attempt:", err);
@@ -106,7 +114,7 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
           className={`rounded-full size-16 bg-white text-purple-600 hover:bg-white/90 shadow-lg border border-purple-100 ${
             faceDetected ? "animate-pulse" : "opacity-70"
           }`}
-          disabled={false} // Always enable the button for testing
+          disabled={false} // Always enable the button
         >
           <Camera className="h-8 w-8" />
         </Button>
@@ -138,6 +146,9 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
         <div>
           Video: {videoRef.current?.readyState || 0}/4 
           {videoRef.current?.paused ? " (paused)" : " (playing)"}
+        </div>
+        <div>
+          Size: {videoRef.current?.videoWidth || 0}x{videoRef.current?.videoHeight || 0}
         </div>
       </div>
     </div>

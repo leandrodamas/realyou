@@ -55,6 +55,7 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
+    let shortTimeoutId: NodeJS.Timeout;
     
     const startCamera = async () => {
       if (!isCameraActive) {
@@ -66,14 +67,22 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
       setErrorMessage(null);
       setIsVideoReady(false);
 
-      // Definir um timeout mais longo para garantir que os usuários não fiquem presos no estado de carregamento
+      // Shorter timeout to set video ready if taking too long
+      shortTimeoutId = setTimeout(() => {
+        if (mountedRef.current && isLoading) {
+          console.log("First camera initialization timeout - setting video ready");
+          setIsVideoReady(true);
+        }
+      }, 5000); // 5 seconds
+
+      // Longer timeout to complete initialization if still loading
       timeoutId = setTimeout(() => {
         if (mountedRef.current && isLoading) {
-          console.log("Camera initialization timeout - forcing ready state");
+          console.log("Final camera initialization timeout - forcing ready state");
           setIsLoading(false);
           setIsVideoReady(true);
         }
-      }, 15000);
+      }, 10000); // 10 seconds instead of 15
 
       try {
         const constraints: MediaStreamConstraints = {
@@ -81,27 +90,41 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
           video: {
             facingMode,
             width: { ideal: 1280 },
-            height: { ideal: 720 }
+            height: { ideal: the 720 }
           }
         };
 
+        console.log("Initializing camera with constraints:", JSON.stringify(constraints));
         const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
         
         if (stream && videoRef.current && mountedRef.current) {
+          console.log("Camera stream obtained successfully");
           streamRef.current = stream;
           setupVideoElement(videoRef.current, stream);
           
-          // Verifica imediatamente se o vídeo está tocando
+          // Check immediately if video is playing
           ensureVideoPlaying(videoRef.current);
           
-          await waitForVideoReady(videoRef.current);
-          
-          if (mountedRef.current) {
-            // Verificar novamente se o vídeo está tocando
-            ensureVideoPlaying(videoRef.current);
+          try {
+            await waitForVideoReady(videoRef.current);
             
-            setIsVideoReady(true);
-            setIsLoading(false);
+            if (mountedRef.current) {
+              // Check again if video is playing
+              ensureVideoPlaying(videoRef.current);
+              
+              setIsVideoReady(true);
+              setIsLoading(false);
+              
+              console.log("Video ready, dimensions:", 
+                videoRef.current.videoWidth, "x", videoRef.current.videoHeight);
+            }
+          } catch (readyError) {
+            console.error("Video ready timeout:", readyError);
+            // Even if timeout, we still set video ready to allow UI to progress
+            if (mountedRef.current) {
+              setIsVideoReady(true);
+              setIsLoading(false);
+            }
           }
         }
       } catch (error: any) {
@@ -109,7 +132,7 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
         if (mountedRef.current) {
           setHasError(true);
           
-          // Definir uma mensagem de erro mais específica com base no erro
+          // Define a more specific error message based on the error
           if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             setErrorMessage("Permissão para acessar câmera foi negada. Por favor, verifique as configurações do seu navegador.");
           } else if (error.name === 'NotFoundError') {
@@ -131,14 +154,15 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      if (shortTimeoutId) clearTimeout(shortTimeoutId);
     };
   }, [isCameraActive, facingMode]);
 
-  // Adicionar um efeito para verificar periodicamente o status do vídeo
+  // Check video status periodically
   useEffect(() => {
     if (!isCameraActive || !videoRef.current || hasError) return;
 
-    // Verificar a cada 2 segundos se o vídeo está realmente funcionando
+    // Check every 2 seconds if video is functioning
     const checkInterval = setInterval(() => {
       const video = videoRef.current;
       if (video && video.paused && video.srcObject) {
