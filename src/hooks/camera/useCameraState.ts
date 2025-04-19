@@ -1,5 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
+import { useCameraError } from "./useCameraError";
 import { cleanupCameraStream } from "../utils/cameraUtils";
 
 export const useCameraState = (isCameraActive: boolean) => {
@@ -7,15 +8,24 @@ export const useCameraState = (isCameraActive: boolean) => {
   const streamRef = useRef<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCamera, setHasCamera] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [errorType, setErrorType] = useState<string | null>(null);
-  const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [faceDetected, setFaceDetected] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const retryCountRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
+  
+  // Use the camera error hook directly
+  const {
+    hasError,
+    errorMessage,
+    lastErrorMessage,
+    errorType,
+    retryCountRef,
+    handleCameraError,
+    resetError,
+    incrementRetryCount,
+    resetRetryCount,
+    hasReachedMaxRetries
+  } = useCameraError();
 
   useEffect(() => {
     mountedRef.current = true;
@@ -36,13 +46,11 @@ export const useCameraState = (isCameraActive: boolean) => {
     hasCamera,
     setHasCamera,
     hasError,
-    setHasError,
+    setHasError: resetError,
     errorMessage,
-    setErrorMessage,
     errorType,
-    setErrorType,
     lastErrorMessage,
-    setLastErrorMessage,
+    handleCameraError,
     facingMode,
     setFacingMode,
     faceDetected,

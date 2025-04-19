@@ -18,6 +18,7 @@ export interface CameraAccessState {
 
 export interface CameraErrorState {
   hasError: boolean;
+  errorMessage: string | null;
   lastErrorMessage: string | null;
   errorType: string | null;
   retryCountRef: RefObject<number>;

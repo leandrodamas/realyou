@@ -10,11 +10,11 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
   const {
     videoRef,
     hasError,
-    hasCamera,
-    isLoading,
     errorMessage,
     errorType,
     lastErrorMessage,
+    hasCamera,
+    isLoading,
     facingMode,
     setFacingMode,
     isVideoReady,

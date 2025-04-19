@@ -9,8 +9,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     streamRef,
     mountedRef,
     setIsLoading,
-    setHasError,
-    setErrorMessage,
+    handleCameraError,
     setIsVideoReady,
     facingMode
   } = useCameraState(isCameraActive);
@@ -23,19 +22,19 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       if (!isCameraActive) return;
 
       setIsLoading(true);
-      setHasError(false);
-      setErrorMessage(null);
       setIsVideoReady(false);
 
+      // Set a short timeout to ensure the UI shows loading state
       shortTimeoutId = setTimeout(() => {
-        if (mountedRef.current && setIsVideoReady) {
+        if (mountedRef.current) {
           console.log("First camera initialization timeout - setting video ready");
           setIsVideoReady(true);
         }
       }, 3000);
 
+      // Set a longer timeout for final fallback
       timeoutId = setTimeout(() => {
-        if (mountedRef.current && setIsLoading) {
+        if (mountedRef.current) {
           console.log("Final camera initialization timeout - forcing ready state");
           setIsLoading(false);
           setIsVideoReady(true);
@@ -68,8 +67,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       } catch (error: any) {
         console.error("Camera access error:", error);
         if (mountedRef.current) {
-          setHasError(true);
-          setErrorMessage(error.message);
+          handleCameraError(error);
           setIsLoading(false);
         }
       }

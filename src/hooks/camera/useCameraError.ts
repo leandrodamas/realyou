@@ -5,6 +5,7 @@ import { CameraErrorState } from "./types";
 
 export const useCameraError = (): CameraErrorState => {
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<string | null>(null);
   const retryCountRef = useRef<number>(0);
@@ -14,7 +15,7 @@ export const useCameraError = (): CameraErrorState => {
   useEffect(() => {
     let resetTimer: NodeJS.Timeout | null = null;
     
-    // Only auto-reset for "NotReadableError" - camera in use errors
+    // Only auto-retry for "NotReadableError" - camera in use errors
     // as these may resolve themselves when other apps release the camera
     if (hasError && errorType === 'NotReadableError' && retryCountRef.current < maxRetries) {
       resetTimer = setTimeout(() => {
@@ -63,6 +64,7 @@ export const useCameraError = (): CameraErrorState => {
     });
     
     setLastErrorMessage(errorMessage);
+    setErrorMessage(errorMessage);
     setHasError(true);
     
     // Only show toast for first occurrence or every third retry
@@ -76,7 +78,7 @@ export const useCameraError = (): CameraErrorState => {
 
   const resetError = () => {
     setHasError(false);
-    setLastErrorMessage(null);
+    setErrorMessage(null);
   };
 
   const incrementRetryCount = () => {
@@ -93,6 +95,7 @@ export const useCameraError = (): CameraErrorState => {
 
   return {
     hasError,
+    errorMessage,
     lastErrorMessage,
     errorType,
     retryCountRef,
