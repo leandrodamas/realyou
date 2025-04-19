@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCcw, FlipHorizontal, X } from "lucide-react";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -31,97 +31,96 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
   const mountedRef = useRef(true);
   // Track manual camera restart attempts
   const restartAttemptsRef = useRef(0);
+  // Track if camera was started by user interaction
+  const [cameraStarted, setCameraStarted] = useState(false);
+  // Track if we showed a temporary message to the user
+  const [showedTempMessage, setShowedTempMessage] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
     
-    // Identify device for platform-specific handling
+    // Identificar dispositivo para tratamento específico
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
     
-    // Force a component update to refresh video element
-    const forceRefreshTimeout = setTimeout(() => {
+    // Mostrar mensagem de dica em dispositivos móveis após um tempo
+    let tempMessageTimer: NodeJS.Timeout;
+    if (isMobile && !showedTempMessage) {
+      tempMessageTimer = setTimeout(() => {
+        toast.info("Toque na tela para ajudar a ativar a câmera", {
+          duration: 4000,
+          id: "camera-touch-tip"
+        });
+        setShowedTempMessage(true);
+      }, 3000);
+    }
+    
+    // Levantar uma ação de usuário em dispositivos móveis para ativar a câmera
+    const unlockCamera = () => {
+      if (!cameraStarted && mountedRef.current) {
+        console.log("Tentativa de desbloqueio da câmera por interação do usuário");
+        setCameraStarted(true);
+        
+        // Em iOS, criar e clicar em um botão temporário para garantir início do vídeo
+        if (isIOS && videoRef.current) {
+          if (videoRef.current.paused && videoRef.current.srcObject) {
+            console.log("Tentando iniciar vídeo através de interação");
+            videoRef.current.play().catch(e => {
+              console.log("Erro ao iniciar vídeo através de interação:", e);
+            });
+          }
+        }
+      }
+    };
+    
+    // Adicionar event listeners para detectar interação do usuário
+    document.addEventListener('touchend', unlockCamera);
+    document.addEventListener('click', unlockCamera);
+    
+    // Adicionar verificação periódica para garantir que o vídeo está em execução
+    const periodicCheck = setInterval(() => {
       const videoElement = videoRef.current;
       if (videoElement && videoElement.paused && videoElement.srcObject) {
-        console.log("Attempting to restart paused video");
-        videoElement.play().catch(err => 
-          console.error("Error during forced video play:", err)
-        );
-      }
-    }, 1000);
-    
-    // Add periodic checks to ensure video is playing
-    const periodicCheckInterval = setInterval(() => {
-      const videoElement = videoRef.current;
-      if (videoElement) {
-        // Log video state for debugging
-        console.log("Video state check:", {
-          paused: videoElement.paused,
-          readyState: videoElement.readyState,
-          srcObject: !!videoElement.srcObject,
-          width: videoElement.videoWidth,
-          height: videoElement.videoHeight
-        });
-        
-        // Try to play if paused but has source
-        if (videoElement.paused && videoElement.srcObject) {
-          console.log("Auto-play attempt for paused video");
-          videoElement.play().catch(() => {
-            // If play fails multiple times, suggest page reload
-            if (mountedRef.current && !isLoading && restartAttemptsRef.current > 3) {
-              toast.error("Problema ao iniciar vídeo. Tente recarregar a página.", {
-                duration: 5000,
-                id: "camera-restart-error"
-              });
-            }
-          });
+        console.log("Vídeo pausado, tentando reiniciar");
+        videoElement.play().catch(e => {
+          console.log("Erro ao reiniciar vídeo:", e);
           restartAttemptsRef.current++;
-        }
+          
+          // Se várias tentativas falharem, sugerir reinicialização completa
+          if (restartAttemptsRef.current >= 3 && !showedTempMessage) {
+            toast.error("Problemas ao iniciar câmera. Tente reiniciar.", {
+              duration: 4000,
+              id: "camera-restart-suggestion"
+            });
+            setShowedTempMessage(true);
+          }
+        });
       }
-    }, 3000);
+    }, 2000);
     
-    // Handle iOS specific behavior
+    // Em dispositivos iOS, tentar abordagens específicas
     if (isIOS) {
-      // For iOS we need to handle touch events to trigger video playback
-      document.body.addEventListener('touchend', handleIOSTouch);
-      
-      // iOS often needs a direct element click, add a hidden button that gets clicked
-      const iosHelper = document.createElement('button');
-      iosHelper.style.position = 'fixed';
-      iosHelper.style.opacity = '0';
-      iosHelper.style.pointerEvents = 'none';
-      document.body.appendChild(iosHelper);
+      // Criar um elemento de interação invisível para ajudar a iniciar o vídeo
+      const invisibleButton = document.createElement('button');
+      invisibleButton.style.position = 'fixed';
+      invisibleButton.style.opacity = '0.01';
+      invisibleButton.style.width = '1px';
+      invisibleButton.style.height = '1px';
+      invisibleButton.textContent = 'Start Camera';
+      document.body.appendChild(invisibleButton);
       
       setTimeout(() => {
-        iosHelper.click();
-        document.body.removeChild(iosHelper);
-      }, 1000);
+        invisibleButton.click();
+        document.body.removeChild(invisibleButton);
+      }, 500);
     }
     
-    // Handle Android specific behavior
-    if (isAndroid) {
-      // For Android we need repeated attempts
-      let androidAttempts = 0;
-      const androidInterval = setInterval(() => {
-        androidAttempts++;
-        const videoElement = videoRef.current;
-        if (videoElement && !videoElement.videoWidth && androidAttempts < 5) {
-          console.log("Android camera retry attempt", androidAttempts);
-          
-          if (videoElement.srcObject) {
-            videoElement.play().catch(() => {});
-          }
-        } else {
-          clearInterval(androidInterval);
-        }
-      }, 1000);
-    }
-    
-    // Request wakelock to prevent screen from sleeping
+    // Tenta obter wakelock para evitar que a tela desligue
     const requestWakeLock = async () => {
       if ('wakeLock' in navigator) {
         try {
-          // @ts-ignore - WakeLock may not be in all TS definitions
+          // @ts-ignore
           const wakeLock = await navigator.wakeLock.request('screen');
           console.log('Wake lock is active');
           return wakeLock;
@@ -133,7 +132,6 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
       return null;
     };
     
-    // Try to get wake lock
     let wakeLockObj: any = null;
     requestWakeLock().then(lock => {
       wakeLockObj = lock;
@@ -141,29 +139,22 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     
     return () => {
       mountedRef.current = false;
-      clearTimeout(forceRefreshTimeout);
-      clearInterval(periodicCheckInterval);
+      clearInterval(periodicCheck);
+      clearTimeout(tempMessageTimer);
+      document.removeEventListener('touchend', unlockCamera);
+      document.removeEventListener('click', unlockCamera);
       
-      if (isIOS) {
-        document.body.removeEventListener('touchend', handleIOSTouch);
-      }
-      
-      // Release wake lock if we have one
+      // Liberar wakelock
       if (wakeLockObj) {
-        wakeLockObj.release().catch(() => {});
+        try {
+          wakeLockObj.release().catch(() => {});
+        } catch (e) {
+          console.log("Erro ao liberar wakelock:", e);
+        }
       }
     };
   }, []);
-  
-  // Helper function for iOS touch handler
-  const handleIOSTouch = () => {
-    const videoElement = videoRef.current;
-    if (videoElement && videoElement.paused && videoElement.srcObject) {
-      console.log("iOS touch triggered video play attempt");
-      videoElement.play().catch(() => {});
-    }
-  };
-  
+
   const handleCapture = () => {
     if (!videoRef.current) {
       toast.error("Câmera não está disponível");
@@ -233,7 +224,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     );
   }
   
-  // Show loading state but with a timer to avoid getting stuck
+  // Show loading state
   if (isLoading || !isVideoReady) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-900 rounded-lg p-6 h-[400px]">
@@ -272,7 +263,7 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-900 text-white rounded-lg p-6 h-[400px]">
         <p className="mb-4">Nenhuma câmera encontrada</p>
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} className="text-white border-white/30">
           Cancelar
         </Button>
       </div>
@@ -323,26 +314,6 @@ const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, onCancel }) => {
         
         <Button variant="ghost" className="text-white" onClick={switchCamera}>
           <FlipHorizontal className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Debug Status */}
-      <div className="absolute top-2 right-2 bg-black/50 text-white text-xs p-1 rounded">
-        {videoRef.current ? 
-          `Status: ${videoRef.current.readyState}/4 ${videoRef.current.paused ? '(pausado)' : '(rodando)'}` : 
-          'Não inicializado'}
-      </div>
-      
-      {/* Camera reload button */}
-      <div className="absolute top-2 left-2">
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="text-white hover:bg-black/30" 
-          onClick={handleFullReload}
-        >
-          <RefreshCcw className="h-4 w-4 mr-1" />
-          Reiniciar
         </Button>
       </div>
     </div>

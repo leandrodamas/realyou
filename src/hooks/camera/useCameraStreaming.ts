@@ -1,7 +1,9 @@
 
 import { useEffect, useCallback } from "react";
 import { useCameraState } from "./useCameraState";
-import { initializeVideoStream, setupVideoElement } from "./utils/cameraOperations";
+import { initializeVideoStream } from "./utils/streamInitializer";
+import { setupVideoElement } from "./utils/videoElementSetup";
+import { toast } from "sonner";
 
 export const useCameraStreaming = (isCameraActive: boolean) => {
   const {
@@ -13,7 +15,8 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     setIsVideoReady,
     facingMode,
     retryCountRef,
-    resetRetryCount
+    resetRetryCount,
+    incrementRetryCount
   } = useCameraState(isCameraActive);
 
   const startCamera = useCallback(async () => {
@@ -29,14 +32,20 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     let timeoutId: NodeJS.Timeout;
     
     try {
-      // Set a longer timeout for final fallback
+      // Set a timeout for camera initialization
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
-          console.log("Timeout final de inicialização da câmera - forçando estado de pronto");
+          console.log("Timeout de inicialização da câmera - forçando estado de pronto");
           setIsLoading(false);
           setIsVideoReady(true);
+          
+          // Em alguns navegadores, podemos tentar forçar interação do usuário para ativar a câmera
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          if (isIOS) {
+            toast.info("Toque na tela para ativar a câmera", { duration: 3000 });
+          }
         }
-      }, 15000); // Extended timeout
+      }, 10000); // 10 segundos para timeout
 
       // Determinar se estamos em um dispositivo móvel para ajustar as configurações
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -71,9 +80,10 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       // Force a small delay before initializing camera
       await new Promise(resolve => setTimeout(resolve, 300));
       
+      // Tentar inicializar stream com configurações específicas
       const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
       
-      // Limpar timeouts se o stream foi obtido com sucesso
+      // Se chegou aqui, tivemos sucesso
       clearTimeout(timeoutId);
       
       if (stream && videoRef.current && mountedRef.current) {
@@ -95,17 +105,35 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
             
             // Forçar refresh da interface
             if (videoRef.current) {
-              const event = new Event('resize');
-              window.dispatchEvent(event);
+              try {
+                const event = new Event('resize');
+                window.dispatchEvent(event);
+              } catch (e) {
+                console.error("Erro ao disparar evento:", e);
+              }
             }
           }
         }, setupDelay);
       }
     } catch (error: any) {
       console.error("Erro de acesso à câmera:", error);
+      
+      // Limpar timeout se ocorrer erro
+      clearTimeout(timeoutId);
+      
       if (mountedRef.current) {
+        incrementRetryCount();
         handleCameraError(error);
         setIsLoading(false);
+        
+        // Se for dispositivo móvel, dar dicas específicas ao usuário
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          toast.error("Erro ao acessar câmera. Verifique as permissões.", {
+            duration: 5000,
+            id: "camera-error-mobile"
+          });
+        }
       }
     }
   }, [isCameraActive, facingMode]);
@@ -151,8 +179,18 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
         }
       }, 5000);
       
+      // Uma segunda verificação após mais tempo
+      const secondCheckTimeout = setTimeout(() => {
+        const video = videoRef.current;
+        if (video && (!video.videoWidth || !video.videoHeight) && mountedRef.current) {
+          console.log("Câmera iniciada, mas sem dimensões de vídeo. Tentando novamente.");
+          startCamera();
+        }
+      }, 8000);
+      
       return () => {
         clearTimeout(checkCameraTimeout);
+        clearTimeout(secondCheckTimeout);
       };
     }
   }, [isCameraActive, startCamera]);

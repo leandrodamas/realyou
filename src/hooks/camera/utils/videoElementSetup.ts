@@ -8,12 +8,19 @@ export const setupVideoElement = (
     
     // Limpeza completa de qualquer stream anterior
     if (video.srcObject) {
-      video.pause();
-      video.srcObject = null;
-      video.load();
+      try {
+        video.pause();
+        video.srcObject = null;
+        video.load();
+      } catch (e) {
+        console.error("Erro ao limpar vídeo:", e);
+      }
     }
     
-    // Configurar stream e todos os atributos importantes
+    // Força o vídeo a parar completamente qualquer atividade anterior
+    video.pause();
+    
+    // Configurar todos os atributos críticos para compatibilidade cross-browser
     video.srcObject = stream;
     video.style.width = "100%";
     video.style.height = "100%";
@@ -33,50 +40,58 @@ export const setupVideoElement = (
     // Garantir que o vídeo seja carregado
     video.load();
     
-    // Forçar reprodução com múltiplas tentativas e intervalo maior entre tentativas
-    const playVideo = (attempts = 15) => {
+    // Tentar reproduzir o vídeo imediatamente
+    video.play().then(() => {
+      console.log("Vídeo iniciado com sucesso");
+    }).catch(e => {
+      console.warn("Erro ao iniciar vídeo na primeira tentativa:", e);
+      
+      // Se falhar no play inicial, tentar criar um manipulador de eventos para o próximo toque
+      const handleUserInteraction = () => {
+        video.play().catch(err => console.log("Erro ao reproduzir vídeo após interação:", err));
+        ['touchend', 'click', 'keydown'].forEach(event => {
+          document.removeEventListener(event, handleUserInteraction);
+        });
+      };
+      
+      // Adicionar ouvintes para qualquer interação do usuário
+      ['touchend', 'click', 'keydown'].forEach(event => {
+        document.addEventListener(event, handleUserInteraction, { once: true });
+      });
+      
+      // Tentar novamente após um breve atraso
+      setTimeout(() => {
+        playVideo(12);
+      }, 800);
+    });
+    
+    // Função para tentar reproduzir o vídeo múltiplas vezes
+    function playVideo(attempts = 5) {
       if (attempts <= 0) {
-        console.log("Máximo de tentativas de reprodução atingido, marcando como pronto mesmo assim");
-        const event = new Event('playing');
-        video.dispatchEvent(event);
+        console.log("Número máximo de tentativas de reprodução atingido");
         return;
       }
       
-      video.play()
-        .then(() => {
-          console.log("Vídeo iniciado com sucesso");
-        })
-        .catch(e => {
-          console.warn(`Erro ao iniciar vídeo, tentativas restantes: ${attempts-1}. Erro:`, e);
-          setTimeout(() => playVideo(attempts - 1), 600);
-        });
-    };
-    
-    // Começar tentativas de reprodução com um atraso maior
-    setTimeout(() => {
-      playVideo();
-    }, 500);
-    
-    // Para iOS, precisamos forçar a reprodução após um toque do usuário
-    if (isIOS) {
-      document.body.addEventListener('touchend', function iosTouchHandler() {
-        video.play().catch(e => console.log("Erro ao reproduzir vídeo no iOS:", e));
-        document.body.removeEventListener('touchend', iosTouchHandler);
-      }, { once: true });
-    }
-    
-    // Garantir que o vídeo seja marcado como pronto em até 10 segundos
-    setTimeout(() => {
-      if (video.paused) {
-        console.log("Vídeo ainda parado após tempo limite, forçando reprodução");
-        video.play().catch(() => {
-          console.log("Tentativa final de reprodução falhou, marcando como pronto");
-          // Disparar um evento falso de reprodução para continuar o fluxo
-          const event = new Event('playing');
-          video.dispatchEvent(event);
+      if (video.paused && video.srcObject) {
+        console.log(`Tentativa ${5-attempts+1} de iniciar vídeo`);
+        video.play().then(() => {
+          console.log(`Vídeo iniciado com sucesso na tentativa ${5-attempts+1}`);
+        }).catch(e => {
+          console.warn(`Erro na tentativa ${5-attempts+1}:`, e);
+          setTimeout(() => playVideo(attempts - 1), 800);
         });
       }
-    }, 10000);
+    }
+    
+    // Garantir que o vídeo seja marcado como pronto após tempo limite
+    setTimeout(() => {
+      if (video.paused && video.srcObject) {
+        console.log("Vídeo ainda parado após tempo limite, forçando reprodução final");
+        video.play().catch(() => {
+          console.log("Tentativa final de reprodução falhou, considerando como pronto mesmo assim");
+        });
+      }
+    }, 5000);
     
   } catch (error) {
     console.error("Erro ao configurar elemento de vídeo:", error);
@@ -93,24 +108,38 @@ export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
   });
   
   if (video.paused && video.srcObject) {
-    // Múltiplas tentativas com intervalos crescentes
-    const attemptPlay = (attempt = 1) => {
-      video.play().catch(e => {
-        console.log(`Tentativa ${attempt} de reprodução falhou:`, e);
-        if (attempt < 8) {
-          setTimeout(() => attemptPlay(attempt + 1), 400 * attempt);
-        } else {
-          // Disparar um evento falso de reprodução para continuar o fluxo
-          const event = new Event('playing');
-          video.dispatchEvent(event);
+    // Tentar reproduzir diretamente
+    video.play().catch(e => {
+      console.log(`Tentativa de reprodução falhou:`, e);
+      
+      // Se falhou, tentar criar um botão invisível para acionar o play
+      const invisibleButton = document.createElement('button');
+      invisibleButton.style.position = 'fixed';
+      invisibleButton.style.bottom = '0';
+      invisibleButton.style.opacity = '0.01';
+      invisibleButton.style.width = '100px';
+      invisibleButton.style.height = '50px';
+      invisibleButton.textContent = 'Iniciar vídeo';
+      
+      invisibleButton.onclick = () => {
+        video.play().catch(() => {});
+        document.body.removeChild(invisibleButton);
+      };
+      
+      document.body.appendChild(invisibleButton);
+      setTimeout(() => {
+        if (document.body.contains(invisibleButton)) {
+          invisibleButton.click();
+          setTimeout(() => {
+            if (document.body.contains(invisibleButton)) {
+              document.body.removeChild(invisibleButton);
+            }
+          }, 1000);
         }
-      });
-    };
+      }, 500);
+    });
     
-    // Tentar reproduzir o vídeo várias vezes
-    attemptPlay();
-    
-    // Definir todos os atributos críticos novamente
+    // Configurar atributos críticos novamente
     video.setAttribute("playsinline", "true");
     video.setAttribute("autoplay", "true");
     video.setAttribute("muted", "true");
@@ -120,16 +149,16 @@ export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
 
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
-    // Tempo máximo de espera para vídeo estar pronto
-    const maxWaitTime = 12000; 
-    const startTime = Date.now();
-    
     // Se o vídeo já tem dimensões, está pronto
     if (video.videoWidth > 0 && video.videoHeight > 0) {
       console.log("Vídeo já tem dimensões:", video.videoWidth, "x", video.videoHeight);
       resolve(true);
       return;
     }
+    
+    // Tempo máximo de espera para vídeo estar pronto
+    const maxWaitTime = 8000; 
+    const startTime = Date.now();
     
     // Função para verificar se o vídeo está pronto
     const checkReady = () => {
