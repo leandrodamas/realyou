@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Camera, ArrowRight, Search } from "lucide-react";
+import { Camera, ArrowRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import CBOSearch from "./CBOSearch";
 
 interface PersonalInfoFormProps {
   onComplete: () => void;
@@ -12,9 +12,7 @@ interface PersonalInfoFormProps {
 
 const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
   const [fullName, setFullName] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [showCBOSearch, setShowCBOSearch] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Carregar informações do usuário do localStorage se disponíveis
@@ -26,12 +24,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         if (profile.fullName) {
           setFullName(profile.fullName);
         } else if (profile.username) {
-          // Fallback to username if fullName is not available
           setFullName(profile.username);
-        }
-        
-        if (profile.title) {
-          setTitle(profile.title);
         }
         
         if (profile.profileImage) {
@@ -51,7 +44,6 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         const imageDataUrl = reader.result as string;
         setProfileImage(imageDataUrl);
 
-        // Update localStorage with new profile image
         try {
           const savedProfile = localStorage.getItem('userProfile');
           const profile = savedProfile ? JSON.parse(savedProfile) : {};
@@ -72,38 +64,19 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFullName(e.target.value);
-  };
-
-  const handleTitleSelect = (selectedTitle: string) => {
-    setTitle(selectedTitle);
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-  };
-
   const handleSubmit = () => {
     if (!fullName.trim()) {
       toast.error("Por favor, preencha seu nome completo");
       return;
     }
     
-    // Atualizar o perfil salvo com novos dados
     try {
       const savedProfile = localStorage.getItem('userProfile');
       const profile = savedProfile ? JSON.parse(savedProfile) : {};
       
-      // Update profile data
       const updatedProfile = {
         ...profile,
         fullName,
-        title,
         profileImage
       };
       
@@ -128,34 +101,8 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         <Input 
           placeholder="Seu nome completo" 
           value={fullName} 
-          onChange={handleNameChange} 
+          onChange={(e) => setFullName(e.target.value)} 
         />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Título Profissional
-        </label>
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Ex: Designer UX/UI Senior" 
-            value={title}
-            onChange={handleTitleChange}
-            className="flex-1"
-          />
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setShowCBOSearch(true)}
-            className="shrink-0"
-            type="button"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Pesquise sua profissão no CBO para maior precisão
-        </p>
       </div>
       
       <div>
@@ -185,7 +132,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={triggerFileInput}
+            onClick={() => fileInputRef.current?.click()}
           >
             {profileImage ? "Alterar Foto" : "Fazer Upload"}
           </Button>
@@ -199,17 +146,12 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700"
           onClick={handleSubmit}
+          disabled={!fullName || !profileImage}
         >
           Continuar
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
-      
-      <CBOSearch 
-        open={showCBOSearch} 
-        setOpen={setShowCBOSearch}
-        onSelect={handleTitleSelect}
-      />
     </div>
   );
 };
