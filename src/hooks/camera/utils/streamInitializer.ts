@@ -2,6 +2,14 @@
 import { RefObject } from "react";
 import { cleanupCameraStream } from "../../utils/cameraUtils";
 
+// Extended type definition for the advanced camera constraints
+interface AdvancedMediaTrackConstraint {
+  // Standard properties plus custom ones
+  autoFocus?: boolean;
+  exposureMode?: string;
+  [key: string]: any; // Allow any other properties for flexibility
+}
+
 export const initializeVideoStream = async (
   constraints: MediaStreamConstraints,
   videoRef: RefObject<HTMLVideoElement>,
@@ -173,10 +181,18 @@ export const initializeVideoStream = async (
           
           // Tentar aplicar restrições adicionais que podem ajudar em alguns dispositivos
           try {
+            // Cast para any para contornar as limitações do TypeScript
+            // com propriedades avançadas de constraints que variam entre navegadores
             await videoTracks[0].applyConstraints({
               advanced: [
-                { autoFocus: true },
-                { exposureMode: "continuous" }
+                { 
+                  // A tipagem do TypeScript não inclui estas propriedades avançadas
+                  // mas elas são suportadas por muitos navegadores
+                  autoFocus: true 
+                } as AdvancedMediaTrackConstraint,
+                { 
+                  exposureMode: "continuous" 
+                } as AdvancedMediaTrackConstraint
               ]
             });
           } catch (e) {
