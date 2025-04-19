@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
@@ -122,7 +123,6 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       } catch (error) {
         console.error("Erro ao capturar imagem:", error);
         if (mountedRef.current) {
-          setErrorMessage("Falha ao processar imagem da câmera");
           toast.error("Erro ao capturar imagem. Tente novamente.");
         }
       }
