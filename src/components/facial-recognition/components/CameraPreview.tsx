@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
+import { Camera, RefreshCw } from "lucide-react";
 import CameraOverlay from "../CameraOverlay";
 import FaceDetectionStatus from "../FaceDetectionStatus";
 import CameraControls from "./CameraControls";
@@ -35,11 +35,11 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
     if (videoElement) {
       console.log("CameraPreview mounted, refreshing video element");
       
-      // Always try to restart the video element on mount
+      // Try to restart the video element on mount
       if (videoElement.srcObject) {
         const stream = videoElement.srcObject as MediaStream;
         
-        // Force video to play
+        // Force video to play with multiple attempts
         try {
           videoElement.play().catch(err => {
             console.error("Error playing video on mount:", err);
@@ -80,9 +80,29 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
       };
     }
   }, [videoRef]);
+
+  const handleRefresh = () => {
+    // Reload the page to restart everything
+    window.location.reload();
+  };
   
   return (
     <div className="relative w-full h-[75vh] bg-black">
+      {/* Display a "no video" message if video isn't ready */}
+      {(!videoRef.current || !videoRef.current.srcObject || videoRef.current.readyState === 0) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90">
+          <p className="text-white mb-4">Câmera não inicializada corretamente</p>
+          <Button 
+            onClick={handleRefresh}
+            variant="outline"
+            className="bg-white/10 text-white border-white/20"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reiniciar câmera
+          </Button>
+        </div>
+      )}
+      
       {/* Use inline style display block to ensure video is visible */}
       <video 
         ref={videoRef} 
@@ -136,6 +156,10 @@ const CameraPreview: React.FC<CameraPreviewProps> = ({
 
       <div className="absolute bottom-36 left-0 right-0 flex justify-center">
         <div className="bg-yellow-500/30 text-yellow-100 px-4 py-2 rounded-md text-sm font-medium">
+          <Button variant="outline" size="sm" className="text-white border-white/30 mr-2" onClick={handleRefresh}>
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Reiniciar Câmera
+          </Button>
           Ajuste o brilho se a imagem estiver escura
         </div>
       </div>

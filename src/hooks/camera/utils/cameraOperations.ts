@@ -10,22 +10,22 @@ export const initializeVideoStream = async (
   console.log("Initializing camera with constraints:", JSON.stringify(constraints));
   
   try {
-    // Primeiro, limpe qualquer stream anterior
+    // First, clean up any previous stream
     if (videoRef.current && videoRef.current.srcObject) {
       const oldStream = videoRef.current.srcObject as MediaStream;
       oldStream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
 
-    // Solicitar a stream com um timeout
+    // Request the stream with a shorter timeout (10 seconds instead of 15)
     const streamPromise = navigator.mediaDevices.getUserMedia(constraints);
     
-    // Criar um timeout para garantir que não ficaremos presos esperando
+    // Create a timeout to ensure we don't get stuck waiting
     const timeoutPromise = new Promise<MediaStream>((_, reject) => {
-      setTimeout(() => reject(new Error("Camera access timeout")), 15000);
+      setTimeout(() => reject(new Error("Camera access timeout")), 10000);
     });
     
-    // Usar Promise.race para evitar ficar preso se a permissão não for concedida
+    // Use Promise.race to avoid getting stuck if permission isn't granted
     const stream = await Promise.race([streamPromise, timeoutPromise]);
     console.log("Camera stream obtained successfully");
     
@@ -38,7 +38,7 @@ export const initializeVideoStream = async (
     if (videoRef.current && mountedRef.current) {
       const video = videoRef.current;
       
-      // Garantir que o elemento de vídeo está limpo antes de definir uma nova stream
+      // Make sure the video element is clean before setting a new stream
       if (video.srcObject) {
         video.srcObject = null;
         video.load();
@@ -49,35 +49,55 @@ export const initializeVideoStream = async (
       video.muted = true;
       video.autoplay = true;
       
-      try {
-        // Primeiro, forçar o carregamento do vídeo
-        video.load();
-        
-        // Então tentar reproduzir
-        console.log("Trying to play video");
-        await video.play().catch(error => {
-          console.warn("Initial play failed, will retry:", error);
+      // Force loading
+      video.load();
+      
+      // Multiple play attempts with different approaches
+      const attemptPlay = async () => {
+        try {
+          console.log("First play attempt");
+          await video.play();
+          console.log("First play succeeded");
+        } catch (e1) {
+          console.warn("First play failed:", e1);
           
-          // Tentar novamente após um pequeno delay
-          setTimeout(() => {
-            if (video && mountedRef.current) {
-              console.log("Retrying video play");
-              video.play().catch(e => console.error("Retry play also failed:", e));
+          // Try again after a delay
+          setTimeout(async () => {
+            try {
+              if (video && mountedRef.current) {
+                console.log("Second play attempt");
+                await video.play();
+                console.log("Second play succeeded");
+              }
+            } catch (e2) {
+              console.warn("Second play failed:", e2);
+              
+              // Last attempt with different approach
+              setTimeout(() => {
+                if (video && mountedRef.current) {
+                  console.log("Third play attempt (manual)");
+                  // This bypasses some browser restrictions by using a user event simulation approach
+                  video.setAttribute("playsinline", "");
+                  video.setAttribute("autoplay", "");
+                  video.setAttribute("muted", "");
+                  video.muted = true;
+                  video.play().catch(e => console.warn("Final play attempt failed:", e));
+                }
+              }, 500);
             }
-          }, 1000);
-        });
-        
-        // Adicionar logs para verificar o estado do vídeo
-        console.log("Video status after play attempt:", {
-          readyState: video.readyState,
-          paused: video.paused,
-          videoWidth: video.videoWidth,
-          videoHeight: video.videoHeight
-        });
-      } catch (error) {
-        console.error("Error during video play:", error);
-        // Continue mesmo que o play falhe, alguns navegadores móveis requerem interação do usuário
-      }
+          }, 500);
+        }
+      };
+      
+      await attemptPlay();
+      
+      // Log video status after play attempts
+      console.log("Video status after play attempts:", {
+        readyState: video.readyState,
+        paused: video.paused,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight
+      });
     }
     
     return stream;
@@ -100,12 +120,12 @@ export const setupVideoElement = (
   video.style.width = "100%";
   video.style.height = "100%";
   
-  // Garantir que o vídeo está configurado corretamente para reprodução automática
+  // Ensure video is properly configured for autoplay
   video.playsInline = true;
   video.muted = true;
   video.autoplay = true;
   
-  // Forçar o carregamento e a reprodução
+  // Force loading and playing
   video.load();
   setTimeout(() => {
     video.play().catch(e => console.log("Error in setupVideoElement play:", e));
@@ -114,17 +134,17 @@ export const setupVideoElement = (
 
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
-    const maxWaitTime = 8000; // Increased timeout to 8 seconds
+    const maxWaitTime = 5000; // Reduced from 8 seconds to 5 seconds
     const startTime = Date.now();
     
-    // Verificar se o vídeo já está pronto
+    // Check if video is already ready
     if (video.videoWidth > 0 && video.videoHeight > 0) {
       console.log("Video already has dimensions:", video.videoWidth, "x", video.videoHeight);
       resolve(true);
       return;
     }
     
-    // Verificar se o vídeo está em um estado de reprodução aceitável
+    // Check if video is in an acceptable playback state
     if (video.readyState >= 2) {
       console.log("Video has acceptable readyState:", video.readyState);
       resolve(true);
@@ -132,25 +152,25 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
     }
     
     const checkReady = () => {
-      // Verificar se temos dimensões
+      // Check if we have dimensions
       if (video.videoWidth > 0 && video.videoHeight > 0) {
         console.log("Video is ready with dimensions:", video.videoWidth, "x", video.videoHeight);
         resolve(true);
         return;
       }
       
-      // Verificar o estado de reprodução
+      // Check readyState
       if (video.readyState >= 2) {
         console.log("Video ready with readyState:", video.readyState);
         resolve(true);
         return;
       }
       
-      // Verificar timeout
+      // Check timeout
       if (Date.now() - startTime > maxWaitTime) {
         console.log("Video ready timeout exceeded, forcing ready state");
         
-        // Forçar a reprodução uma última vez
+        // Force play one last time
         try {
           video.play().catch(e => console.log("Timeout play attempt failed:", e));
         } catch (e) {
@@ -161,11 +181,11 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
         return;
       }
       
-      // Verificar novamente em breve
+      // Check again soon
       setTimeout(checkReady, 200);
     };
     
-    // Registrar event listeners
+    // Register event listeners
     const eventHandler = () => {
       console.log("Video ready event fired");
       resolve(true);
@@ -176,12 +196,12 @@ export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => 
     video.addEventListener('canplay', eventHandler, { once: true });
     video.addEventListener('playing', eventHandler, { once: true });
     
-    // Iniciar a verificação periódica
+    // Start periodic checking
     checkReady();
   });
 };
 
-// Nova função para tentar várias abordagens para iniciar o vídeo
+// Function to try multiple approaches to start video
 export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
   if (!video) return;
   
@@ -192,23 +212,22 @@ export const ensureVideoPlaying = (video: HTMLVideoElement): void => {
   });
   
   if (video.paused && video.srcObject) {
-    // Tentar reproduzir imediatamente
-    video.play().catch(e => {
-      console.log("Initial ensure play failed:", e);
-      
-      // Tentar novamente com atraso
-      setTimeout(() => {
-        if (video) {
-          console.log("Retrying video play");
-          video.play().catch(e2 => {
-            console.log("Retry also failed:", e2);
-            
-            // Última tentativa com interação simulada
-            video.muted = true;
-            video.play().catch(() => {});
-          });
-        }
-      }, 1000);
-    });
+    // Try multiple play methods
+    const tryPlay = () => {
+      video.play().catch(e => {
+        console.log("Play failed in ensureVideoPlaying:", e);
+      });
+    };
+
+    tryPlay();
+    
+    // Set important attributes
+    video.setAttribute("playsinline", "");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("muted", "");
+    video.muted = true;
+    
+    // Try again after a small delay
+    setTimeout(tryPlay, 300);
   }
 }

@@ -73,7 +73,7 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
           console.log("First camera initialization timeout - setting video ready");
           setIsVideoReady(true);
         }
-      }, 5000); // 5 seconds
+      }, 3000); // Reduced from 5 seconds to 3 seconds
 
       // Longer timeout to complete initialization if still loading
       timeoutId = setTimeout(() => {
@@ -82,15 +82,16 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
           setIsLoading(false);
           setIsVideoReady(true);
         }
-      }, 10000); // 10 seconds instead of 15
+      }, 6000); // Reduced from 10 seconds to 6 seconds
 
       try {
+        // Try with simpler constraints first
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
             facingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640 }, // Reduced from 1280
+            height: { ideal: 480 }  // Reduced from 720
           }
         };
 
@@ -104,6 +105,15 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
           
           // Check immediately if video is playing
           ensureVideoPlaying(videoRef.current);
+          
+          // Force video ready after a brief delay regardless of waitForVideoReady
+          setTimeout(() => {
+            if (mountedRef.current && isLoading) {
+              console.log("Forcing video ready state after delay");
+              setIsVideoReady(true);
+              setIsLoading(false);
+            }
+          }, 1500);
           
           try {
             await waitForVideoReady(videoRef.current);
@@ -158,18 +168,28 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     };
   }, [isCameraActive, facingMode]);
 
-  // Check video status periodically
+  // Check video status more frequently
   useEffect(() => {
     if (!isCameraActive || !videoRef.current || hasError) return;
 
-    // Check every 2 seconds if video is functioning
+    // Check more frequently if video is functioning (every 1 second instead of 2)
     const checkInterval = setInterval(() => {
       const video = videoRef.current;
       if (video && video.paused && video.srcObject) {
         console.log("Video is paused but should be playing, attempting to restart");
         ensureVideoPlaying(video);
       }
-    }, 2000);
+      
+      // Log video status for debugging
+      if (video) {
+        console.log("Video status:", {
+          readyState: video.readyState,
+          paused: video.paused, 
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
+      }
+    }, 1000);
 
     return () => clearInterval(checkInterval);
   }, [isCameraActive, hasError]);
