@@ -12,6 +12,10 @@ import OnboardingProgress from "./OnboardingProgress";
 import PersonalInfoForm from "./PersonalInfoForm";
 import LocationForm from "./LocationForm";
 import PricingForm from "./PricingForm";
+import GalleryForm from "./GalleryForm";
+import SocialMediaForm from "./SocialMediaForm";
+import CertificationsForm from "./CertificationsForm";
+import AvailabilityForm from "./AvailabilityForm";
 
 const GamifiedOnboarding: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -96,6 +100,10 @@ const GamifiedOnboarding: React.FC = () => {
           onClick={() => handleSectionClick("gallery")}
         />
         
+        {activeSection === "gallery" && (
+          <GalleryForm onComplete={() => completeSection("gallery")} />
+        )}
+        
         <OnboardingItem
           title="Conectar Redes Sociais"
           description="LinkedIn, Instagram, ou portfólio"
@@ -104,6 +112,10 @@ const GamifiedOnboarding: React.FC = () => {
           isCompleted={completedSections.includes("social")}
           onClick={() => handleSectionClick("social")}
         />
+        
+        {activeSection === "social" && (
+          <SocialMediaForm onComplete={() => completeSection("social")} />
+        )}
         
         <OnboardingItem
           title="Certificações"
@@ -114,6 +126,10 @@ const GamifiedOnboarding: React.FC = () => {
           onClick={() => handleSectionClick("certificates")}
         />
         
+        {activeSection === "certificates" && (
+          <CertificationsForm onComplete={() => completeSection("certificates")} />
+        )}
+        
         <OnboardingItem
           title="Disponibilidade"
           description="Configure sua agenda e horários"
@@ -122,6 +138,10 @@ const GamifiedOnboarding: React.FC = () => {
           isCompleted={completedSections.includes("availability")}
           onClick={() => handleSectionClick("availability")}
         />
+        
+        {activeSection === "availability" && (
+          <AvailabilityForm onComplete={() => completeSection("availability")} />
+        )}
       </OnboardingSection>
 
       {progress === 100 && (
