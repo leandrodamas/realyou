@@ -15,7 +15,7 @@ export interface TimeSlotSelectorProps {
     afternoon: boolean;
     evening: boolean;
   };
-  onToggleTimeSlot: (slot: keyof typeof timeSlots) => void;
+  onToggleTimeSlot: (slot: "morning" | "afternoon" | "evening") => void;
 }
 
 export interface CalendarSyncButtonProps {
