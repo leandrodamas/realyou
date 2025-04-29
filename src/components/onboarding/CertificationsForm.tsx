@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Award, Upload, CheckCircle, Calendar, Trash2 } from "lucide-react";
+import { ArrowRight, Award, Upload, CheckCircle, Calendar, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
