@@ -25,7 +25,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading, isVideoReady } = useCameraStream(isCameraActive);
+  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   
@@ -39,7 +39,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
       try {
-        console.log("Capturing image from camera");
+        console.log("Capturando imagem estática da câmera");
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
@@ -47,7 +47,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         const videoWidth = video.videoWidth || 640;
         const videoHeight = video.videoHeight || 480;
         
-        console.log("Video dimensions:", videoWidth, "x", videoHeight);
+        console.log("Dimensões do vídeo:", videoWidth, "x", videoHeight);
         
         canvas.width = videoWidth;
         canvas.height = videoHeight;
@@ -66,12 +66,12 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           context.filter = 'none';
           
           const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
-          console.log("Image captured successfully");
+          console.log("Imagem capturada com sucesso");
           
           if (mountedRef.current) {
             if (typeof window !== 'undefined') {
               localStorage.setItem('tempCapturedImage', imageDataUrl);
-              console.log("Image saved to localStorage");
+              console.log("Imagem salva no localStorage");
             }
             
             onCapture();
@@ -79,7 +79,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           }
         }
       } catch (error) {
-        console.error("Error capturing image:", error);
+        console.error("Erro ao capturar imagem:", error);
         if (mountedRef.current) {
           toast.error("Erro ao capturar imagem. Tente novamente.");
         }
@@ -116,7 +116,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           <>
             <CameraPreview
               videoRef={videoRef}
-              faceDetected={true} // Always true since we're not doing real-time face detection
+              faceDetected={true} // Modo de captura estática, não precisamos de detecção em tempo real
               onCapture={handleCapture}
               brightness={brightness}
               facingMode={facingMode}

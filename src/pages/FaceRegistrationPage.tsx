@@ -8,6 +8,7 @@ import StepIndicator from "@/components/face-registration/StepIndicator";
 import StepContent from "@/components/face-registration/StepContent";
 import SuccessDialog from "@/components/face-registration/SuccessDialog";
 import { useNavigate } from "react-router-dom";
+import { useFacialRecognition } from "@/hooks/useFacialRecognition";
 
 const FaceRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,12 +17,24 @@ const FaceRegistrationPage: React.FC = () => {
   const [username, setUsername] = useState<string>("");
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const { registerFace } = useFacialRecognition();
 
-  // Cleanup resources when component unmounts
+  // Load any existing profile data when component mounts
   useEffect(() => {
-    return () => {
-      // Any cleanup if needed
-    };
+    try {
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        if (profile.username) {
+          setUsername(profile.username);
+        }
+        if (profile.profileImage) {
+          setCapturedImage(profile.profileImage);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar perfil existente:", error);
+    }
   }, []);
 
   const handleNextStep = async () => {
@@ -42,15 +55,32 @@ const FaceRegistrationPage: React.FC = () => {
         setIsProcessing(true);
         try {
           const tempUserId = `user_${Date.now()}`;
-          const success = await registerFaceForUser(capturedImage, tempUserId);
+          // Usar o hook de reconhecimento facial para registrar
+          const success = await registerFace(capturedImage, tempUserId);
           
           if (success) {
-            // Salvar informações do usuário no localStorage para uso em outras páginas
-            localStorage.setItem('userProfile', JSON.stringify({
+            // Salvar ou atualizar informações do usuário no localStorage
+            const savedProfile = localStorage.getItem('userProfile');
+            const existingProfile = savedProfile ? JSON.parse(savedProfile) : {};
+            
+            const updatedProfile = {
+              ...existingProfile,
               userId: tempUserId,
               username: username,
               fullName: username, // Save username as fullName too for consistent data
-              profileImage: capturedImage
+              profileImage: capturedImage,
+              registrationComplete: true,
+              registrationDate: new Date().toISOString(),
+              lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+            
+            // Sincronizar perfil com outras partes do aplicativo
+            document.dispatchEvent(new CustomEvent('profileUpdated', { 
+              detail: { 
+                profile: updatedProfile 
+              }
             }));
             
             setShowSuccessDialog(true);

@@ -42,10 +42,14 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       
       const updatedProfile = {
         ...profile,
-        profileImage: imageData
+        profileImage: imageData,
+        lastUpdated: new Date().toISOString()
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      
+      // Atualizar também a imagem temporária para uso em outros componentes
+      localStorage.setItem('tempCapturedImage', imageData);
     } catch (error) {
       console.error("Erro ao salvar imagem de perfil:", error);
       toast.error("Não foi possível salvar a foto");
@@ -65,11 +69,20 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       const updatedProfile = {
         ...profile,
         fullName,
-        profileImage
+        profileImage,
+        lastUpdated: new Date().toISOString(),
+        profileComplete: true
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       toast.success("Informações salvas com sucesso!");
+      
+      // Sincronizar perfil com outras partes do aplicativo
+      document.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { 
+          profile: updatedProfile 
+        }
+      }));
     } catch (error) {
       console.error("Erro ao salvar perfil do usuário:", error);
       toast.error("Erro ao salvar informações");

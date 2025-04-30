@@ -184,6 +184,24 @@ export const useFacialRecognition = () => {
         throw new Error("Falha ao fazer upload da imagem");
       }
       
+      // Salvar a URL da imagem e informações do usuário no localStorage para persistência
+      try {
+        const savedProfile = localStorage.getItem('userProfile');
+        const profile = savedProfile ? JSON.parse(savedProfile) : {};
+        
+        const updatedProfile = {
+          ...profile,
+          userId: effectiveUserId,
+          profileImage: publicUrl,
+          faceRegistered: true,
+          registrationTimestamp: new Date().toISOString()
+        };
+        
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      } catch (error) {
+        console.error("Erro ao salvar perfil:", error);
+      }
+      
       // Registrar URL na tabela do usuário (simulação)
       toast.success("Face registrada com sucesso!");
       return true;

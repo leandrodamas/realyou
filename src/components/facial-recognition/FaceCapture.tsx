@@ -63,9 +63,24 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     if (!capturedImage && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setCapturedImage) {
-        console.log("Retrieving image from localStorage");
+        console.log("Recuperando imagem do localStorage");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
+      }
+    }
+    
+    // Check for user profile
+    const userProfile = localStorage.getItem('userProfile');
+    if (userProfile && !capturedImage) {
+      try {
+        const profile = JSON.parse(userProfile);
+        if (profile.profileImage && setCapturedImage) {
+          console.log("Usando imagem de perfil como imagem capturada");
+          setCapturedImage(profile.profileImage);
+          if (onCaptureImage) onCaptureImage(profile.profileImage);
+        }
+      } catch (error) {
+        console.error("Erro ao processar perfil do usuário:", error);
       }
     }
   }, []);
@@ -82,7 +97,23 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
         
-        // Clear after use
+        // Salvar no perfil do usuário também
+        try {
+          const userProfile = localStorage.getItem('userProfile');
+          const profile = userProfile ? JSON.parse(userProfile) : {};
+          
+          const updatedProfile = {
+            ...profile,
+            profileImage: tempImage,
+            lastUpdated: new Date().toISOString()
+          };
+          
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        } catch (error) {
+          console.error("Erro ao atualizar perfil com nova imagem:", error);
+        }
+        
+        // Limpar após uso
         localStorage.removeItem('tempCapturedImage');
       }
     }
@@ -108,7 +139,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
           <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-              Encontre conexões com fotos de perfil
+              Encontre conexões com fotos
             </span>
             <Sparkles className="h-5 w-5 text-blue-500" />
           </h2>
