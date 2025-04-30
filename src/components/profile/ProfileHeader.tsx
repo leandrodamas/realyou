@@ -32,23 +32,25 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   
   // Carregar dados do perfil do localStorage
   useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
-        setProfileData({
-          name: profile.fullName || profile.username || propName || "Usuário",
-          title: profile.profession || propTitle || "Profissional",
-          avatar: profile.profileImage || propAvatar || "/placeholder.svg"
-        });
+    const loadProfileData = () => {
+      try {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile);
+          setProfileData({
+            name: profile.fullName || profile.username || propName || "Usuário",
+            title: profile.profession || propTitle || "Profissional",
+            avatar: profile.profileImage || propAvatar || "/placeholder.svg"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do perfil:", error);
       }
-    } catch (error) {
-      console.error("Erro ao carregar dados do perfil:", error);
-    }
-  }, [propName, propTitle, propAvatar]);
-  
-  // Adicionar listener para atualizações de perfil
-  useEffect(() => {
+    };
+    
+    loadProfileData();
+    
+    // Adicionar listener para atualizações de perfil
     const handleProfileUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       if (customEvent.detail && customEvent.detail.profile) {
@@ -66,7 +68,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     return () => {
       document.removeEventListener('profileUpdated', handleProfileUpdate);
     };
-  }, []);
+  }, [propName, propTitle, propAvatar]);
   
   return (
     <motion.div 

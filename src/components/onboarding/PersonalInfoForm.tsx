@@ -50,6 +50,13 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       
       // Atualizar também a imagem temporária para uso em outros componentes
       localStorage.setItem('tempCapturedImage', imageData);
+      
+      // Notificar outros componentes sobre a atualização do perfil
+      document.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { 
+          profile: updatedProfile 
+        }
+      }));
     } catch (error) {
       console.error("Erro ao salvar imagem de perfil:", error);
       toast.error("Não foi possível salvar a foto");
@@ -83,12 +90,13 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
           profile: updatedProfile 
         }
       }));
+      
+      // Garantir que a chamada onComplete seja executada após a atualização
+      setTimeout(onComplete, 100);
     } catch (error) {
       console.error("Erro ao salvar perfil do usuário:", error);
       toast.error("Erro ao salvar informações");
     }
-    
-    onComplete();
   };
 
   return (
