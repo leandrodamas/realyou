@@ -93,15 +93,16 @@ export const useFacialRecognition = () => {
           ]
         };
         
-        // Registrar resultado da pesquisa no histórico (comentado até a tabela estar disponível)
-        /* 
+        // Note: A tabela face_search_history não está implementada no esquema do banco de dados ainda
+        // Quando a tabela estiver disponível, descomente o código abaixo
+        /*
         if (user) {
           await supabase
             .from('face_search_history')
             .insert({
               user_id: user.id,
               matched: true,
-              matched_person_id: person.id,
+              matched_person_name: person.name,
               image_url: imageUrl,
               search_timestamp: new Date().toISOString()
             })
@@ -115,7 +116,8 @@ export const useFacialRecognition = () => {
         setNoMatchFound(true);
         toast.info("Nenhuma correspondência encontrada");
         
-        // Registrar pesquisa sem correspondência (comentado até a tabela estar disponível)
+        // Note: A tabela face_search_history não está implementada no esquema do banco de dados ainda
+        // Quando a tabela estiver disponível, descomente o código abaixo
         /*
         if (user) {
           await supabase
