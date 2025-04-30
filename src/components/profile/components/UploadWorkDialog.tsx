@@ -18,13 +18,15 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadFile, isUploading } = useFileUpload();
+  const { uploadFile, isUploading, uploadProgress } = useFileUpload();
 
   const resetForm = () => {
     setTitle("");
     setDescription("");
     setSelectedFile(null);
+    setPreviewUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -47,6 +49,13 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
     }
 
     setSelectedFile(file);
+    
+    // Generate preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -68,8 +77,14 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
         return;
       }
 
+      // Upload image to work_gallery bucket
       const { publicUrl, error: uploadError } = await uploadFile(selectedFile, {
-        bucketName: 'work_gallery'
+        bucketName: 'work_gallery',
+        folder: user.id,
+        metadata: {
+          user_id: user.id,
+          title: title.trim()
+        }
       });
 
       if (uploadError || !publicUrl) {
@@ -77,6 +92,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
         return;
       }
 
+      // Save work details to database
       const { error: dbError } = await supabase
         .from('work_gallery')
         .insert({
@@ -103,7 +119,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
       if (!isOpen) resetForm();
       onOpenChange(isOpen);
     }}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Trabalho</DialogTitle>
         </DialogHeader>
@@ -126,6 +142,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
               disabled={isUploading}
             />
           </div>
+          
           <div>
             <input
               type="file"
@@ -135,8 +152,33 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
               onChange={handleFileSelect}
               disabled={isUploading}
             />
+            
+            {previewUrl && (
+              <div className="mb-4 relative">
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="w-full h-48 object-cover rounded-md" 
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  disabled={isUploading}
+                >
+                  Remover
+                </Button>
+              </div>
+            )}
+            
             <div className="space-y-2">
-              {selectedFile && (
+              {selectedFile && !previewUrl && (
                 <div className="text-sm text-gray-500 flex items-center gap-2">
                   <ImageIcon className="h-4 w-4" />
                   <span>{selectedFile.name}</span>
@@ -151,7 +193,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
                 {isUploading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Enviando...
+                    Enviando... {uploadProgress > 0 ? `${uploadProgress}%` : ""}
                   </>
                 ) : (
                   <>
@@ -162,6 +204,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
               </Button>
             </div>
           </div>
+          
           <Button 
             onClick={handleSubmit} 
             disabled={isUploading || !selectedFile || !title.trim()}

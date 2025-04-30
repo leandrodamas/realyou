@@ -1,8 +1,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
-import { detectAndMatchFace } from "@/services/facialRecognitionService";
+import { detectAndMatchFace, registerFaceForUser } from "@/services/facialRecognitionService";
+import { useFileUpload } from "./useFileUpload";
 
 export const useFacialRecognition = () => {
   const [isSearching, setIsSearching] = useState(false);
@@ -12,8 +14,8 @@ export const useFacialRecognition = () => {
   const [hasError, setHasError] = useState(false);
   const searchAttemptRef = useRef<number>(0);
   const isMounted = useRef<boolean>(true);
+  const { uploadFile } = useFileUpload();
 
-  // Reset error state when component unmounts
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -35,24 +37,52 @@ export const useFacialRecognition = () => {
     const currentAttempt = ++searchAttemptRef.current;
     
     try {
-      toast.info("Analisando foto de perfil...");
+      toast.info("Analisando imagem...");
       
-      // Simulate profile photo analysis with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload da imagem para armazenamento antes da análise
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Verify this is still the latest search attempt
+      // Converter base64 para arquivo
+      const imageBlob = await fetch(profileImage).then(r => r.blob());
+      const imageFile = new File(
+        [imageBlob], 
+        `search-image-${Date.now()}.jpg`, 
+        { type: 'image/jpeg' }
+      );
+      
+      // Upload da imagem para bucket facial_recognition
+      let imageUrl = profileImage;
+      if (user) {
+        const { publicUrl } = await uploadFile(imageFile, {
+          bucketName: 'facial_recognition',
+          folder: `searches/${user.id}`,
+          metadata: {
+            user_id: user?.id || 'anonymous',
+            purpose: 'face_search'
+          }
+        });
+        
+        if (publicUrl) {
+          imageUrl = publicUrl;
+        }
+      }
+      
+      // Simular um delay para análise (em produção seria uma API real)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
         return;
       }
       
-      // 70% chance to find a match for demonstration
+      // 70% chance de encontrar uma correspondência para demonstração
       const matchFound = Math.random() > 0.3;
       
       if (matchFound) {
         const person: MatchedPerson = {
+          id: `user-${Math.random().toString(36).substring(2, 9)}`,
           name: "Alex Johnson",
           profession: "Terapeuta",
-          avatar: profileImage, // Use the uploaded profile image
+          avatar: imageUrl, // Use a URL armazenada
           schedule: [
             { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
             { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
@@ -64,11 +94,38 @@ export const useFacialRecognition = () => {
           ]
         };
         
+        // Registrar resultado da pesquisa no histórico
+        if (user) {
+          await supabase
+            .from('face_search_history')
+            .insert({
+              user_id: user.id,
+              matched: true,
+              matched_person_id: person.id,
+              image_url: imageUrl,
+              search_timestamp: new Date().toISOString()
+            })
+            .select();
+        }
+        
         setMatchedPerson(person);
         toast.success("Correspondência encontrada com sucesso!");
       } else {
         setNoMatchFound(true);
         toast.info("Nenhuma correspondência encontrada");
+        
+        // Registrar pesquisa sem correspondência
+        if (user) {
+          await supabase
+            .from('face_search_history')
+            .insert({
+              user_id: user.id,
+              matched: false,
+              image_url: imageUrl,
+              search_timestamp: new Date().toISOString()
+            })
+            .select();
+        }
       }
     } catch (error) {
       console.error("Erro durante a busca por foto:", error);
@@ -84,6 +141,53 @@ export const useFacialRecognition = () => {
       if (isMounted.current && currentAttempt === searchAttemptRef.current) {
         setIsSearching(false);
       }
+    }
+  };
+
+  const registerFace = async (imageData: string, userId?: string) => {
+    try {
+      setIsSearching(true);
+      
+      // Obter ID do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      const effectiveUserId = userId || user?.id;
+      
+      if (!effectiveUserId) {
+        toast.error("Necessário estar logado para registrar face");
+        return false;
+      }
+      
+      // Converter base64 para arquivo
+      const imageBlob = await fetch(imageData).then(r => r.blob());
+      const imageFile = new File(
+        [imageBlob], 
+        `face-registration-${Date.now()}.jpg`, 
+        { type: 'image/jpeg' }
+      );
+      
+      // Upload para bucket facial_recognition
+      const { publicUrl } = await uploadFile(imageFile, {
+        bucketName: 'facial_recognition',
+        folder: `registrations/${effectiveUserId}`,
+        metadata: {
+          user_id: effectiveUserId,
+          purpose: 'face_registration'
+        }
+      });
+      
+      if (!publicUrl) {
+        throw new Error("Falha ao fazer upload da imagem");
+      }
+      
+      // Registrar URL na tabela do usuário (simulação)
+      toast.success("Face registrada com sucesso!");
+      return true;
+    } catch (error) {
+      console.error("Erro ao registrar face:", error);
+      toast.error("Não foi possível registrar seu reconhecimento facial");
+      return false;
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -107,6 +211,7 @@ export const useFacialRecognition = () => {
     connectionSent,
     hasError,
     handleSearch,
+    registerFace,
     sendConnectionRequest,
     setNoMatchFound,
     setMatchedPerson,

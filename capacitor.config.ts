@@ -16,10 +16,23 @@ const config: CapacitorConfig = {
       splashImmersive: true
     },
     Permissions: {
-      permissions: ["camera"]
+      permissions: ["camera", "storage"]
     },
     Camera: {
-      presentationStyle: 'fullscreen'
+      presentationStyle: 'fullscreen',
+      promptLabelHeader: "Acesso à Câmera",
+      promptLabelCancel: "Cancelar",
+      promptLabelPhoto: "Foto",
+      promptLabelPicture: "Tirar Foto",
+      quality: 90, // Qualidade da foto (0-100)
+      width: 1280, // Largura máxima
+      height: 720, // Altura máxima
+      correctOrientation: true, // Corrige a orientação da foto
+      saveToGallery: false // Não salvar na galeria por padrão
+    },
+    LocalNotifications: {
+      smallIcon: "ic_notification",
+      iconColor: "#128C7E"
     }
   },
   android: {
@@ -29,8 +42,11 @@ const config: CapacitorConfig = {
     backgroundColor: "#000000", // Fundo preto para melhorar visualização de câmera
     alwaysUseMediaLightMode: false, // Forçar modo escuro para a câmera
     permissions: [
-      "android.permission.CAMERA"
-    ]
+      "android.permission.CAMERA",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE"
+    ],
+    useLegacyBridge: false // Usar novo bridge para melhorar performance
   },
   ios: {
     contentInset: "always",
@@ -40,9 +56,14 @@ const config: CapacitorConfig = {
     permissions: [
       {
         "name": "Camera",
-        "purpose": "Permitir acesso à câmera para reconhecimento facial"
+        "purpose": "Permitir acesso à câmera para reconhecimento facial e upload de fotos"
+      },
+      {
+        "name": "Photos",
+        "purpose": "Permitir acesso às fotos para upload de imagens"
       }
-    ]
+    ],
+    limitsNavigationsToAppBoundDomains: true // Melhoria de segurança
   }
 };
 
