@@ -79,7 +79,6 @@ export const useFacialRecognition = () => {
       
       if (matchFound) {
         const person: MatchedPerson = {
-          id: `user-${Math.random().toString(36).substring(2, 9)}`,
           name: "Alex Johnson",
           profession: "Terapeuta",
           avatar: imageUrl, // Use a URL armazenada
@@ -94,7 +93,8 @@ export const useFacialRecognition = () => {
           ]
         };
         
-        // Registrar resultado da pesquisa no histórico
+        // Registrar resultado da pesquisa no histórico (comentado até a tabela estar disponível)
+        /* 
         if (user) {
           await supabase
             .from('face_search_history')
@@ -107,6 +107,7 @@ export const useFacialRecognition = () => {
             })
             .select();
         }
+        */
         
         setMatchedPerson(person);
         toast.success("Correspondência encontrada com sucesso!");
@@ -114,7 +115,8 @@ export const useFacialRecognition = () => {
         setNoMatchFound(true);
         toast.info("Nenhuma correspondência encontrada");
         
-        // Registrar pesquisa sem correspondência
+        // Registrar pesquisa sem correspondência (comentado até a tabela estar disponível)
+        /*
         if (user) {
           await supabase
             .from('face_search_history')
@@ -126,6 +128,7 @@ export const useFacialRecognition = () => {
             })
             .select();
         }
+        */
       }
     } catch (error) {
       console.error("Erro durante a busca por foto:", error);
