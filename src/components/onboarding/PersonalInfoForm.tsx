@@ -20,7 +20,8 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
         const profile = JSON.parse(savedProfile);
-        console.log("Loading profile in PersonalInfoForm:", profile);
+        console.log("PersonalInfoForm: Carregando perfil:", profile);
+        
         if (profile.fullName) {
           setFullName(profile.fullName);
         } else if (profile.username) {
@@ -32,7 +33,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         }
       }
     } catch (error) {
-      console.error("Erro ao carregar perfil do usuário:", error);
+      console.error("PersonalInfoForm: Erro ao carregar perfil do usuário:", error);
       toast.error("Erro ao carregar perfil");
     }
   }, []);
@@ -50,7 +51,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-      console.log("Profile image updated in PersonalInfoForm:", updatedProfile);
+      console.log("PersonalInfoForm: Imagem de perfil atualizada:", updatedProfile);
       
       // Atualizar também a imagem temporária para uso em outros componentes
       localStorage.setItem('tempCapturedImage', imageData);
@@ -58,14 +59,18 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       // Use a slight delay to ensure storage is updated before event dispatch
       setTimeout(() => {
         // Notificar outros componentes sobre a atualização do perfil
-        document.dispatchEvent(new CustomEvent('profileUpdated', { 
-          detail: { 
-            profile: updatedProfile 
-          }
-        }));
-      }, 100);
+        try {
+          document.dispatchEvent(new CustomEvent('profileUpdated', { 
+            detail: { 
+              profile: updatedProfile 
+            }
+          }));
+        } catch (error) {
+          console.error("PersonalInfoForm: Erro ao disparar evento de atualização:", error);
+        }
+      }, 300);
     } catch (error) {
-      console.error("Erro ao salvar imagem de perfil:", error);
+      console.error("PersonalInfoForm: Erro ao salvar imagem de perfil:", error);
       toast.error("Não foi possível salvar a foto");
     }
   };
@@ -96,33 +101,30 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-      console.log("Profile completed in PersonalInfoForm:", updatedProfile);
+      console.log("PersonalInfoForm: Perfil completado:", updatedProfile);
       toast.success("Informações salvas com sucesso!");
       
-      // Use setTimeout to ensure the event is processed after the current execution stack
-      setTimeout(() => {
-        try {
-          // Dispatch the profile update event
-          document.dispatchEvent(new CustomEvent('profileUpdated', { 
-            detail: { 
-              profile: updatedProfile 
-            }
-          }));
-          
-          // Allow some time for the event to propagate before continuing
-          setTimeout(() => {
-            // Call onComplete callback to continue
-            setIsSubmitting(false);
-            onComplete();
-          }, 300);
-        } catch (error) {
-          console.error("Error dispatching profile update event:", error);
+      // Garantir que o perfil seja salvo antes de prosseguir
+      try {
+        // Disparar evento de atualização de perfil e aguardar um pouco
+        document.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { 
+            profile: updatedProfile 
+          }
+        }));
+        
+        // Aguardar um pouco para que os outros componentes possam processar o evento
+        setTimeout(() => {
           setIsSubmitting(false);
-          onComplete(); // Continue anyway if there's an error
-        }
-      }, 100);
+          onComplete();
+        }, 500);
+      } catch (error) {
+        console.error("PersonalInfoForm: Erro ao disparar evento de atualização de perfil:", error);
+        setIsSubmitting(false);
+        onComplete(); // Continuar de qualquer forma se houver erro
+      }
     } catch (error) {
-      console.error("Erro ao salvar perfil do usuário:", error);
+      console.error("PersonalInfoForm: Erro ao salvar perfil do usuário:", error);
       toast.error("Erro ao salvar informações");
       setIsSubmitting(false);
     }

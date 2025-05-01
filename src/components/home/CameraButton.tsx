@@ -8,7 +8,11 @@ const CameraButton: React.FC = () => {
   const navigate = useNavigate();
   
   const handleCameraClick = () => {
-    navigate("/register"); // Changed to use the register route which exists
+    try {
+      navigate("/register");
+    } catch (error) {
+      console.error("Erro na navegação:", error);
+    }
   };
 
   return (

@@ -38,30 +38,34 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         const savedProfile = localStorage.getItem('userProfile');
         if (savedProfile) {
           const profile = JSON.parse(savedProfile);
-          console.log("Profile data loaded in ProfileHeader:", profile);
+          console.log("ProfileHeader: Dados do perfil carregados:", profile);
           setProfileData({
             name: profile.fullName || profile.username || propName || "Usuário",
             title: profile.profession || propTitle || "Profissional",
             avatar: profile.profileImage || propAvatar || "/placeholder.svg"
           });
+        } else {
+          console.log("ProfileHeader: Nenhum perfil encontrado no localStorage");
         }
       } catch (error) {
-        console.error("Erro ao carregar dados do perfil:", error);
-        // Don't let errors crash the component
-        toast.error("Erro ao carregar perfil");
+        console.error("ProfileHeader: Erro ao carregar dados do perfil:", error);
+        // Mostra um toast apenas se for um erro inesperado
+        if (error instanceof Error && error.message !== "Unexpected end of JSON input") {
+          toast.error("Erro ao carregar perfil");
+        }
       }
     };
     
-    // Load profile data immediately on mount
+    // Carrega o perfil imediatamente na montagem
     loadProfileData();
     
-    // Adicionar listener para atualizações de perfil
+    // Configura um listener para atualizações de perfil
     const handleProfileUpdate = (event: Event) => {
       try {
         const customEvent = event as CustomEvent;
         if (customEvent.detail && customEvent.detail.profile) {
           const profile = customEvent.detail.profile;
-          console.log("Profile updated event received in ProfileHeader:", profile);
+          console.log("ProfileHeader: Evento de atualização de perfil recebido:", profile);
           setProfileData({
             name: profile.fullName || profile.username || "Usuário",
             title: profile.profession || "Profissional",
@@ -69,8 +73,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           });
         }
       } catch (error) {
-        console.error("Error handling profile update:", error);
-        // Don't let errors crash the component
+        console.error("ProfileHeader: Erro ao processar atualização de perfil:", error);
       }
     };
     
@@ -80,6 +83,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       document.removeEventListener('profileUpdated', handleProfileUpdate);
     };
   }, [propName, propTitle, propAvatar]);
+  
+  console.log("ProfileHeader: Renderizando com dados:", profileData);
   
   return (
     <motion.div 

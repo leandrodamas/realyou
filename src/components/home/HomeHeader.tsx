@@ -4,16 +4,54 @@ import { Link } from "react-router-dom";
 import { Search, Bell, User, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const HomeHeader: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [userInitials, setUserInitials] = useState("ME");
   
   useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
+    const loadProfileData = () => {
+      try {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile);
+          console.log("HomeHeader: Carregando perfil do usuário:", profile);
+          
+          if (profile.profileImage) {
+            setProfileImage(profile.profileImage);
+          }
+          
+          if (profile.fullName) {
+            const nameParts = profile.fullName.split(' ');
+            let initials = '';
+            if (nameParts.length >= 1) {
+              initials += nameParts[0].charAt(0);
+            }
+            if (nameParts.length >= 2) {
+              initials += nameParts[nameParts.length - 1].charAt(0);
+            }
+            if (initials) {
+              setUserInitials(initials.toUpperCase());
+            }
+          } else if (profile.username) {
+            setUserInitials(profile.username.substring(0, 2).toUpperCase());
+          }
+        }
+      } catch (error) {
+        console.error("HomeHeader: Erro ao carregar perfil:", error);
+      }
+    };
+    
+    // Carrega o perfil imediatamente
+    loadProfileData();
+    
+    // Configura o listener para atualizações de perfil
+    const handleProfileUpdate = (event: CustomEvent<{profile: any}>) => {
+      try {
+        console.log("HomeHeader: Recebido evento de atualização de perfil");
+        const profile = event.detail.profile;
+        
         if (profile.profileImage) {
           setProfileImage(profile.profileImage);
         }
@@ -30,23 +68,9 @@ const HomeHeader: React.FC = () => {
           if (initials) {
             setUserInitials(initials.toUpperCase());
           }
-        } else if (profile.username) {
-          setUserInitials(profile.username.substring(0, 2).toUpperCase());
-        }
-      }
-    } catch (error) {
-      console.error("Error loading profile:", error);
-    }
-    
-    // Listen for profile updates
-    const handleProfileUpdate = (event: CustomEvent<{profile: any}>) => {
-      try {
-        const profile = event.detail.profile;
-        if (profile.profileImage) {
-          setProfileImage(profile.profileImage);
         }
       } catch (error) {
-        console.error("Error handling profile update in HomeHeader:", error);
+        console.error("HomeHeader: Erro ao processar atualização de perfil:", error);
       }
     };
     
