@@ -37,6 +37,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         const savedProfile = localStorage.getItem('userProfile');
         if (savedProfile) {
           const profile = JSON.parse(savedProfile);
+          console.log("Profile data loaded in ProfileHeader:", profile);
           setProfileData({
             name: profile.fullName || profile.username || propName || "Usuário",
             title: profile.profession || propTitle || "Profissional",
@@ -48,6 +49,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       }
     };
     
+    // Load profile data immediately on mount
     loadProfileData();
     
     // Adicionar listener para atualizações de perfil
@@ -55,6 +57,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       const customEvent = event as CustomEvent;
       if (customEvent.detail && customEvent.detail.profile) {
         const profile = customEvent.detail.profile;
+        console.log("Profile updated event received in ProfileHeader:", profile);
         setProfileData({
           name: profile.fullName || profile.username || "Usuário",
           title: profile.profession || "Profissional",

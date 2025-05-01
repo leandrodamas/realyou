@@ -76,14 +76,17 @@ const FaceRegistrationPage: React.FC = () => {
             
             localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
             
-            // Sincronizar perfil com outras partes do aplicativo
-            document.dispatchEvent(new CustomEvent('profileUpdated', { 
-              detail: { 
-                profile: updatedProfile 
-              }
-            }));
-            
-            setShowSuccessDialog(true);
+            // Garantir que o evento seja disparado corretamente para sincronização
+            setTimeout(() => {
+              document.dispatchEvent(new CustomEvent('profileUpdated', { 
+                detail: { 
+                  profile: updatedProfile 
+                }
+              }));
+              
+              console.log("Profile updated event dispatched:", updatedProfile);
+              setShowSuccessDialog(true);
+            }, 100);
           } else {
             toast.error("Falha ao registrar rosto. Tente novamente.");
           }
@@ -107,6 +110,20 @@ const FaceRegistrationPage: React.FC = () => {
 
   const handleFinishRegistration = () => {
     setShowSuccessDialog(false);
+    // Force profile refresh before navigating
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        // Dispatch another event to ensure profile is updated everywhere
+        document.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { profile }
+        }));
+        console.log("Final profile sync before navigation:", profile);
+      } catch (error) {
+        console.error("Error during final profile sync:", error);
+      }
+    }
     navigate("/onboarding");
   };
 

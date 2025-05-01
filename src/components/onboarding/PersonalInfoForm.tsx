@@ -19,6 +19,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
         const profile = JSON.parse(savedProfile);
+        console.log("Loading profile in PersonalInfoForm:", profile);
         if (profile.fullName) {
           setFullName(profile.fullName);
         } else if (profile.username) {
@@ -47,6 +48,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      console.log("Profile image updated in PersonalInfoForm:", updatedProfile);
       
       // Atualizar também a imagem temporária para uso em outros componentes
       localStorage.setItem('tempCapturedImage', imageData);
@@ -82,17 +84,21 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      console.log("Profile completed in PersonalInfoForm:", updatedProfile);
       toast.success("Informações salvas com sucesso!");
       
       // Sincronizar perfil com outras partes do aplicativo
-      document.dispatchEvent(new CustomEvent('profileUpdated', { 
-        detail: { 
-          profile: updatedProfile 
-        }
-      }));
-      
-      // Garantir que a chamada onComplete seja executada após a atualização
-      setTimeout(onComplete, 100);
+      // Use setTimeout to ensure the event is processed after the current execution stack
+      setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { 
+            profile: updatedProfile 
+          }
+        }));
+        
+        // Garantir que a chamada onComplete seja executada após a atualização
+        onComplete();
+      }, 100);
     } catch (error) {
       console.error("Erro ao salvar perfil do usuário:", error);
       toast.error("Erro ao salvar informações");
