@@ -1,11 +1,62 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Bell, User, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const HomeHeader: React.FC = () => {
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [userInitials, setUserInitials] = useState("ME");
+  
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        if (profile.profileImage) {
+          setProfileImage(profile.profileImage);
+        }
+        
+        if (profile.fullName) {
+          const nameParts = profile.fullName.split(' ');
+          let initials = '';
+          if (nameParts.length >= 1) {
+            initials += nameParts[0].charAt(0);
+          }
+          if (nameParts.length >= 2) {
+            initials += nameParts[nameParts.length - 1].charAt(0);
+          }
+          if (initials) {
+            setUserInitials(initials.toUpperCase());
+          }
+        } else if (profile.username) {
+          setUserInitials(profile.username.substring(0, 2).toUpperCase());
+        }
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    }
+    
+    // Listen for profile updates
+    const handleProfileUpdate = (event: CustomEvent<{profile: any}>) => {
+      try {
+        const profile = event.detail.profile;
+        if (profile.profileImage) {
+          setProfileImage(profile.profileImage);
+        }
+      } catch (error) {
+        console.error("Error handling profile update in HomeHeader:", error);
+      }
+    };
+    
+    document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    
+    return () => {
+      document.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, []);
+
   return (
     <motion.header 
       initial={{ y: -20, opacity: 0 }}
@@ -49,9 +100,11 @@ const HomeHeader: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             <Avatar className="h-10 w-10 border-2 border-purple-200">
-              <AvatarImage src="/placeholder.svg" />
+              {profileImage ? (
+                <AvatarImage src={profileImage} alt="Profile" />
+              ) : null}
               <AvatarFallback className="bg-gradient-to-br from-purple-400 to-blue-500 text-white">
-                ME
+                {userInitials}
               </AvatarFallback>
             </Avatar>
           </motion.div>

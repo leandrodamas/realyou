@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, UserPlus, Link as LinkIcon, Camera, Shield, Medal } from "lucide-react";
+import { MessageSquare, UserPlus, Link as LinkIcon, Shield, Medal } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface ProfileHeaderProps {
   name?: string;
@@ -46,6 +47,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }
       } catch (error) {
         console.error("Erro ao carregar dados do perfil:", error);
+        // Don't let errors crash the component
+        toast.error("Erro ao carregar perfil");
       }
     };
     
@@ -54,15 +57,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     
     // Adicionar listener para atualizações de perfil
     const handleProfileUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail && customEvent.detail.profile) {
-        const profile = customEvent.detail.profile;
-        console.log("Profile updated event received in ProfileHeader:", profile);
-        setProfileData({
-          name: profile.fullName || profile.username || "Usuário",
-          title: profile.profession || "Profissional",
-          avatar: profile.profileImage || "/placeholder.svg"
-        });
+      try {
+        const customEvent = event as CustomEvent;
+        if (customEvent.detail && customEvent.detail.profile) {
+          const profile = customEvent.detail.profile;
+          console.log("Profile updated event received in ProfileHeader:", profile);
+          setProfileData({
+            name: profile.fullName || profile.username || "Usuário",
+            title: profile.profession || "Profissional",
+            avatar: profile.profileImage || "/placeholder.svg"
+          });
+        }
+      } catch (error) {
+        console.error("Error handling profile update:", error);
+        // Don't let errors crash the component
       }
     };
     

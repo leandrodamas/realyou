@@ -13,6 +13,7 @@ interface PersonalInfoFormProps {
 const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
   const [fullName, setFullName] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
     try {
@@ -32,6 +33,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       }
     } catch (error) {
       console.error("Erro ao carregar perfil do usuário:", error);
+      toast.error("Erro ao carregar perfil");
     }
   }, []);
 
@@ -53,12 +55,15 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       // Atualizar também a imagem temporária para uso em outros componentes
       localStorage.setItem('tempCapturedImage', imageData);
       
-      // Notificar outros componentes sobre a atualização do perfil
-      document.dispatchEvent(new CustomEvent('profileUpdated', { 
-        detail: { 
-          profile: updatedProfile 
-        }
-      }));
+      // Use a slight delay to ensure storage is updated before event dispatch
+      setTimeout(() => {
+        // Notificar outros componentes sobre a atualização do perfil
+        document.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { 
+            profile: updatedProfile 
+          }
+        }));
+      }, 100);
     } catch (error) {
       console.error("Erro ao salvar imagem de perfil:", error);
       toast.error("Não foi possível salvar a foto");
@@ -70,6 +75,13 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       toast.error("Por favor, preencha seu nome completo");
       return;
     }
+    
+    if (!profileImage) {
+      toast.error("Por favor, adicione uma foto de perfil");
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
       const savedProfile = localStorage.getItem('userProfile');
@@ -87,21 +99,32 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
       console.log("Profile completed in PersonalInfoForm:", updatedProfile);
       toast.success("Informações salvas com sucesso!");
       
-      // Sincronizar perfil com outras partes do aplicativo
       // Use setTimeout to ensure the event is processed after the current execution stack
       setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('profileUpdated', { 
-          detail: { 
-            profile: updatedProfile 
-          }
-        }));
-        
-        // Garantir que a chamada onComplete seja executada após a atualização
-        onComplete();
+        try {
+          // Dispatch the profile update event
+          document.dispatchEvent(new CustomEvent('profileUpdated', { 
+            detail: { 
+              profile: updatedProfile 
+            }
+          }));
+          
+          // Allow some time for the event to propagate before continuing
+          setTimeout(() => {
+            // Call onComplete callback to continue
+            setIsSubmitting(false);
+            onComplete();
+          }, 300);
+        } catch (error) {
+          console.error("Error dispatching profile update event:", error);
+          setIsSubmitting(false);
+          onComplete(); // Continue anyway if there's an error
+        }
       }, 100);
     } catch (error) {
       console.error("Erro ao salvar perfil do usuário:", error);
       toast.error("Erro ao salvar informações");
+      setIsSubmitting(false);
     }
   };
 
@@ -130,9 +153,9 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onComplete }) => {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700"
           onClick={handleSubmit}
-          disabled={!fullName || !profileImage}
+          disabled={!fullName || !profileImage || isSubmitting}
         >
-          Continuar
+          {isSubmitting ? "Salvando..." : "Continuar"}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

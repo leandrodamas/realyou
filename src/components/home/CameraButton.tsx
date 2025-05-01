@@ -8,7 +8,7 @@ const CameraButton: React.FC = () => {
   const navigate = useNavigate();
   
   const handleCameraClick = () => {
-    navigate("/face-recognition"); // Fixed path to match the route in App.tsx
+    navigate("/register"); // Changed to use the register route which exists
   };
 
   return (
