@@ -1,10 +1,11 @@
 
 import { useState, useRef } from "react";
+import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 import { FacialRecognitionState } from "./types";
 
 export const useSearchState = () => {
   const [isSearching, setIsSearching] = useState(false);
-  const [matchedPerson, setMatchedPerson] = useState<null>(null);
+  const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
   const [noMatchFound, setNoMatchFound] = useState(false);
   const [connectionSent, setConnectionSent] = useState(false);
   const [hasError, setHasError] = useState(false);

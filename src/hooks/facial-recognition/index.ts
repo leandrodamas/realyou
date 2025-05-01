@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { useSearchState } from "./useSearchState";
 import { useSearchOperation } from "./useSearchOperation";
 import { useFaceRegistration } from "./useFaceRegistration";
-import type { UseFacialRecognitionResult } from "./types";
+import type { UseFacialRecognitionResult, FacialRecognitionState } from "./types";
+import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 
 export const useFacialRecognition = (): UseFacialRecognitionResult => {
   const {
@@ -95,6 +96,11 @@ export const useFacialRecognition = (): UseFacialRecognitionResult => {
     return result;
   };
 
+  // Create wrapper functions for type compatibility
+  const setMatchedPersonWrapper = (person: MatchedPerson | null) => {
+    setMatchedPerson(person);
+  };
+
   return {
     isSearching,
     matchedPerson,
@@ -105,7 +111,7 @@ export const useFacialRecognition = (): UseFacialRecognitionResult => {
     registerFace,
     sendConnectionRequest,
     setNoMatchFound,
-    setMatchedPerson,
+    setMatchedPerson: setMatchedPersonWrapper,
     resetState
   };
 };
