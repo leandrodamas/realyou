@@ -5,7 +5,7 @@ import { useProfileStorage } from "./useProfileStorage";
 
 export const useFaceRegistration = () => {
   const { uploadProfileImage } = useImageUploader();
-  const { saveProfile } = useProfileStorage();
+  const { saveProfile, getProfile } = useProfileStorage();
 
   const registerFace = async (imageData: string, userId?: string) => {
     try {
@@ -49,16 +49,32 @@ export const useFaceRegistration = () => {
       
       console.log("Image uploaded successfully, URL:", publicUrl);
       
-      // Save information to local profile
-      saveProfile({
+      // Get existing profile data if any
+      const existingProfile = getProfile() || {};
+      
+      // Save information to local profile with merged data
+      const updatedProfile = {
+        ...existingProfile,
         userId: tempUserId,
         profileImage: imageData, // Store base64 in localStorage for quick access
         serverImage: publicUrl,  // Store server URL for reference
         faceRegistered: true,
         registrationTimestamp: new Date().toISOString()
-      });
+      };
       
-      console.log("Profile saved to localStorage");
+      // Save the updated profile
+      saveProfile(updatedProfile);
+      
+      console.log("Profile saved to localStorage:", updatedProfile);
+      
+      // Force profile update event to be dispatched
+      setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { profile: updatedProfile }
+        }));
+        console.log("profileUpdated event dispatched after registration");
+      }, 300);
+      
       toast.success("Face registrada com sucesso!");
       return true;
     } catch (error) {

@@ -5,38 +5,56 @@ import { Search, Bell, User, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 
 const HomeHeader: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [userInitials, setUserInitials] = useState("ME");
+  const { getProfile } = useProfileStorage();
+  
+  // Função para calcular iniciais com base no nome
+  const calculateInitials = (name: string): string => {
+    const nameParts = name.trim().split(' ');
+    let initials = '';
+    
+    if (nameParts.length >= 1) {
+      initials += nameParts[0].charAt(0);
+    }
+    
+    if (nameParts.length >= 2) {
+      initials += nameParts[nameParts.length - 1].charAt(0);
+    }
+    
+    return initials.toUpperCase() || 'ME';
+  };
+
+  // Função para atualizar o perfil exibido
+  const updateProfileDisplay = (profile: any) => {
+    if (!profile) return;
+    
+    console.log("HomeHeader: Atualizando exibição do perfil:", profile);
+    
+    if (profile.profileImage) {
+      setProfileImage(profile.profileImage);
+    }
+    
+    if (profile.fullName) {
+      setUserInitials(calculateInitials(profile.fullName));
+    } else if (profile.username) {
+      setUserInitials(profile.username.substring(0, 2).toUpperCase());
+    }
+  };
   
   useEffect(() => {
+    // Função para carregar o perfil
     const loadProfileData = () => {
       try {
-        const savedProfile = localStorage.getItem('userProfile');
-        if (savedProfile) {
-          const profile = JSON.parse(savedProfile);
+        const profile = getProfile();
+        if (profile) {
           console.log("HomeHeader: Carregando perfil do usuário:", profile);
-          
-          if (profile.profileImage) {
-            setProfileImage(profile.profileImage);
-          }
-          
-          if (profile.fullName) {
-            const nameParts = profile.fullName.split(' ');
-            let initials = '';
-            if (nameParts.length >= 1) {
-              initials += nameParts[0].charAt(0);
-            }
-            if (nameParts.length >= 2) {
-              initials += nameParts[nameParts.length - 1].charAt(0);
-            }
-            if (initials) {
-              setUserInitials(initials.toUpperCase());
-            }
-          } else if (profile.username) {
-            setUserInitials(profile.username.substring(0, 2).toUpperCase());
-          }
+          updateProfileDisplay(profile);
+        } else {
+          console.log("HomeHeader: Nenhum perfil encontrado");
         }
       } catch (error) {
         console.error("HomeHeader: Erro ao carregar perfil:", error);
@@ -50,36 +68,22 @@ const HomeHeader: React.FC = () => {
     const handleProfileUpdate = (event: CustomEvent<{profile: any}>) => {
       try {
         console.log("HomeHeader: Recebido evento de atualização de perfil");
-        const profile = event.detail.profile;
-        
-        if (profile.profileImage) {
-          setProfileImage(profile.profileImage);
-        }
-        
-        if (profile.fullName) {
-          const nameParts = profile.fullName.split(' ');
-          let initials = '';
-          if (nameParts.length >= 1) {
-            initials += nameParts[0].charAt(0);
-          }
-          if (nameParts.length >= 2) {
-            initials += nameParts[nameParts.length - 1].charAt(0);
-          }
-          if (initials) {
-            setUserInitials(initials.toUpperCase());
-          }
+        if (event.detail && event.detail.profile) {
+          updateProfileDisplay(event.detail.profile);
         }
       } catch (error) {
         console.error("HomeHeader: Erro ao processar atualização de perfil:", error);
       }
     };
     
+    // Adiciona o listener de eventos
     document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
     
+    // Limpa o listener quando o componente for desmontado
     return () => {
       document.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
     };
-  }, []);
+  }, [getProfile]);
 
   return (
     <motion.header 

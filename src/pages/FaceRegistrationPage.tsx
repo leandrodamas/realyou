@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { registerFaceForUser } from "@/services/facialRecognitionService";
 import HeaderComponent from "@/components/face-registration/HeaderComponent";
 import StepIndicator from "@/components/face-registration/StepIndicator";
 import StepContent from "@/components/face-registration/StepContent";
 import SuccessDialog from "@/components/face-registration/SuccessDialog";
 import { useNavigate } from "react-router-dom";
 import { useFacialRecognition } from "@/hooks/useFacialRecognition";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 
 const FaceRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,13 +18,14 @@ const FaceRegistrationPage: React.FC = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const { registerFace } = useFacialRecognition();
+  const { saveProfile, getProfile } = useProfileStorage();
 
   // Load any existing profile data when component mounts
   useEffect(() => {
     try {
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
+      const profile = getProfile();
+      if (profile) {
+        console.log("FaceRegistrationPage: Perfil existente carregado:", profile);
         if (profile.username) {
           setUsername(profile.username);
         }
@@ -35,7 +36,7 @@ const FaceRegistrationPage: React.FC = () => {
     } catch (error) {
       console.error("Erro ao carregar perfil existente:", error);
     }
-  }, []);
+  }, [getProfile]);
 
   const handleNextStep = async () => {
     if (registrationStep === 1 && !capturedImage) {
@@ -59,9 +60,8 @@ const FaceRegistrationPage: React.FC = () => {
           const success = await registerFace(capturedImage, tempUserId);
           
           if (success) {
-            // Salvar ou atualizar informações do usuário no localStorage
-            const savedProfile = localStorage.getItem('userProfile');
-            const existingProfile = savedProfile ? JSON.parse(savedProfile) : {};
+            // Obter perfil atual (possivelmente atualizado pelo registerFace)
+            const existingProfile = getProfile() || {};
             
             const updatedProfile = {
               ...existingProfile,
@@ -74,7 +74,9 @@ const FaceRegistrationPage: React.FC = () => {
               lastUpdated: new Date().toISOString()
             };
             
-            localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+            // Salvar o perfil atualizado
+            saveProfile(updatedProfile);
+            console.log("FaceRegistrationPage: Perfil atualizado:", updatedProfile);
             
             // Garantir que o evento seja disparado corretamente para sincronização
             setTimeout(() => {
@@ -86,7 +88,7 @@ const FaceRegistrationPage: React.FC = () => {
               
               console.log("Profile updated event dispatched:", updatedProfile);
               setShowSuccessDialog(true);
-            }, 100);
+            }, 300);
           } else {
             toast.error("Falha ao registrar rosto. Tente novamente.");
           }
@@ -110,21 +112,27 @@ const FaceRegistrationPage: React.FC = () => {
 
   const handleFinishRegistration = () => {
     setShowSuccessDialog(false);
-    // Force profile refresh before navigating
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
+    // Forçar atualização do perfil antes de navegar
+    const profile = getProfile();
+    if (profile) {
       try {
-        const profile = JSON.parse(savedProfile);
-        // Dispatch another event to ensure profile is updated everywhere
+        // Disparar outro evento para garantir que o perfil seja atualizado em todos os lugares
         document.dispatchEvent(new CustomEvent('profileUpdated', { 
           detail: { profile }
         }));
         console.log("Final profile sync before navigation:", profile);
+        
+        // Pequeno atraso para garantir que o evento seja processado
+        setTimeout(() => {
+          navigate("/onboarding");
+        }, 500);
       } catch (error) {
         console.error("Error during final profile sync:", error);
+        navigate("/onboarding");
       }
+    } else {
+      navigate("/onboarding");
     }
-    navigate("/onboarding");
   };
 
   return (
