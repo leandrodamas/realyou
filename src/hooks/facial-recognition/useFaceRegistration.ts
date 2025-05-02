@@ -15,12 +15,36 @@ export const useFaceRegistration = () => {
       const tempUserId = userId || `temp_${Date.now()}`;
       console.log(`Using userId for registration: ${tempUserId}`);
       
-      // Upload the image
-      const publicUrl = await uploadProfileImage(imageData, tempUserId, 'face_registration');
+      // Upload the image - try 3 times with backoff
+      let publicUrl = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (!publicUrl && attempts < maxAttempts) {
+        attempts++;
+        try {
+          console.log(`Upload attempt ${attempts} of ${maxAttempts}`);
+          publicUrl = await uploadProfileImage(imageData, tempUserId, 'face_registration');
+          
+          if (!publicUrl) {
+            console.error(`Attempt ${attempts} failed: No URL returned`);
+            // If this isn't the last attempt, wait before retrying
+            if (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+            }
+          }
+        } catch (uploadError) {
+          console.error(`Attempt ${attempts} failed with error:`, uploadError);
+          // If this isn't the last attempt, wait before retrying
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          }
+        }
+      }
       
       if (!publicUrl) {
-        console.error("Failed to upload image, no URL returned");
-        throw new Error("Falha ao fazer upload da imagem");
+        console.error(`All ${maxAttempts} upload attempts failed`);
+        throw new Error("Falha ao fazer upload da imagem após várias tentativas");
       }
       
       console.log("Image uploaded successfully, URL:", publicUrl);

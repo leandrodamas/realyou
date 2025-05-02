@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -7,6 +8,7 @@ interface UploadOptions {
   folder?: string;
   metadata?: Record<string, string>;
   isPublic?: boolean;
+  anonymous?: boolean;
 }
 
 interface FileUploadResult {
@@ -29,15 +31,17 @@ export const useFileUpload = () => {
     try {
       // Generate a unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileName = `${timestamp}-${randomString}.${fileExt}`;
       const filePath = options.folder 
         ? `${options.folder}/${fileName}`
         : fileName;
       
-      // Simplify metadata - anonymous uploads don't need user_id
+      // Simplify metadata for anonymous uploads
       const metadata = {
         contentType: file.type,
-        size: file.size.toString(),
+        fileSize: file.size.toString(),
         ...options.metadata
       };
       
@@ -49,15 +53,19 @@ export const useFileUpload = () => {
       }
       
       console.log(`Uploading to bucket: ${options.bucketName}, path: ${filePath}`);
+      console.log(`File type: ${file.type}, size: ${fileToUpload.size} bytes`);
       
-      // Remove upsert option to avoid possible conflicts with RLS
+      // Upload options without upsert to avoid RLS conflicts
+      const uploadOptions = {
+        cacheControl: '3600',
+        contentType: file.type,
+        metadata
+      };
+      
+      // Upload the file
       const { error: uploadError, data } = await supabase.storage
         .from(options.bucketName)
-        .upload(filePath, fileToUpload, {
-          cacheControl: '3600',
-          contentType: file.type,
-          metadata
-        });
+        .upload(filePath, fileToUpload, uploadOptions);
 
       if (uploadError) {
         console.error('Upload error:', uploadError);

@@ -16,7 +16,11 @@ export const useImageUploader = () => {
       // Convert base64 to file
       const base64Response = await fetch(imageData);
       const imageBlob = await base64Response.blob();
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
+      
+      // Generate a truly unique filename with timestamp and random string
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const filename = `${timestamp}-${randomString}.jpg`;
       
       const imageFile = new File(
         [imageBlob], 
@@ -26,21 +30,26 @@ export const useImageUploader = () => {
       
       console.log(`Created file object: ${filename}, size: ${imageFile.size} bytes`);
       
-      // Determine folder based on purpose
+      // Simple folder structure to prevent collisions
       const folder = userId 
         ? `${purpose === 'face_registration' ? 'registrations' : 'searches'}/${userId}` 
         : `${purpose === 'face_registration' ? 'registrations' : 'searches'}/anonymous`;
       
       console.log(`Uploading to folder: ${folder}`);
       
+      // Set minimal metadata to avoid RLS issues
+      const metadata = {
+        purpose,
+        created_at: new Date().toISOString()
+      };
+      
       // Upload the image
       const { publicUrl, error } = await uploadFile(imageFile, {
         bucketName: 'facial_recognition',
         folder,
-        metadata: {
-          purpose,
-          userId: userId || 'anonymous'
-        }
+        metadata,
+        // Ensure we're not trying to use auth features for anonymous uploads
+        anonymous: !userId
       });
       
       if (error) {
