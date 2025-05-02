@@ -19,6 +19,7 @@ export const useFaceRegistration = () => {
       const publicUrl = await uploadProfileImage(imageData, tempUserId, 'face_registration');
       
       if (!publicUrl) {
+        console.error("Failed to upload image, no URL returned");
         throw new Error("Falha ao fazer upload da imagem");
       }
       

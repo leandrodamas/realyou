@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,14 +50,12 @@ export const useFileUpload = () => {
       
       console.log(`Uploading to bucket: ${options.bucketName}, path: ${filePath}`);
       
-      // Upload the file
+      // Remove upsert option to avoid possible conflicts with RLS
       const { error: uploadError, data } = await supabase.storage
         .from(options.bucketName)
         .upload(filePath, fileToUpload, {
           cacheControl: '3600',
-          upsert: true, // Changed from false to true to overwrite existing files
           contentType: file.type,
-          duplex: 'half',
           metadata
         });
 

@@ -16,7 +16,7 @@ export const useImageUploader = () => {
       // Convert base64 to file
       const base64Response = await fetch(imageData);
       const imageBlob = await base64Response.blob();
-      const filename = `${purpose}-${Date.now()}.jpg`;
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
       
       const imageFile = new File(
         [imageBlob], 
@@ -44,6 +44,7 @@ export const useImageUploader = () => {
       });
       
       if (error) {
+        console.error("Error uploading image:", error);
         throw error;
       }
       
