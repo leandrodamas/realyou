@@ -28,47 +28,59 @@ export const useFileUpload = () => {
     setUploadProgress(0);
     
     try {
-      // Verificar se usuário está logado (para adicionar metadata)
-      const { data: { user } } = await supabase.auth.getUser();
-      const metadata = {
-        contentType: file.type,
-        size: file.size.toString(),
-        ...(user ? { user_id: user.id } : {}),
-        ...options.metadata
-      };
-      
-      // Gerar nome de arquivo único para evitar colisões
+      // Generate a unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = options.folder 
         ? `${options.folder}/${fileName}`
         : fileName;
       
-      // Compressão de imagem se for um arquivo de imagem
+      // Simplify metadata - anonymous uploads don't need user_id
+      const metadata = {
+        contentType: file.type,
+        size: file.size.toString(),
+        ...options.metadata
+      };
+      
+      // Compression of image if needed
       let fileToUpload = file;
       if (file.type.startsWith('image/') && file.size > 500000) { // 500KB
         fileToUpload = await compressImage(file, 0.8);
         console.log(`Imagem comprimida: ${file.size} -> ${fileToUpload.size}`);
       }
       
-      // Upload do arquivo
-      const { error: uploadError } = await supabase.storage
+      console.log(`Uploading to bucket: ${options.bucketName}, path: ${filePath}`);
+      
+      // Upload the file
+      const { error: uploadError, data } = await supabase.storage
         .from(options.bucketName)
         .upload(filePath, fileToUpload, {
           cacheControl: '3600',
-          upsert: false,
+          upsert: true, // Changed from false to true to overwrite existing files
           contentType: file.type,
+          duplex: 'half',
           metadata
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(uploadError.message);
+      }
       
-      // Obter URL pública
+      if (!data) {
+        throw new Error("Upload failed without error details");
+      }
+      
+      console.log("Upload successful, getting public URL");
+      
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from(options.bucketName)
         .getPublicUrl(filePath);
 
+      console.log("Public URL obtained:", publicUrl);
       toast.success("Arquivo enviado com sucesso!");
+      
       return { publicUrl, filePath, error: null };
       
     } catch (error) {
@@ -85,7 +97,7 @@ export const useFileUpload = () => {
     }
   };
 
-  // Função para comprimir imagens
+  // Function to compress images
   const compressImage = (file: File, quality: number): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -96,10 +108,10 @@ export const useFileUpload = () => {
         img.onload = () => {
           const canvas = document.createElement('canvas');
           
-          // Redimensionar se a imagem for muito grande
+          // Resize if the image is too large
           let width = img.width;
           let height = img.height;
-          const maxSize = 1200; // Tamanho máximo em pixels
+          const maxSize = 1200; // Max size in pixels
           
           if (width > height && width > maxSize) {
             height = Math.round(height * maxSize / width);
@@ -113,12 +125,17 @@ export const useFileUpload = () => {
           canvas.height = height;
           
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
           
           canvas.toBlob(
             (blob) => {
               if (!blob) {
-                reject(new Error('Falha na compressão da imagem'));
+                reject(new Error('Failed to compress image'));
                 return;
               }
               const compressedFile = new File([blob], file.name, {
@@ -131,12 +148,14 @@ export const useFileUpload = () => {
             quality
           );
         };
+        
+        img.onerror = () => reject(new Error('Failed to load image for compression'));
       };
       reader.onerror = (error) => reject(error);
     });
   };
 
-  // Função para deletar arquivos
+  // Function to delete files
   const deleteFile = async (bucketName: string, filePath: string): Promise<boolean> => {
     try {
       const { error } = await supabase.storage

@@ -1,6 +1,5 @@
 
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useImageUploader } from "./useImageUploader";
 import { useProfileStorage } from "./useProfileStorage";
 
@@ -10,32 +9,31 @@ export const useFaceRegistration = () => {
 
   const registerFace = async (imageData: string, userId?: string) => {
     try {
-      // Obter ID do usuário atual se não fornecido
-      if (!userId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        userId = user?.id;
-      }
+      console.log("Starting face registration process");
       
-      if (!userId) {
-        toast.error("Necessário estar logado para registrar face");
-        return false;
-      }
+      // Generate a temporary userId if none provided
+      const tempUserId = userId || `temp_${Date.now()}`;
+      console.log(`Using userId for registration: ${tempUserId}`);
       
-      // Upload da imagem
-      const publicUrl = await uploadProfileImage(imageData, userId, 'face_registration');
+      // Upload the image
+      const publicUrl = await uploadProfileImage(imageData, tempUserId, 'face_registration');
       
       if (!publicUrl) {
         throw new Error("Falha ao fazer upload da imagem");
       }
       
-      // Salvar informações no perfil local
+      console.log("Image uploaded successfully, URL:", publicUrl);
+      
+      // Save information to local profile
       saveProfile({
-        userId,
-        profileImage: publicUrl,
+        userId: tempUserId,
+        profileImage: imageData, // Store base64 in localStorage for quick access
+        serverImage: publicUrl,  // Store server URL for reference
         faceRegistered: true,
         registrationTimestamp: new Date().toISOString()
       });
       
+      console.log("Profile saved to localStorage");
       toast.success("Face registrada com sucesso!");
       return true;
     } catch (error) {
