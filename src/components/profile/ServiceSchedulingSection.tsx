@@ -8,7 +8,11 @@ import PublicToggle from "./service/PublicToggle";
 import MarketingPrompt from "./service/MarketingPrompt";
 import ServiceInformation from "./service/ServiceInformation";
 
-const ServiceSchedulingSection: React.FC = () => {
+interface ServiceSchedulingSectionProps {
+  isOwner?: boolean;
+}
+
+const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({ isOwner = true }) => {
   const [showPublicly, setShowPublicly] = useState(true);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -30,15 +34,19 @@ const ServiceSchedulingSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PublicToggle 
-        showPublicly={showPublicly} 
-        onChange={setShowPublicly} 
-      />
+      {isOwner && (
+        <PublicToggle 
+          showPublicly={showPublicly} 
+          onChange={setShowPublicly} 
+        />
+      )}
       
-      <MarketingPrompt 
-        isPromptVisible={isPromptVisible} 
-        onDismiss={() => setIsPromptVisible(false)} 
-      />
+      {isOwner && isPromptVisible && (
+        <MarketingPrompt 
+          isPromptVisible={isPromptVisible} 
+          onDismiss={() => setIsPromptVisible(false)} 
+        />
+      )}
 
       <IntegratedScheduleView
         selectedDate={date}

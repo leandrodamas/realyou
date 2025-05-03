@@ -15,6 +15,7 @@ interface BusinessCardProps {
   location: string;
   education: string;
   skills: string[];
+  isEditable?: boolean;
 }
 
 const BusinessCard: React.FC<BusinessCardProps> = ({
@@ -23,6 +24,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({
   location,
   education,
   skills,
+  isEditable = false,
 }) => {
   return (
     <motion.div

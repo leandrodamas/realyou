@@ -10,7 +10,11 @@ import { WorkItemErrorBoundary } from "./components/WorkItemErrorBoundary";
 import { WorkItemSkeleton } from "./components/WorkItemSkeleton";
 import { toast } from "sonner";
 
-const ProfileGallery: React.FC = () => {
+interface ProfileGalleryProps {
+  isOwner?: boolean;
+}
+
+const ProfileGallery: React.FC<ProfileGalleryProps> = ({ isOwner = true }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showSocialShare, setShowSocialShare] = useState(false);
   const { items, reloadGallery, isLoading } = useWorkGallery();
@@ -70,23 +74,25 @@ const ProfileGallery: React.FC = () => {
             Verificar
           </Button>
         </motion.div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => setShowSocialShare(!showSocialShare)}
-            className="bg-blue-600 hover:bg-blue-700"
-            size="sm"
-          >
-            <Share2 className="h-4 w-4 mr-2" />
-            Integrar
-          </Button>
-          <Button 
-            onClick={() => setShowUploadDialog(true)}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Trabalho
-          </Button>
-        </div>
+        {isOwner && (
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowSocialShare(!showSocialShare)}
+              className="bg-blue-600 hover:bg-blue-700"
+              size="sm"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Integrar
+            </Button>
+            <Button 
+              onClick={() => setShowUploadDialog(true)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Trabalho
+            </Button>
+          </div>
+        )}
       </div>
 
       <motion.div 
@@ -114,13 +120,15 @@ const ProfileGallery: React.FC = () => {
             <LinkIcon className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-700 mb-2">Comece a compartilhar seu trabalho</h3>
             <p className="text-gray-500 mb-4">Adicione imagens dos seus trabalhos para mostrar suas habilidades e conectar-se com outros profissionais</p>
-            <Button 
-              onClick={() => setShowUploadDialog(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Primeiro Trabalho
-            </Button>
+            {isOwner && (
+              <Button 
+                onClick={() => setShowUploadDialog(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeiro Trabalho
+              </Button>
+            )}
           </motion.div>
         )}
       </motion.div>
