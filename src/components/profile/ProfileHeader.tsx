@@ -34,7 +34,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [editedName, setEditedName] = useState(name);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedBio, setEditedBio] = useState("");
-  const { updateProfile, getProfile } = useProfileStorage();
+  const { saveProfile, getProfile } = useProfileStorage();
   
   const handleUploadPhoto = () => {
     // Aqui seria implementada a lógica para upload de foto
@@ -53,7 +53,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         bio: editedBio
       };
       
-      updateProfile(updatedProfile);
+      saveProfile(updatedProfile);
       toast.success("Perfil atualizado com sucesso!");
       setEditProfile(false);
       

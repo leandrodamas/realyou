@@ -37,7 +37,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({
   const [editedEducation, setEditedEducation] = useState(education);
   const [editedSkills, setEditedSkills] = useState<string[]>(skills);
   
-  const { updateProfile, getProfile } = useProfileStorage();
+  const { saveProfile, getProfile } = useProfileStorage();
   
   const handleSaveChanges = () => {
     try {
@@ -51,7 +51,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({
         skills: editedSkills
       };
       
-      updateProfile(updatedProfile);
+      saveProfile(updatedProfile);
       toast.success("Informações profissionais atualizadas!");
       setIsEditing(false);
       
