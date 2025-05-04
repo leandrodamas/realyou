@@ -1,24 +1,37 @@
 
 import React from "react";
 import { GraduationCap } from "lucide-react";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
 
 interface EducationSectionProps {
   education: string;
+  isEditing?: boolean;
+  onEducationChange?: (value: string) => void;
 }
 
-const EducationSection: React.FC<EducationSectionProps> = ({ education }) => {
+const EducationSection: React.FC<EducationSectionProps> = ({ 
+  education,
+  isEditing = false,
+  onEducationChange
+}) => {
   return (
-    <motion.div 
-      className="flex items-start"
-      whileHover={{ x: 5 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <div className="bg-green-100 p-2 rounded-full mr-3">
-        <GraduationCap className="h-5 w-5 text-green-600" />
+    <div className="flex space-x-3">
+      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+        <GraduationCap className="h-4 w-4 text-green-600" />
       </div>
-      <p className="text-sm">{education}</p>
-    </motion.div>
+      <div className="flex-1">
+        {isEditing ? (
+          <Input
+            value={education}
+            onChange={(e) => onEducationChange && onEducationChange(e.target.value)}
+            placeholder="Sua formação acadêmica"
+            className="h-8 text-sm"
+          />
+        ) : (
+          <p className="text-sm text-gray-500">{education}</p>
+        )}
+      </div>
+    </div>
   );
 };
 

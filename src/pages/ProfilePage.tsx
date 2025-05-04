@@ -23,8 +23,8 @@ const ProfilePage: React.FC = () => {
   });
   const [isOwner, setIsOwner] = useState(true);
 
-  useEffect(() => {
-    // Carregar dados do perfil do localStorage
+  // Function to update profile data
+  const updateProfileData = () => {
     try {
       const profile = getProfile();
       if (profile) {
@@ -37,6 +37,12 @@ const ProfilePage: React.FC = () => {
           connectionCount: profile.connectionCount || 186,
           skillsCount: profile.skillsCount || 5
         });
+        
+        // If the user has a profile, they're registered
+        if (profile.fullName) {
+          // This is to ensure they're not shown as a new user
+          localStorage.setItem('isRegistered', 'true');
+        }
       } else {
         console.log("ProfilePage: Nenhum perfil encontrado, usando dados padrão");
       }
@@ -44,6 +50,19 @@ const ProfilePage: React.FC = () => {
       console.error("Erro ao carregar perfil:", error);
       toast.error("Não foi possível carregar seu perfil");
     }
+  };
+
+  useEffect(() => {
+    // Load profile data
+    updateProfileData();
+
+    // Listen for profile updated events
+    const handleProfileUpdate = () => {
+      console.log("ProfilePage: Evento de atualização de perfil recebido");
+      updateProfileData();
+    };
+    
+    document.addEventListener('profileUpdated', handleProfileUpdate);
 
     // Check if there's a tab parameter in the URL
     const params = new URLSearchParams(location.search);
@@ -51,6 +70,10 @@ const ProfilePage: React.FC = () => {
     if (tabParam && ["posts", "about", "services", "achievements"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
+    
+    return () => {
+      document.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, [location, getProfile]);
 
   const openSettings = (section?: string) => {
@@ -78,7 +101,7 @@ const ProfilePage: React.FC = () => {
       />
 
       {/* Quick Settings Access */}
-      <QuickSettingsSection openSettings={openSettings} />
+      {isOwner && <QuickSettingsSection openSettings={openSettings} />}
 
       {/* Interactive Tabs with Animation */}
       <ProfileTabs 

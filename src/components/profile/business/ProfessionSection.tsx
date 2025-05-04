@@ -1,65 +1,52 @@
 
-import React, { useState } from "react";
-import { Briefcase, Edit } from "lucide-react";
+import React from "react";
+import { Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
 
 interface ProfessionSectionProps {
   initialProfession: string;
   company: string;
+  isEditing?: boolean;
+  onProfessionChange?: (value: string) => void;
+  onCompanyChange?: (value: string) => void;
 }
 
 const ProfessionSection: React.FC<ProfessionSectionProps> = ({
   initialProfession,
   company,
+  isEditing = false,
+  onProfessionChange,
+  onCompanyChange
 }) => {
-  const [isEditingProfession, setIsEditingProfession] = useState(false);
-  const [profession, setProfession] = useState(initialProfession);
-
-  const handleSaveProfession = () => {
-    setIsEditingProfession(false);
-    toast.success("Profissão atualizada com sucesso!");
-  };
-
   return (
-    <motion.div 
-      className="flex items-start"
-      whileHover={{ x: 5 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <div className="bg-purple-100 p-2 rounded-full mr-3">
-        <Briefcase className="h-5 w-5 text-purple-600" />
+    <div className="flex space-x-3">
+      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+        <Briefcase className="h-4 w-4 text-blue-600" />
       </div>
-      <div className="flex-1">
-        {isEditingProfession ? (
-          <div className="flex gap-2">
-            <Input 
-              value={profession} 
-              onChange={(e) => setProfession(e.target.value)} 
+      <div>
+        {isEditing ? (
+          <div className="space-y-2">
+            <Input
+              value={initialProfession}
+              onChange={(e) => onProfessionChange && onProfessionChange(e.target.value)}
+              placeholder="Sua profissão"
               className="h-8 text-sm"
             />
-            <Button size="sm" onClick={handleSaveProfession}>Salvar</Button>
+            <Input
+              value={company}
+              onChange={(e) => onCompanyChange && onCompanyChange(e.target.value)}
+              placeholder="Empresa ou organização"
+              className="h-8 text-sm"
+            />
           </div>
         ) : (
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{profession}</p>
-              <p className="text-sm text-gray-500">{company}</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6" 
-              onClick={() => setIsEditingProfession(true)}
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          </div>
+          <>
+            <h3 className="text-sm font-medium text-gray-900">{initialProfession}</h3>
+            <p className="text-sm text-gray-500">{company}</p>
+          </>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

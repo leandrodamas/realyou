@@ -1,10 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PencilLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 
 interface ProfileHeaderProps {
   name: string;
@@ -25,10 +30,41 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   skillsCount,
   isOwner = true
 }) => {
+  const [editProfile, setEditProfile] = useState(false);
+  const [editedName, setEditedName] = useState(name);
+  const [editedTitle, setEditedTitle] = useState(title);
+  const [editedBio, setEditedBio] = useState("");
+  const { updateProfile, getProfile } = useProfileStorage();
+  
   const handleUploadPhoto = () => {
     // Aqui seria implementada a lógica para upload de foto
     if (isOwner) {
       toast.info("Funcionalidade de upload de foto será implementada em breve");
+    }
+  };
+
+  const handleSaveProfile = () => {
+    try {
+      const currentProfile = getProfile() || {};
+      const updatedProfile = {
+        ...currentProfile,
+        fullName: editedName,
+        title: editedTitle,
+        bio: editedBio
+      };
+      
+      updateProfile(updatedProfile);
+      toast.success("Perfil atualizado com sucesso!");
+      setEditProfile(false);
+      
+      // Dispatch event to notify other components about the profile update
+      const event = new CustomEvent('profileUpdated', { 
+        detail: { profile: updatedProfile } 
+      });
+      document.dispatchEvent(event);
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      toast.error("Não foi possível atualizar seu perfil");
     }
   };
 
@@ -91,15 +127,56 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </motion.p>
           </div>
           {isOwner && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full border-purple-200"
-              onClick={() => toast.info("Edição de perfil será implementada em breve")}
-            >
-              <PencilLine className="h-4 w-4 mr-1" />
-              Editar perfil
-            </Button>
+            <Sheet open={editProfile} onOpenChange={setEditProfile}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full border-purple-200"
+                >
+                  <PencilLine className="h-4 w-4 mr-1" />
+                  Editar perfil
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="sm:max-w-md">
+                <SheetHeader>
+                  <SheetTitle>Editar Perfil</SheetTitle>
+                  <SheetDescription>
+                    Atualize suas informações de perfil aqui. Clique em salvar quando terminar.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Nome</Label>
+                    <Input 
+                      id="name" 
+                      value={editedName} 
+                      onChange={(e) => setEditedName(e.target.value)} 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Título Profissional</Label>
+                    <Input 
+                      id="title" 
+                      value={editedTitle} 
+                      onChange={(e) => setEditedTitle(e.target.value)} 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea 
+                      id="bio" 
+                      value={editedBio} 
+                      onChange={(e) => setEditedBio(e.target.value)} 
+                      placeholder="Escreva sobre você e seu trabalho"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           )}
         </div>
         

@@ -1,24 +1,37 @@
 
 import React from "react";
 import { MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
 
 interface LocationSectionProps {
   location: string;
+  isEditing?: boolean;
+  onLocationChange?: (value: string) => void;
 }
 
-const LocationSection: React.FC<LocationSectionProps> = ({ location }) => {
+const LocationSection: React.FC<LocationSectionProps> = ({ 
+  location,
+  isEditing = false,
+  onLocationChange
+}) => {
   return (
-    <motion.div 
-      className="flex items-center"
-      whileHover={{ x: 5 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <div className="bg-blue-100 p-2 rounded-full mr-3">
-        <MapPin className="h-5 w-5 text-blue-600" />
+    <div className="flex space-x-3">
+      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+        <MapPin className="h-4 w-4 text-purple-600" />
       </div>
-      <p className="text-sm">{location}</p>
-    </motion.div>
+      <div className="flex-1">
+        {isEditing ? (
+          <Input
+            value={location}
+            onChange={(e) => onLocationChange && onLocationChange(e.target.value)}
+            placeholder="Sua localização"
+            className="h-8 text-sm"
+          />
+        ) : (
+          <p className="text-sm text-gray-500">{location}</p>
+        )}
+      </div>
+    </div>
   );
 };
 

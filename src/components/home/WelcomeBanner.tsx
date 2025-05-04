@@ -1,11 +1,28 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 
 const WelcomeBanner: React.FC = () => {
+  const [isRegistered, setIsRegistered] = useState(false);
+  const { getProfile } = useProfileStorage();
+  
+  useEffect(() => {
+    // Check if user has a profile
+    const profile = getProfile();
+    if (profile && profile.fullName) {
+      setIsRegistered(true);
+    }
+  }, [getProfile]);
+  
+  // Don't show welcome banner for registered users
+  if (isRegistered) {
+    return null;
+  }
+
   return (
     <motion.div 
       className="mt-4 px-4"
