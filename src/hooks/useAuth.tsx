@@ -1,5 +1,5 @@
 
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState, createContext, useContext, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,6 +31,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (event === 'SIGNED_IN') {
           toast.success("Login realizado com sucesso!");
+          
+          // Initialize user profile if needed
+          if (currentSession?.user) {
+            setTimeout(() => {
+              const savedProfile = localStorage.getItem('userProfile');
+              if (!savedProfile) {
+                const initialProfile = {
+                  userId: currentSession.user.id,
+                  username: currentSession.user.email?.split('@')[0],
+                  lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('userProfile', JSON.stringify(initialProfile));
+              }
+            }, 0);
+          }
         } else if (event === 'SIGNED_OUT') {
           toast.info("Sessão encerrada");
         }
@@ -97,7 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
@@ -106,7 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error: any) {
       console.error("Error refreshing session:", error);
     }
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ session, user, isLoading, signIn, signUp, signOut, refreshSession }}>

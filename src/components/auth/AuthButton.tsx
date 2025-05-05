@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -8,19 +8,39 @@ import { User } from "lucide-react";
 
 const AuthButton: React.FC = () => {
   const { user } = useAuth();
+  const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Listen for profile updates
+    const handleProfileUpdate = (e: Event) => {
+      if (e instanceof CustomEvent && e.detail?.profile) {
+        setProfileImage(e.detail.profile.profileImage);
+      }
+    };
+
+    // Load initial profile
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        if (profile.profileImage) {
+          setProfileImage(profile.profileImage);
+        }
+      } catch (error) {
+        console.error("Error parsing profile data", error);
+      }
+    }
+
+    document.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => document.removeEventListener('profileUpdated', handleProfileUpdate);
+  }, [user]);
 
   if (user) {
     // User is logged in, show avatar
     return (
       <Link to="/profile" className="block">
         <Avatar className="h-9 w-9 border-2 border-white">
-          <AvatarImage 
-            src={localStorage.getItem('userProfile') 
-              ? JSON.parse(localStorage.getItem('userProfile')!).profileImage 
-              : undefined
-            } 
-            alt={user.email || "User"} 
-          />
+          <AvatarImage src={profileImage} alt={user.email || "User"} />
           <AvatarFallback className="bg-gradient-to-br from-purple-400 to-blue-500 text-white text-xs">
             {user.email?.substring(0, 2).toUpperCase() || "U"}
           </AvatarFallback>

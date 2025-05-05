@@ -1,11 +1,14 @@
 
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface UserProfile {
   userId?: string;
   username?: string;
   fullName?: string;
   profileImage?: string;
+  coverImage?: string;
   faceRegistered?: boolean;
   registrationTimestamp?: string;
   lastUpdated?: string;
@@ -13,6 +16,8 @@ export interface UserProfile {
 }
 
 export const useProfileStorage = () => {
+  const { user } = useAuth();
+
   const saveProfile = (profileData: Partial<UserProfile>): void => {
     try {
       const savedProfile = localStorage.getItem('userProfile');
@@ -46,5 +51,67 @@ export const useProfileStorage = () => {
     }
   };
 
-  return { saveProfile, getProfile };
+  const uploadProfileImage = async (file: File): Promise<string | null> => {
+    if (!user) {
+      toast.error("Você precisa estar autenticado para fazer upload de imagens");
+      return null;
+    }
+
+    try {
+      const filePath = `${user.id}/${Date.now()}-${file.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast.error("Erro ao fazer upload da imagem");
+      return null;
+    }
+  };
+
+  const uploadCoverImage = async (file: File): Promise<string | null> => {
+    if (!user) {
+      toast.error("Você precisa estar autenticado para fazer upload de imagens");
+      return null;
+    }
+
+    try {
+      const filePath = `${user.id}/cover/${Date.now()}-${file.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error("Error uploading cover image:", error);
+      toast.error("Erro ao fazer upload da imagem de capa");
+      return null;
+    }
+  };
+
+  return { saveProfile, getProfile, uploadProfileImage, uploadCoverImage };
 };

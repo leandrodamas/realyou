@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import ChatList from "@/components/chats/ChatList";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ const ChatsPage: React.FC = () => {
   const [message, setMessage] = useState("");
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioTime, setAudioTime] = useState(0);
-  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null); // Changed from number to string
   const [chatOpen, setChatOpen] = useState(false);
   const [attachmentType, setAttachmentType] = useState<string | null>(null);
   
@@ -51,7 +52,7 @@ const ChatsPage: React.FC = () => {
   };
 
   // Open chat with user
-  const openChat = (id: number, name: string) => {
+  const openChat = (id: string, name: string) => { // Changed parameter type from number to string
     setSelectedChat(id);
     setChatOpen(true);
     // We'll use the name from the selected chat in the list
