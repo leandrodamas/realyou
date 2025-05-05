@@ -1,85 +1,103 @@
 
-import React from "react";
-import { DollarSign, TrendingUp, Award, BadgeCheck, Share2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import ServicePackageDialog from "./ServicePackageDialog";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { DollarSign, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 import { toast } from "sonner";
 
-const ServicePricing = () => {
-  const handleSharePrice = () => {
-    navigator.clipboard.writeText("R$ 150,00 ~ 180,00");
-    toast.success("Preço copiado para a área de transferência!");
-  }
+interface ServicePricingProps {
+  isOwner?: boolean;
+}
+
+const ServicePricing: React.FC<ServicePricingProps> = ({ isOwner = false }) => {
+  const { saveProfile, getProfile } = useProfileStorage();
+  const profile = getProfile() || {};
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [basePrice, setBasePrice] = useState(profile.basePrice || 180);
+  const [currency, setCurrency] = useState(profile.currency || "BRL");
+  
+  const currencySymbols = {
+    BRL: "R$",
+    USD: "$",
+    EUR: "€",
+    GBP: "£"
+  };
+  
+  const formattedPrice = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency,
+  }).format(basePrice);
+  
+  const handleSave = () => {
+    try {
+      saveProfile({
+        ...profile,
+        basePrice,
+        currency
+      });
+      
+      toast.success("Preço atualizado com sucesso!");
+      setIsEditing(false);
+      
+      // Notificar outras partes da aplicação sobre a atualização
+      const event = new CustomEvent('profileUpdated', { 
+        detail: { profile: {...profile, basePrice, currency} } 
+      });
+      document.dispatchEvent(event);
+    } catch (error) {
+      console.error("Erro ao salvar preço:", error);
+      toast.error("Não foi possível atualizar o preço");
+    }
+  };
 
   return (
-    <motion.div 
-      className="flex items-center"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="flex items-center">
       <DollarSign className="h-5 w-5 text-green-600 mr-3" />
-      <div className="w-full">
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium">Valor</h4>
-          <Badge className="bg-amber-100 text-amber-700 border-0 cursor-pointer" onClick={handleSharePrice}>
-            <TrendingUp className="h-3 w-3 mr-1" /> 
-            Preço Dinâmico
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <p className="text-gray-600 font-medium">R$ 150,00 ~ 180,00</p>
-          <Badge className="bg-blue-100 text-blue-700 border-0">Preço acessível</Badge>
-        </div>
+      <div className="flex-1">
+        <h4 className="font-medium">Preço</h4>
         
-        <div className="mt-2">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>Horário vazio</span>
-            <span>Horário cheio</span>
-          </div>
-          <motion.div 
-            className="h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full mt-1"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          />
-        </div>
-        
-        <div className="mt-3 space-y-2">
-          <ServicePackageDialog />
-          
-          <div className="flex gap-2 mt-2 justify-around">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center bg-purple-50 p-1 rounded-md text-xs text-purple-700 cursor-pointer"
-              onClick={() => toast.success("Certificação verificada!")}
-            >
-              <BadgeCheck className="h-3 w-3 mr-1" />
-              Certificado
-            </motion.div>
+        {isEditing && isOwner ? (
+          <div className="flex items-center gap-2 mt-1">
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger className="h-8 w-24">
+                <SelectValue placeholder="Moeda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BRL">R$ (BRL)</SelectItem>
+                <SelectItem value="USD">$ (USD)</SelectItem>
+                <SelectItem value="EUR">€ (EUR)</SelectItem>
+                <SelectItem value="GBP">£ (GBP)</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center bg-blue-50 p-1 rounded-md text-xs text-blue-700 cursor-pointer"
-              onClick={() => toast.success("Link copiado para compartilhar!")}
-            >
-              <Share2 className="h-3 w-3 mr-1" />
-              Compartilhar
-            </motion.div>
+            <Input
+              type="number"
+              value={basePrice}
+              onChange={(e) => setBasePrice(Number(e.target.value))}
+              className="h-8 w-24"
+              min="0"
+            />
             
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center bg-amber-50 p-1 rounded-md text-xs text-amber-700 cursor-pointer"
-              onClick={() => toast.success("Profissional premiado!")}
-            >
-              <Award className="h-3 w-3 mr-1" />
-              Premiado
-            </motion.div>
+            <div className="flex gap-1">
+              <Button size="sm" onClick={handleSave} className="h-8">Salvar</Button>
+              <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="h-8">Cancelar</Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600 font-semibold">{formattedPrice}</p>
+            {isOwner && (
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditing(true)}>
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
