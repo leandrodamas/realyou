@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+// Import from the new location using the compatibility layer
 import { useProfileImageUpload } from "@/hooks/useProfileImageUpload";
 
 interface ProfileImageUploadProps {
