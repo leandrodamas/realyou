@@ -23,14 +23,7 @@ const MapView: React.FC<MapViewProps> = ({ professionals: initialProfessionals }
         // Get professionals from service_pricing table
         const { data, error } = await supabase
           .from('service_pricing')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              avatar_url,
-              location
-            )
-          `);
+          .select('*');
         
         if (error) throw error;
         
@@ -44,14 +37,14 @@ const MapView: React.FC<MapViewProps> = ({ professionals: initialProfessionals }
             
             return {
               id: item.id,
-              name: item.profiles?.full_name || "Profissional",
+              name: item.title || "Profissional", // Use title as name if no profile info
               title: item.title || "Especialista",
               rating: 4.5 + Math.random() * 0.5, // Random rating between 4.5-5.0
               reviews: Math.floor(Math.random() * 100) + 10, // Random reviews count
               price: item.base_price,
               distance: Math.round((Math.random() * 5 + 0.5) * 10) / 10, // Random distance 0.5-5.5km
               available: Math.random() > 0.5 ? "Hoje" : "Amanhã",
-              image: item.profiles?.avatar_url || "https://randomuser.me/api/portraits/men/32.jpg",
+              image: "https://randomuser.me/api/portraits/men/32.jpg", // Default image
               coordinates: [lng, lat] as [number, number]
             };
           });
@@ -63,6 +56,7 @@ const MapView: React.FC<MapViewProps> = ({ professionals: initialProfessionals }
         }
       } catch (error) {
         console.error("Error loading professionals:", error);
+        toast.error("Erro ao carregar profissionais");
         // Keep initial professionals data if there's an error
       } finally {
         setIsLoading(false);
@@ -101,7 +95,7 @@ const MapView: React.FC<MapViewProps> = ({ professionals: initialProfessionals }
             </div>
             <div className="mt-2 overflow-hidden">
               {professionals.slice(0, 1).map(pro => (
-                <div key={pro.id} className="flex items-center gap-3">
+                <div key={`${pro.id}`} className="flex items-center gap-3">
                   <img 
                     src={pro.image} 
                     alt={pro.name}
@@ -128,7 +122,7 @@ const MapView: React.FC<MapViewProps> = ({ professionals: initialProfessionals }
             <h3 className="font-medium text-lg mb-4">{professionals.length} profissionais encontrados</h3>
             <div className="space-y-4">
               {professionals.map(pro => (
-                <ProfessionalCard key={pro.id} professional={pro} />
+                <ProfessionalCard key={`${pro.id}`} professional={pro} />
               ))}
             </div>
           </div>

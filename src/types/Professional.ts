@@ -1,6 +1,6 @@
 
 export interface Professional {
-  id: number;
+  id: string | number;
   name: string;
   title: string;
   rating: number;
