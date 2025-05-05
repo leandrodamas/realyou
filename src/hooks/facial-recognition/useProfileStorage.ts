@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 export interface UserProfile {
   userId?: string;
@@ -17,6 +18,7 @@ export interface UserProfile {
 
 export const useProfileStorage = () => {
   const { user } = useAuth();
+  const { uploadFile } = useFileUpload();
 
   const saveProfile = (profileData: Partial<UserProfile>): void => {
     try {
@@ -58,23 +60,14 @@ export const useProfileStorage = () => {
     }
 
     try {
-      const filePath = `${user.id}/${Date.now()}-${file.name}`;
+      const result = await uploadFile(file, {
+        bucketName: 'profiles',
+        folder: user.id,
+        isPublic: true
+      });
       
-      const { data, error } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) throw error;
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
-
-      return publicUrlData.publicUrl;
+      if (result.error) throw result.error;
+      return result.publicUrl;
     } catch (error) {
       console.error("Error uploading profile image:", error);
       toast.error("Erro ao fazer upload da imagem");
@@ -89,23 +82,14 @@ export const useProfileStorage = () => {
     }
 
     try {
-      const filePath = `${user.id}/cover/${Date.now()}-${file.name}`;
+      const result = await uploadFile(file, {
+        bucketName: 'profiles',
+        folder: `${user.id}/cover`,
+        isPublic: true
+      });
       
-      const { data, error } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) throw error;
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
-
-      return publicUrlData.publicUrl;
+      if (result.error) throw result.error;
+      return result.publicUrl;
     } catch (error) {
       console.error("Error uploading cover image:", error);
       toast.error("Erro ao fazer upload da imagem de capa");
