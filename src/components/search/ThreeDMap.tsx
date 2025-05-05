@@ -1,13 +1,7 @@
+
 import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-
-interface Professional {
-  id: number;
-  name: string;
-  coordinates: [number, number]; // [longitude, latitude]
-  image: string;
-  // other professional properties
-}
+import { Professional } from "@/types/Professional";
 
 interface ThreeDMapProps {
   professionals: Professional[];
@@ -63,7 +57,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
             
             return (
               <motion.div
-                key={pro.id}
+                key={`${pro.id}`}
                 className="absolute"
                 style={{ 
                   left: `${x}%`, 

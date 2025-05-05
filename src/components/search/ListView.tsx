@@ -15,7 +15,7 @@ const ListView: React.FC<ListViewProps> = ({ professionals, resetAllFilters }) =
     <div className="p-4 space-y-4">
       {professionals.length > 0 ? (
         professionals.map(pro => (
-          <ProfessionalCard key={pro.id} professional={pro} />
+          <ProfessionalCard key={`${pro.id}`} professional={pro} />
         ))
       ) : (
         <div className="text-center py-8">

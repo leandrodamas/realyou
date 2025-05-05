@@ -5,19 +5,7 @@ import { Star, Clock, MapPin, Calendar, Award, BadgeCheck, Zap, Clock3 } from "l
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-
-interface Professional {
-  id: number;
-  name: string;
-  title: string;
-  rating: number;
-  reviews: number;
-  price: number;
-  distance: number;
-  available: string;
-  image: string;
-  coordinates?: [number, number];
-}
+import { Professional } from "@/types/Professional";
 
 interface ProfessionalCardProps {
   professional: Professional;
