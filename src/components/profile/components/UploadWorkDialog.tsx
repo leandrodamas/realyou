@@ -19,16 +19,26 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading, uploadProgress } = useFileUpload();
 
-  // Check user authentication status when component loads
+  // Check user authentication status when component loads and when dialog opens
   useEffect(() => {
     const checkUserAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
+        setSession(data.session);
+        
+        // If no session found, check if there's an active user
+        if (!data.session) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // We have a user but no session, refresh auth
+            const { data: refreshedData } = await supabase.auth.refreshSession();
+            setSession(refreshedData.session);
+          }
+        }
       } catch (error) {
         console.error("Error checking authentication:", error);
       }
@@ -38,13 +48,14 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
     
     // Subscribe to auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      console.log("Auth state changed:", event, session?.user?.id);
+      setSession(session);
     });
     
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [open]); // Re-check when dialog opens
 
   const resetForm = () => {
     setTitle("");
@@ -94,15 +105,16 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
     }
     
     // Check if user is logged in
-    const { data } = await supabase.auth.getSession();
-    const currentUser = data.session?.user || user;
-    
-    if (!currentUser) {
+    if (!session?.user) {
+      console.error("No user session found", session);
       toast.error("Você precisa estar logado para adicionar trabalhos");
       return;
     }
 
     try {
+      const currentUser = session.user;
+      console.log("Uploading with user:", currentUser.id);
+
       // Upload image to work_gallery bucket
       const { publicUrl, error: uploadError } = await uploadFile(selectedFile, {
         bucketName: 'work_gallery',
@@ -231,13 +243,25 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
             </div>
           </div>
           
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isUploading || !selectedFile || !title.trim()}
-            className="w-full"
-          >
-            {isUploading ? "Salvando..." : "Salvar Trabalho"}
-          </Button>
+          {session?.user ? (
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isUploading || !selectedFile || !title.trim()}
+              className="w-full"
+            >
+              {isUploading ? "Salvando..." : "Salvar Trabalho"}
+            </Button>
+          ) : (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+              <p>Você precisa estar logado para adicionar trabalhos.</p>
+              <p className="mt-1 text-xs">Se você já está logado e está vendo esta mensagem, tente atualizar a página.</p>
+            </div>
+          )}
+          
+          {/* Debug info - can be removed in production */}
+          <div className="text-xs text-gray-400 mt-2">
+            Status da sessão: {session ? "Conectado como " + session.user?.email : "Não conectado"}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
