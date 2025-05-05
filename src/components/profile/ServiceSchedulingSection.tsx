@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Drawer } from "@/components/ui/drawer";
 import IntegratedScheduleView from "./schedule/IntegratedScheduleView";
@@ -7,6 +7,7 @@ import ScheduleSuccessDrawer from "./schedule/ScheduleSuccessDrawer";
 import PublicToggle from "./service/PublicToggle";
 import MarketingPrompt from "./service/MarketingPrompt";
 import ServiceInformation from "./service/ServiceInformation";
+import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 
 interface ServiceSchedulingSectionProps {
   isOwner?: boolean;
@@ -18,11 +19,53 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({ isO
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isPromptVisible, setIsPromptVisible] = useState(true);
   const [showMatchSuccess, setShowMatchSuccess] = useState(false);
-
-  const availableTimeSlots = [
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([
     "08:00", "09:00", "10:00", "11:00", 
     "14:00", "15:00", "16:00", "17:00"
-  ];
+  ]);
+  
+  const { getProfile } = useProfileStorage();
+  const profile = getProfile() || {};
+  
+  // Dados do profissional baseados no perfil
+  const [profileData, setProfileData] = useState({
+    profileImage: profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
+    name: profile.fullName || "Dr. Carlos Silva",
+    basePrice: profile.basePrice || 180
+  });
+  
+  // Atualizar os dados quando o perfil mudar
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const updatedProfile = customEvent.detail?.profile || getProfile() || {};
+      
+      setProfileData({
+        profileImage: updatedProfile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
+        name: updatedProfile.fullName || "Dr. Carlos Silva",
+        basePrice: updatedProfile.basePrice || 180
+      });
+      
+      // Atualizar horários disponíveis baseados nas configurações do usuário
+      if (updatedProfile.availableTimeSlots) {
+        setAvailableTimeSlots(updatedProfile.availableTimeSlots);
+      }
+    };
+    
+    document.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    // Carregar dados iniciais
+    const currentProfile = getProfile() || {};
+    setProfileData({
+      profileImage: currentProfile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
+      name: currentProfile.fullName || "Dr. Carlos Silva",
+      basePrice: currentProfile.basePrice || 180
+    });
+    
+    return () => {
+      document.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, [getProfile]);
 
   const handleScheduleService = () => {
     if (!date || !selectedTime) {
@@ -55,12 +98,12 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({ isO
         onTimeSelect={setSelectedTime}
         onSchedule={handleScheduleService}
         availableTimeSlots={availableTimeSlots}
-        profileImage="https://randomuser.me/api/portraits/men/32.jpg"
-        name="Dr. Carlos Silva"
-        basePrice={180}
+        profileImage={profileData.profileImage}
+        name={profileData.name}
+        basePrice={profileData.basePrice}
       />
 
-      <ServiceInformation />
+      <ServiceInformation isOwner={isOwner} />
 
       <Drawer open={showMatchSuccess} onOpenChange={setShowMatchSuccess}>
         <ScheduleSuccessDrawer 

@@ -1,12 +1,13 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarClock, Check, Zap, TrendingUp } from "lucide-react";
+import { CalendarClock, Check, Zap, TrendingUp, Users } from "lucide-react";
 import { format, isSameDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 interface ServiceDatePickerProps {
   selectedDate: Date | undefined;
@@ -17,22 +18,39 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
   selectedDate,
   onDateSelect,
 }) => {
-  // Mock data - in a real app this would come from an API
-  const availableDates = [
-    addDays(new Date(), 1),
-    addDays(new Date(), 2),
-    addDays(new Date(), 3),
-    addDays(new Date(), 5),
-    addDays(new Date(), 7),
-  ];
+  // Gerar datas disponíveis para os próximos 10 dias
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [urgentDates, setUrgentDates] = useState<Date[]>([]);
+  const [highDemandDates, setHighDemandDates] = useState<Date[]>([]);
   
-  const urgentDates = [
-    addDays(new Date(), 1),
-  ];
-  
-  const highDemandDates = [
-    addDays(new Date(), 2),
-  ];
+  useEffect(() => {
+    // Gerar datas disponíveis para os próximos 10 dias (excluindo alguns dias aleatoriamente)
+    const dates: Date[] = [];
+    const urgents: Date[] = [];
+    const highDemand: Date[] = [];
+    
+    for (let i = 1; i <= 14; i++) {
+      // Pular 2-3 dias para simular indisponibilidade
+      if (i % 3 !== 0) {
+        const date = addDays(new Date(), i);
+        dates.push(date);
+        
+        // Adicionar alguns dias como urgentes (disponibilidade imediata)
+        if (i <= 2) {
+          urgents.push(date);
+        }
+        
+        // Adicionar alguns dias como alta demanda (preço dinâmico)
+        if (i === 3 || i === 6 || i === 10) {
+          highDemand.push(date);
+        }
+      }
+    }
+    
+    setAvailableDates(dates);
+    setUrgentDates(urgents);
+    setHighDemandDates(highDemand);
+  }, []);
   
   const isDateAvailable = (date: Date) => {
     return availableDates.some(availableDate => 
@@ -51,14 +69,37 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
       isSameDay(highDemandDate, date)
     );
   };
+  
+  // Número de pessoas que estão visualizando o calendário agora
+  const [viewerCount, setViewerCount] = useState(0);
+  
+  useEffect(() => {
+    // Gerar um número aleatório de visualizadores entre 1 e 4
+    setViewerCount(Math.floor(Math.random() * 4) + 1);
+    
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(() => {
+      setViewerCount(Math.floor(Math.random() * 4) + 1);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <CalendarClock className="h-5 w-5 mr-2 text-purple-600" />
-          Selecione uma data
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            <CalendarClock className="h-5 w-5 mr-2 text-purple-600" />
+            Selecione uma data
+          </CardTitle>
+          {viewerCount > 0 && (
+            <Badge variant="outline" className="bg-purple-50 border-purple-100 text-purple-700">
+              <Users className="h-3 w-3 mr-1" />
+              {viewerCount} online
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Calendar
@@ -118,7 +159,11 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
         </div>
         
         {selectedDate && (
-          <div className="mt-3 text-center">
+          <motion.div 
+            className="mt-3 text-center"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <p className="text-xs text-purple-700 font-medium">
               {isUrgentDate(selectedDate) ? (
                 <span className="flex items-center justify-center">
@@ -136,7 +181,7 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
                 </span>
               )}
             </p>
-          </div>
+          </motion.div>
         )}
       </CardContent>
     </Card>

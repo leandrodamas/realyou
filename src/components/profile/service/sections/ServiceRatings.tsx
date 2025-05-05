@@ -1,96 +1,82 @@
 
 import React, { useState } from "react";
-import { Users, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Star, MessageSquare, ThumbsUp, Edit } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface ServiceRatingsProps {
-  totalRatings?: number;
-  averageRating?: number;
+  isOwner?: boolean;
 }
 
-const ServiceRatings: React.FC<ServiceRatingsProps> = ({
-  totalRatings = 132,
-  averageRating = 4.9
-}) => {
-  const [showReviews, setShowReviews] = useState(false);
-
-  const ratingStats = {
-    "5": 87,
-    "4": 10,
-    "3": 2,
-    "2": 1,
-    "1": 0,
-  };
-
-  const reviews = [
-    { name: "Marcela S.", rating: 5, comment: "Excelente profissional! Super recomendo.", date: "há 2 dias" },
-    { name: "João P.", rating: 4, comment: "Ótimo serviço, pontual e eficiente.", date: "há 1 semana" },
-    { name: "Ana C.", rating: 5, comment: "Incrível! Resolveu meu problema rapidamente.", date: "há 3 semanas" },
+const ServiceRatings: React.FC<ServiceRatingsProps> = ({ isOwner = false }) => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  
+  const ratings = [
+    { stars: 5, percentage: 85 },
+    { stars: 4, percentage: 10 },
+    { stars: 3, percentage: 3 },
+    { stars: 2, percentage: 1 },
+    { stars: 1, percentage: 1 },
   ];
-
-  const toggleReviews = () => setShowReviews(!showReviews);
+  
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+  
+  const handleGenerateReviews = () => {
+    toast.success("Em breve: Gere avaliações com IA");
+  };
 
   return (
     <div className="flex items-start">
-      <Users className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-      <div>
-        <h4 className="font-medium">Avaliações</h4>
-        <div className="flex items-center mt-1 mb-2">
-          <div className="flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-            ))}
-          </div>
-          <span className="text-sm ml-2">{averageRating} ({totalRatings} avaliações)</span>
+      <MessageSquare className="h-5 w-5 text-purple-600 mr-3 mt-0.5" />
+      <div className="flex-1">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium">Avaliações</h4>
+          <Button variant="ghost" size="sm" onClick={toggleCollapse} className="text-xs">
+            {isCollapsed ? "Mostrar detalhes" : "Ocultar detalhes"}
+          </Button>
         </div>
         
-        {!showReviews ? (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs text-purple-600 -ml-2" 
-            onClick={toggleReviews}
-          >
-            Ver avaliações
-          </Button>
-        ) : (
-          <div className="animate-fade-in">
-            <div className="space-y-1 mb-2">
-              {Object.entries(ratingStats).map(([rating, percentage]) => (
-                <div key={rating} className="flex items-center gap-2">
-                  <div className="w-4 text-xs text-right">{rating}</div>
-                  <Progress value={percentage} className="h-1.5" />
-                  <div className="text-xs text-gray-500 w-6">{percentage}%</div>
+        <div className="flex items-center mt-1">
+          <div className="flex items-center">
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            <span className="mx-1 font-medium">4.9</span>
+          </div>
+          <span className="text-sm text-gray-500 mx-2">(132 avaliações)</span>
+          <div className="flex items-center text-green-600 text-xs">
+            <ThumbsUp className="h-3 w-3 mr-0.5" />
+            98% recomendações
+          </div>
+        </div>
+        
+        {!isCollapsed && (
+          <div className="mt-3 space-y-2">
+            {ratings.map((rating) => (
+              <div key={rating.stars} className="flex items-center">
+                <div className="w-10 text-xs flex items-center">
+                  <span>{rating.stars}</span>
+                  <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 ml-0.5" />
                 </div>
-              ))}
-            </div>
-            
-            <div className="space-y-3 mt-3">
-              {reviews.map((review, index) => (
-                <div key={index} className="border-t pt-2 border-gray-100">
-                  <div className="flex justify-between">
-                    <span className="font-medium text-sm">{review.name}</span>
-                    <span className="text-xs text-gray-500">{review.date}</span>
-                  </div>
-                  <div className="flex mt-0.5 mb-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className={`h-2.5 w-2.5 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-600">{review.comment}</p>
+                <div className="flex-1 mx-2">
+                  <Progress value={rating.percentage} className="h-2" />
                 </div>
-              ))}
-            </div>
+                <div className="w-8 text-right text-xs">{rating.percentage}%</div>
+              </div>
+            ))}
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs text-purple-600 -ml-2 mt-2" 
-              onClick={toggleReviews}
-            >
-              Esconder avaliações
-            </Button>
+            {isOwner && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs mt-2 w-full"
+                onClick={handleGenerateReviews}
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                Gerar avaliações com IA
+              </Button>
+            )}
           </div>
         )}
       </div>

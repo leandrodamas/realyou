@@ -3,7 +3,11 @@ import React from "react";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const ServiceHeader = ({ rating = 4.9 }: { rating?: number }) => {
+interface ServiceHeaderProps {
+  rating?: number;
+}
+
+const ServiceHeader = ({ rating = 4.9 }: ServiceHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
       <span>Informações do Serviço</span>
