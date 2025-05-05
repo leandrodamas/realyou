@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Upload, Loader2, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,32 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading, uploadProgress } = useFileUpload();
+
+  // Check user authentication status when component loads
+  useEffect(() => {
+    const checkUserAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user || null);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+      }
+    };
+    
+    checkUserAuth();
+    
+    // Subscribe to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const resetForm = () => {
     setTitle("");
@@ -68,21 +92,23 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
       toast.error("Por favor, adicione um título");
       return;
     }
+    
+    // Check if user is logged in
+    const { data } = await supabase.auth.getSession();
+    const currentUser = data.session?.user || user;
+    
+    if (!currentUser) {
+      toast.error("Você precisa estar logado para adicionar trabalhos");
+      return;
+    }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error("Você precisa estar logado para adicionar trabalhos");
-        return;
-      }
-
       // Upload image to work_gallery bucket
       const { publicUrl, error: uploadError } = await uploadFile(selectedFile, {
         bucketName: 'work_gallery',
-        folder: user.id,
+        folder: currentUser.id,
         metadata: {
-          user_id: user.id,
+          user_id: currentUser.id,
           title: title.trim()
         }
       });
@@ -99,7 +125,7 @@ export const UploadWorkDialog: React.FC<UploadDialogProps> = ({
           image_path: publicUrl,
           title: title.trim(),
           description: description.trim(),
-          user_id: user.id
+          user_id: currentUser.id
         });
 
       if (dbError) throw dbError;
