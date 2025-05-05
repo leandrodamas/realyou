@@ -1,0 +1,20 @@
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# JS and TS files must keep their LF line endings
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+
+# CSS files
+*.css text eol=lf
+*.scss text eol=lf
+
+# JSON files
+*.json text eol=lf
+
+# Ignore certain files in GitHub stats
+*.lock binary
+*.lockb binary
