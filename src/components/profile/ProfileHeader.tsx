@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PencilLine } from "lucide-react";
+import { PencilLine, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
@@ -15,6 +15,7 @@ interface ProfileHeaderProps {
   name: string;
   title: string;
   avatar: string;
+  coverImage?: string;
   postCount: number;
   connectionCount: number;
   skillsCount: number;
@@ -25,6 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   name,
   title,
   avatar,
+  coverImage,
   postCount,
   connectionCount,
   skillsCount,
@@ -34,12 +36,86 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [editedName, setEditedName] = useState(name);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedBio, setEditedBio] = useState("");
-  const { saveProfile, getProfile } = useProfileStorage();
+  const { saveProfile, getProfile, uploadProfileImage, uploadCoverImage } = useProfileStorage();
   
-  const handleUploadPhoto = () => {
-    // Aqui seria implementada a lógica para upload de foto
-    if (isOwner) {
-      toast.info("Funcionalidade de upload de foto será implementada em breve");
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleProfilePhotoUpload = () => {
+    if (isOwner && profileInputRef.current) {
+      profileInputRef.current.click();
+    }
+  };
+  
+  const handleCoverPhotoUpload = () => {
+    if (isOwner && coverInputRef.current) {
+      coverInputRef.current.click();
+    }
+  };
+
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      toast.loading("Enviando foto...");
+      
+      const imageUrl = await uploadProfileImage(file);
+      if (!imageUrl) throw new Error("Falha ao fazer upload da imagem");
+      
+      const currentProfile = getProfile() || {};
+      const updatedProfile = {
+        ...currentProfile,
+        profileImage: imageUrl
+      };
+      
+      saveProfile(updatedProfile);
+      toast.success("Foto de perfil atualizada com sucesso!");
+      
+      // Dispatch event to notify other components about the profile update
+      const event = new CustomEvent('profileUpdated', { 
+        detail: { profile: updatedProfile } 
+      });
+      document.dispatchEvent(event);
+      
+    } catch (error) {
+      console.error("Erro ao atualizar foto de perfil:", error);
+      toast.error("Não foi possível atualizar sua foto de perfil");
+    }
+  };
+  
+  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      toast.loading("Enviando imagem de capa...");
+      
+      const imageUrl = await uploadCoverImage(file);
+      if (!imageUrl) throw new Error("Falha ao fazer upload da imagem de capa");
+      
+      const currentProfile = getProfile() || {};
+      const updatedProfile = {
+        ...currentProfile,
+        coverImage: imageUrl
+      };
+      
+      saveProfile(updatedProfile);
+      toast.success("Imagem de capa atualizada com sucesso!");
+      
+      // Dispatch event to notify other components about the profile update
+      const event = new CustomEvent('profileUpdated', { 
+        detail: { profile: updatedProfile } 
+      });
+      document.dispatchEvent(event);
+      
+    } catch (error) {
+      console.error("Erro ao atualizar imagem de capa:", error);
+      toast.error("Não foi possível atualizar sua imagem de capa");
     }
   };
 
@@ -71,36 +147,62 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <div className="py-4 px-4">
       <div className="relative mb-6">
-        <div className="h-32 bg-gradient-to-r from-purple-600 to-blue-500 rounded-xl"></div>
+        <div 
+          className="h-32 rounded-xl bg-cover bg-center"
+          style={{ 
+            backgroundImage: coverImage ? `url(${coverImage})` : 'linear-gradient(to right, #9333ea, #3b82f6)'
+          }}
+        >
+          {isOwner && (
+            <input 
+              type="file"
+              ref={coverInputRef}
+              onChange={handleCoverImageChange}
+              className="hidden"
+              accept="image/*"
+            />
+          )}
+        </div>
+        
         {isOwner && (
           <Button 
             variant="secondary" 
             size="sm" 
             className="absolute top-2 right-2 rounded-full"
-            onClick={() => toast.info("Funcionalidade de upload de capa será implementada em breve")}
+            onClick={handleCoverPhotoUpload}
           >
-            <PencilLine className="h-4 w-4 mr-1" />
+            <Camera className="h-4 w-4 mr-1" />
             Capa
           </Button>
         )}
         
         <div className="absolute -bottom-12 left-4 flex items-end">
           <div className="relative">
-            <Avatar className="h-24 w-24 border-4 border-white shadow-lg" onClick={isOwner ? handleUploadPhoto : undefined}>
+            <Avatar className="h-24 w-24 border-4 border-white shadow-lg" onClick={isOwner ? handleProfilePhotoUpload : undefined}>
               <AvatarImage src={avatar} alt={name} />
               <AvatarFallback className="text-2xl bg-gradient-to-br from-purple-400 to-blue-500">
                 {name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
+            
             {isOwner && (
-              <Button 
-                variant="secondary" 
-                size="icon" 
-                className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 shadow-sm"
-                onClick={handleUploadPhoto}
-              >
-                <PencilLine className="h-4 w-4" />
-              </Button>
+              <>
+                <input 
+                  type="file"
+                  ref={profileInputRef}
+                  onChange={handleProfileImageChange}
+                  className="hidden"
+                  accept="image/*"
+                />
+                <Button 
+                  variant="secondary" 
+                  size="icon" 
+                  className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 shadow-sm"
+                  onClick={handleProfilePhotoUpload}
+                >
+                  <PencilLine className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>

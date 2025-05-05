@@ -8,15 +8,20 @@ import FloatingActionButton from "@/components/profile/FloatingActionButton";
 import { useLocation } from "react-router-dom";
 import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
   const location = useLocation();
   const { getProfile } = useProfileStorage();
+  const { user } = useAuth();
+  
   const [profileData, setProfileData] = useState<any>({
     name: "Seu Perfil",
     title: "Configure seu perfil profissional",
     avatar: null,
+    coverImage: null,
     postCount: 0,
     connectionCount: 0,
     skillsCount: 0
@@ -33,6 +38,7 @@ const ProfilePage: React.FC = () => {
           name: profile.fullName || profile.username || "Seu Perfil",
           title: profile.title || "Configure seu perfil profissional",
           avatar: profile.profileImage || null,
+          coverImage: profile.coverImage || null,
           postCount: profile.postCount || 0,
           connectionCount: profile.connectionCount || 186,
           skillsCount: profile.skillsCount || 5
@@ -85,35 +91,38 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      {/* Header */}
-      <ProfilePageHeader openSettings={openSettings} isOwner={isOwner} />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+        {/* Header */}
+        <ProfilePageHeader openSettings={openSettings} isOwner={isOwner} />
 
-      {/* Profile Info */}
-      <ProfileHeader 
-        name={profileData.name}
-        title={profileData.title}
-        avatar={profileData.avatar || "/placeholder.svg"}
-        postCount={profileData.postCount}
-        connectionCount={profileData.connectionCount}
-        skillsCount={profileData.skillsCount}
-        isOwner={isOwner}
-      />
+        {/* Profile Info */}
+        <ProfileHeader 
+          name={profileData.name}
+          title={profileData.title}
+          avatar={profileData.avatar || "/placeholder.svg"}
+          coverImage={profileData.coverImage}
+          postCount={profileData.postCount}
+          connectionCount={profileData.connectionCount}
+          skillsCount={profileData.skillsCount}
+          isOwner={isOwner}
+        />
 
-      {/* Quick Settings Access */}
-      {isOwner && <QuickSettingsSection openSettings={openSettings} />}
+        {/* Quick Settings Access */}
+        {isOwner && <QuickSettingsSection openSettings={openSettings} />}
 
-      {/* Interactive Tabs with Animation */}
-      <ProfileTabs 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        openSettings={openSettings}
-        isOwner={isOwner}
-      />
+        {/* Interactive Tabs with Animation */}
+        <ProfileTabs 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          openSettings={openSettings}
+          isOwner={isOwner}
+        />
 
-      {/* Floating Action Button - apenas para o próprio usuário */}
-      {isOwner && <FloatingActionButton />}
-    </div>
+        {/* Floating Action Button - apenas para o próprio usuário */}
+        {isOwner && <FloatingActionButton />}
+      </div>
+    </ProtectedRoute>
   );
 };
 
