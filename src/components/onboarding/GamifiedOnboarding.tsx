@@ -16,10 +16,12 @@ import GalleryForm from "./GalleryForm";
 import SocialMediaForm from "./SocialMediaForm";
 import CertificationsForm from "./CertificationsForm";
 import AvailabilityForm from "./AvailabilityForm";
+import { useNavigate } from "react-router-dom";
 
 const GamifiedOnboarding: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [completedSections, setCompletedSections] = useState<string[]>([]);
+  const navigate = useNavigate();
   
   // Calculate progress based on completed sections
   const totalSections = 7; // Total number of sections that can be completed
@@ -39,6 +41,10 @@ const GamifiedOnboarding: React.FC = () => {
       setCompletedSections([...completedSections, section]);
     }
     setActiveSection(null);
+  };
+  
+  const navigateToProfile = () => {
+    navigate("/profile");
   };
 
   return (
@@ -153,7 +159,10 @@ const GamifiedOnboarding: React.FC = () => {
           <p className="text-sm text-green-600 mb-3">
             Parabéns! Seu perfil está 100% completo e pronto para atrair clientes.
           </p>
-          <Button className="bg-green-600 hover:bg-green-700">
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={navigateToProfile}
+          >
             Ver Meu Perfil
           </Button>
         </div>
