@@ -1,9 +1,9 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, User, Check } from "lucide-react";
+import { Calendar, Mail, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { MatchedPerson } from "./types/MatchedPersonTypes";
+import type { MatchedPerson } from "./types/MatchedPersonTypes";
 
 interface MatchedPersonCardProps {
   matchedPerson: MatchedPerson;
@@ -19,51 +19,52 @@ const MatchedPersonCard: React.FC<MatchedPersonCardProps> = ({
   onSendConnectionRequest,
 }) => {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="mt-6 bg-white rounded-xl p-4 shadow-md border border-gray-100"
+      className="w-full bg-white rounded-xl shadow-xl overflow-hidden mt-6 border border-purple-100"
     >
-      <div className="flex items-center gap-3">
-        <img 
-          src={matchedPerson.avatar} 
-          alt={matchedPerson.name} 
-          className="h-12 w-12 rounded-full object-cover"
-        />
-        <div>
-          <h3 className="font-medium">{matchedPerson.name}</h3>
-          <p className="text-xs text-gray-500">{matchedPerson.profession}</p>
+      <div className="relative h-32 bg-gradient-to-r from-purple-600 to-blue-500">
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+          <div className="rounded-full border-4 border-white h-24 w-24 overflow-hidden">
+            <img
+              src={matchedPerson.avatar}
+              alt={matchedPerson.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
         </div>
       </div>
-      
-      <div className="flex gap-2 mt-4">
-        <Button 
-          variant="outline"
-          className="flex-1 text-sm h-9"
-          onClick={onShowScheduleDialog}
-        >
-          <Clock className="h-4 w-4 mr-2" />
-          Ver Horários
-        </Button>
-        
-        <Button 
-          className={`flex-1 text-sm h-9 ${connectionSent ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-purple-600 to-blue-500'}`}
-          onClick={onSendConnectionRequest}
-          disabled={connectionSent}
-        >
+
+      <div className="pt-16 pb-6 px-5 text-center">
+        <h3 className="text-xl font-bold">{matchedPerson.name}</h3>
+        <p className="text-gray-500">{matchedPerson.profession}</p>
+
+        <div className="flex flex-col gap-4 mt-6">
+          <Button
+            onClick={onShowScheduleDialog}
+            variant="outline"
+            className="flex items-center gap-2 justify-center"
+          >
+            <Calendar className="h-4 w-4" />
+            Ver disponibilidade
+          </Button>
+
           {connectionSent ? (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Solicitação Enviada
-            </>
+            <Button disabled className="bg-green-500 hover:bg-green-600">
+              Solicitação enviada
+            </Button>
           ) : (
-            <>
-              <User className="h-4 w-4 mr-2" />
-              Enviar Solicitação
-            </>
+            <Button
+              onClick={onSendConnectionRequest}
+              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Conectar
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </motion.div>
   );

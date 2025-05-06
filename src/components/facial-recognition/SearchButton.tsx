@@ -1,37 +1,45 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface SearchButtonProps {
-  isSearching: boolean;
   onClick: () => void;
+  isSearching: boolean;
 }
 
-const SearchButton: React.FC<SearchButtonProps> = ({ isSearching, onClick }) => {
+const SearchButton: React.FC<SearchButtonProps> = ({ onClick, isSearching }) => {
   return (
-    <div className="mt-6 space-y-3">
-      <Button 
-        className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 shadow-md" 
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="w-full mt-6"
+    >
+      <Button
         onClick={onClick}
+        className="w-full py-6 bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 rounded-xl flex items-center justify-center gap-2"
         disabled={isSearching}
       >
         {isSearching ? (
-          <div className="flex items-center">
-            <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-            Procurando...
-          </div>
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Buscando correspondências...</span>
+          </>
         ) : (
           <>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Buscar Usuários por Foto de Perfil
+            <Search className="h-5 w-5" />
+            <span>Buscar correspondências de pessoas</span>
           </>
         )}
       </Button>
-      <p className="text-xs text-gray-500 text-center px-4">
-        Notificaremos as pessoas se encontrarmos uma correspondência, e elas poderão escolher se conectar com você
+
+      <p className="text-xs text-center text-gray-500 mt-2">
+        Este recurso utiliza reconhecimento facial para encontrar pessoas
+        cadastradas no RealYou com características similares
       </p>
-    </div>
+    </motion.div>
   );
 };
 

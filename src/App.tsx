@@ -1,59 +1,31 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { MotionConfig } from "framer-motion";
-import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
-import ChatsPage from "./pages/ChatsPage";
-import ProfilePage from "./pages/ProfilePage";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import SearchPage from './pages/SearchPage';
+import ChatsPage from './pages/ChatsPage';
+import ProfilePage from './pages/ProfilePage';
+import OnboardingPage from './pages/OnboardingPage';
+import FaceRegistrationPage from './pages/FaceRegistrationPage';
+import NavBar from './components/layout/NavBar';
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
-import FaceRegistrationPage from "./pages/FaceRegistrationPage";
-import SearchPage from "./pages/SearchPage";
-import AdvancedSearchPage from "./pages/AdvancedSearchPage";
-import SettingsPage from "./pages/SettingsPage";
-import NotFound from "./pages/NotFound";
-import OnboardingPage from "./pages/OnboardingPage";
-import TimelinePage from "./pages/TimelinePage";
-import AuthPage from "./pages/AuthPage";
-import NavBar from "./components/layout/NavBar";
 
-// Create a new QueryClient instance
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <MotionConfig reducedMotion="user">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
-            <div className="pb-20"> {/* Added extra padding bottom to accommodate NavBar and center camera button */}
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/chats" element={<ChatsPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/face-recognition" element={<FaceRecognitionPage />} />
-                <Route path="/register" element={<FaceRegistrationPage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/advanced-search" element={<AdvancedSearchPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/timeline" element={<TimelinePage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <NavBar />
-            </div>
-          </Router>
-        </TooltipProvider>
-      </MotionConfig>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/chats" element={<ChatsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/register" element={<FaceRegistrationPage />} />
+          <Route path="/facial-recognition" element={<FaceRecognitionPage />} />
+        </Routes>
+        <NavBar />
+      </div>
+    </Router>
+  );
+}
 
 export default App;

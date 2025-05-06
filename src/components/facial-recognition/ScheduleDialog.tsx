@@ -1,14 +1,19 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MatchedPerson } from "./types/MatchedPersonTypes";
-import PersonHeader from "./schedule/PersonHeader";
-import ScheduleList from "./schedule/ScheduleList";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
+import type { MatchedPerson } from "./types/MatchedPersonTypes";
 
 interface ScheduleDialogProps {
   showDialog: boolean;
-  matchedPerson: MatchedPerson | null;
+  matchedPerson: MatchedPerson;
   onCloseDialog: () => void;
 }
 
@@ -17,31 +22,47 @@ const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
   matchedPerson,
   onCloseDialog,
 }) => {
-  if (!matchedPerson) return null;
-
   return (
     <Dialog open={showDialog} onOpenChange={onCloseDialog}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Horários de Atendimento</DialogTitle>
+          <DialogTitle>Agenda de {matchedPerson.name}</DialogTitle>
+          <DialogDescription>
+            Horários disponíveis para agendamento
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="mt-4 space-y-4">
-          <PersonHeader matchedPerson={matchedPerson} />
-          
-          <div>
-            <h4 className="text-sm font-medium mb-3">Disponibilidade Semanal</h4>
-            <ScheduleList schedule={matchedPerson.schedule} />
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              onClick={onCloseDialog}
-              className="bg-gradient-to-r from-purple-600 to-blue-500"
-            >
-              Fechar
-            </Button>
-          </div>
+
+        <div className="space-y-4 mt-4">
+          {matchedPerson.schedule?.map((day) => (
+            <div key={day.day} className="border rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-medium">{day.day}</p>
+                <Badge variant={day.active ? "default" : "outline"}>
+                  {day.active ? "Disponível" : "Indisponível"}
+                </Badge>
+              </div>
+              {day.active && day.slots.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {day.slots.map((slot) => (
+                    <Badge
+                      key={slot}
+                      variant="outline"
+                      className="flex items-center gap-1 px-2 py-1 bg-purple-50"
+                    >
+                      <Clock className="h-3 w-3" />
+                      {slot}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  {day.active
+                    ? "Sem horários disponíveis"
+                    : "Indisponível neste dia"}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       </DialogContent>
     </Dialog>

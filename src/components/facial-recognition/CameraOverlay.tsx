@@ -8,46 +8,46 @@ interface CameraOverlayProps {
 
 const CameraOverlay: React.FC<CameraOverlayProps> = ({ faceDetected }) => {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className="absolute inset-0 bg-black bg-opacity-30 z-10">
-        <svg className="absolute inset-0 w-full h-full">
-          <defs>
-            <mask id="oval-mask">
-              <rect width="100%" height="100%" fill="white" />
-              <ellipse cx="50%" cy="50%" rx="35%" ry="45%" fill="black" />
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill="black" mask="url(#oval-mask)" fillOpacity="0.5" />
-        </svg>
+    <div className="absolute inset-0 pointer-events-none">
+      <div className="relative h-full w-full">
+        {/* Border overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative w-64 h-64">
+            {/* Top Left */}
+            <div className="absolute top-0 left-0 h-8 w-8 border-t-2 border-l-2 border-white opacity-70"></div>
+            {/* Top Right */}
+            <div className="absolute top-0 right-0 h-8 w-8 border-t-2 border-r-2 border-white opacity-70"></div>
+            {/* Bottom Left */}
+            <div className="absolute bottom-0 left-0 h-8 w-8 border-b-2 border-l-2 border-white opacity-70"></div>
+            {/* Bottom Right */}
+            <div className="absolute bottom-0 right-0 h-8 w-8 border-b-2 border-r-2 border-white opacity-70"></div>
+
+            {/* Detection feedback */}
+            {faceDetected && (
+              <motion.div
+                initial={{ opacity: 0, scale: 1.2 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 border-2 border-green-400 rounded-md"
+              ></motion.div>
+            )}
+
+            {/* Scanning animation */}
+            <motion.div
+              initial={{ y: "-100%" }}
+              animate={{ 
+                y: ["100%", "-100%"], 
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 1.5,
+                ease: "linear",
+              }}
+              className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70"
+            ></motion.div>
+          </div>
+        </div>
       </div>
-      
-      <motion.div
-        initial={{ opacity: 0.5 }}
-        animate={{ 
-          opacity: faceDetected ? 1 : 0.7,
-          borderColor: faceDetected ? "rgb(34, 197, 94)" : "rgba(255, 255, 255, 0.5)" 
-        }}
-        transition={{ duration: 0.2 }}
-        className={`absolute border-4 rounded-full ${faceDetected ? "border-green-500" : "border-white/50"}`}
-        style={{
-          width: "70%",
-          height: "90%",
-          boxShadow: faceDetected 
-            ? "0 0 0 8px rgba(34, 197, 94, 0.3), 0 0 24px rgba(34, 197, 94, 0.5)"
-            : "0 0 0 2px rgba(255, 255, 255, 0.2)"
-        }}
-      />
-      
-      {faceDetected && (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="absolute z-20 text-green-400 font-medium"
-          style={{ bottom: "38%" }}
-        >
-          Rosto detectado com sucesso
-        </motion.div>
-      )}
     </div>
   );
 };
