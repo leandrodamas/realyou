@@ -3,11 +3,13 @@ export interface MatchedPerson {
   name: string;
   profession: string;
   avatar: string;
-  schedule?: Array<{
-    day: string;
-    slots: string[];
-    active: boolean;
-  }>;
+  schedule?: Array<ScheduleSlot>;
+}
+
+export interface ScheduleSlot {
+  day: string;
+  slots: string[];
+  active: boolean;
 }
 
 export interface FaceCaptureProps {
