@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import TimeSlotPicker from "../service/TimeSlotPicker";
 import ServiceDatePicker from "../service/ServiceDatePicker";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 interface IntegratedScheduleViewProps {
   selectedDate?: Date;
@@ -15,6 +16,7 @@ interface IntegratedScheduleViewProps {
   profileImage: string;
   name: string;
   basePrice: number;
+  providerId?: string;
 }
 
 const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
@@ -27,7 +29,10 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
   profileImage,
   name,
   basePrice,
+  providerId
 }) => {
+  const { user } = useAuth();
+  
   const isDynamicPrice = selectedDate && (
     selectedDate.getDay() === 1 ||
     selectedDate.getDay() === 5
@@ -77,6 +82,7 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
           <ServiceDatePicker
             selectedDate={selectedDate}
             onDateSelect={onDateSelect}
+            providerId={providerId || user?.id}
           />
         </div>
 
@@ -88,6 +94,7 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
             onTimeSelect={onTimeSelect}
             onSchedule={onSchedule}
             availableTimeSlots={availableTimeSlots}
+            providerId={providerId || user?.id}
           />
         </div>
       </motion.div>

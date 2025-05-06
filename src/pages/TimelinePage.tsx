@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, DollarSign, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const TimelinePage: React.FC = () => {
@@ -27,6 +28,7 @@ const TimelinePage: React.FC = () => {
   });
   
   const { getProfile } = useProfileStorage();
+  const { user } = useAuth();
   
   useEffect(() => {
     const loadProfileData = async () => {
@@ -35,16 +37,12 @@ const TimelinePage: React.FC = () => {
         // Get profile from storage
         const storedProfile = getProfile();
         
-        // Get user session
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userId = sessionData.session?.user?.id;
-        
-        if (userId) {
+        if (user?.id) {
           // Try to get service pricing data
           const { data: pricingData } = await supabase
             .from('service_pricing')
             .select('*')
-            .eq('user_id', userId)
+            .eq('user_id', user.id)
             .single();
             
           // Update profile data with real information
@@ -68,7 +66,7 @@ const TimelinePage: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error("Error loading profile data:", error);
+        console.error("Erro ao carregar dados do perfil:", error);
         toast.error("Erro ao carregar dados do perfil");
       } finally {
         setIsLoading(false);
@@ -87,7 +85,7 @@ const TimelinePage: React.FC = () => {
     return () => {
       document.removeEventListener('profileUpdated', handleProfileUpdate);
     };
-  }, [getProfile]);
+  }, [getProfile, user]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);

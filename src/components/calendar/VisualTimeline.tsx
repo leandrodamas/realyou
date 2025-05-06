@@ -6,7 +6,8 @@ import TimelineNavigation from "./TimelineNavigation";
 import WeekDaySelector from "./WeekDaySelector";
 import DayHeader from "./DayHeader";
 import AppointmentItem from "./AppointmentItem";
-import { generateMockAppointmentsData, getDayAppointments } from "./mockData";
+import { useAppointments } from "@/hooks/useAppointments";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const VisualTimeline: React.FC<VisualTimelineProps> = ({ 
   initialDate = new Date(),
@@ -31,8 +32,8 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
   // Generate a week of dates starting from currentDate
   const weekDates = [...Array(7)].map((_, i) => addDays(currentDate, i));
   
-  // Generate mock data
-  const mockAppointmentsData = generateMockAppointmentsData(weekDates);
+  // Fetch real appointments data
+  const { appointments, isLoading } = useAppointments(weekDates);
   
   const navigatePrevWeek = () => {
     setCurrentDate(prevDate => addDays(prevDate, -7));
@@ -57,9 +58,12 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
     }
   };
   
-  // Apply filters to appointments
-  const dayAppointments = getDayAppointments(currentDate, mockAppointmentsData)
-    .filter(appointment => localFilters.includes(appointment.type));
+  // Get appointments for selected day and apply filters
+  const dayAppointments = appointments
+    .filter(appointment => 
+      appointment.date.toDateString() === currentDate.toDateString() &&
+      localFilters.includes(appointment.type)
+    );
 
   return (
     <div className="bg-white rounded-lg border shadow-sm">
@@ -75,25 +79,36 @@ const VisualTimeline: React.FC<VisualTimelineProps> = ({
         weekDates={weekDates}
         currentDate={currentDate}
         onDaySelect={handleDaySelect}
-        mockAppointmentsData={mockAppointmentsData}
+        appointments={appointments}
       />
       
       {/* Appointments for the selected day */}
       <div className="p-4">
         <DayHeader selectedDate={currentDate} />
         
-        {/* Time slots */}
-        <div className="space-y-3">
-          {dayAppointments.map(appointment => (
-            <AppointmentItem 
-              key={appointment.id}
-              appointment={appointment}
-              isSelected={appointment.time === selectedTime}
-              showBookingActions={showBookingActions}
-              onTimeSelect={handleTimeSelect}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : dayAppointments.length > 0 ? (
+          <div className="space-y-3">
+            {dayAppointments.map(appointment => (
+              <AppointmentItem 
+                key={appointment.id}
+                appointment={appointment}
+                isSelected={appointment.time === selectedTime}
+                showBookingActions={showBookingActions}
+                onTimeSelect={handleTimeSelect}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-gray-500">
+            <p>Nenhum compromisso encontrado para esta data.</p>
+          </div>
+        )}
       </div>
     </div>
   );
