@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
 import CoverImageSection from "./header/CoverImageSection";
@@ -31,17 +31,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const { saveProfile, getProfile, uploadProfileImage, uploadCoverImage } = useProfileStorage();
   
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   
   const handleProfilePhotoUpload = () => {
-    if (isOwner && profileInputRef.current) {
+    if (isOwner && profileInputRef.current && !isUploadingAvatar) {
       profileInputRef.current.click();
     }
   };
   
   const handleCoverPhotoUpload = () => {
-    if (isOwner && coverInputRef.current) {
+    if (isOwner && coverInputRef.current && !isUploadingCover) {
       coverInputRef.current.click();
     }
   };
@@ -53,6 +56,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     if (!file) return;
     
     try {
+      setIsUploadingAvatar(true);
       toast.loading("Enviando foto...");
       
       const imageUrl = await uploadProfileImage(file);
@@ -76,6 +80,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     } catch (error) {
       console.error("Erro ao atualizar foto de perfil:", error);
       toast.error("Não foi possível atualizar sua foto de perfil");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
   
@@ -86,6 +92,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     if (!file) return;
     
     try {
+      setIsUploadingCover(true);
       toast.loading("Enviando imagem de capa...");
       
       const imageUrl = await uploadCoverImage(file);
@@ -109,6 +116,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     } catch (error) {
       console.error("Erro ao atualizar imagem de capa:", error);
       toast.error("Não foi possível atualizar sua imagem de capa");
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -137,7 +146,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   };
 
   return (
-    <div className="py-4 px-4">
+    <div className="py-4 px-4 animate-fade-in">
       <div className="relative mb-6">
         <CoverImageSection 
           coverImage={coverImage}
@@ -145,6 +154,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           onCoverPhotoUpload={handleCoverPhotoUpload}
           coverInputRef={coverInputRef}
           onCoverImageChange={handleCoverImageChange}
+          isUploading={isUploadingCover}
         />
         
         <div className="absolute -bottom-12 left-4 flex items-end">
@@ -155,6 +165,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             onAvatarClick={handleProfilePhotoUpload}
             profileInputRef={profileInputRef}
             onProfileImageChange={handleProfileImageChange}
+            isUploading={isUploadingAvatar}
           />
         </div>
       </div>
