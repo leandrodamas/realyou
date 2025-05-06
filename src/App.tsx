@@ -9,23 +9,26 @@ import OnboardingPage from './pages/OnboardingPage';
 import FaceRegistrationPage from './pages/FaceRegistrationPage';
 import NavBar from './components/layout/NavBar';
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
+import { AuthProvider } from './hooks/useAuth';
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/chats" element={<ChatsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/register" element={<FaceRegistrationPage />} />
-          <Route path="/facial-recognition" element={<FaceRecognitionPage />} />
-        </Routes>
-        <NavBar />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/chats" element={<ChatsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/register" element={<FaceRegistrationPage />} />
+            <Route path="/facial-recognition" element={<FaceRecognitionPage />} />
+          </Routes>
+          <NavBar />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
