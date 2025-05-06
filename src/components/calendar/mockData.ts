@@ -1,12 +1,12 @@
 
 import { addDays, isSameDay } from "date-fns";
-import { TimelineDay } from "./types";
+import { TimelineDay, TimelineDayAppointment } from "./types";
 
 export const generateMockAppointmentsData = (weekDates: Date[]): TimelineDay[] => {
   // Mock appointments data - in a real app, this would come from an API
   const mockAppointmentsData: TimelineDay[] = weekDates.map(date => {
     // Generate different appointments for each day
-    const dayAppointments = [];
+    const dayAppointments: TimelineDayAppointment[] = [];
     
     // Working hours from 8 AM to 6 PM
     const workHours = [...Array(10)].map((_, i) => `${8 + i}:00`);

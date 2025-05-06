@@ -36,7 +36,7 @@ const AppointmentDetails: React.FC<AppointmentDetailsProps> = ({
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-gray-500" />
-            <span>Duração: {appointment.duration} minutos</span>
+            <span>Duração: {appointment.duration || 60} minutos</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-gray-500" />

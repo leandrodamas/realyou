@@ -17,11 +17,13 @@ import {
 interface ScheduleSuccessDrawerProps {
   date?: Date;
   selectedTime: string | null;
+  providerName?: string;
 }
 
 const ScheduleSuccessDrawer: React.FC<ScheduleSuccessDrawerProps> = ({
   date,
   selectedTime,
+  providerName = "Dr. Carlos Silva"
 }) => {
   return (
     <DrawerContent className="px-6">
@@ -48,7 +50,7 @@ const ScheduleSuccessDrawer: React.FC<ScheduleSuccessDrawerProps> = ({
           </div>
         </div>
         
-        <h3 className="font-semibold mt-4">Dr. Carlos Silva</h3>
+        <h3 className="font-semibold mt-4">{providerName}</h3>
         <p className="text-sm text-gray-600">Desenvolvedor Senior</p>
         
         <div className="bg-purple-50 w-full rounded-lg p-4 mt-6 text-center">

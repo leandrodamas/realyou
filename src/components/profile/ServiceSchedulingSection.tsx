@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Drawer } from "@/components/ui/drawer";
@@ -35,14 +34,12 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
   const { user } = useAuth();
   const profile = getProfile() || {};
   
-  // Dados do profissional baseados no perfil
   const [profileData, setProfileData] = useState({
     profileImage: profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
     name: profile.fullName || "Dr. Carlos Silva",
     basePrice: profile.basePrice || 180
   });
   
-  // Buscar dados do perfil do provedor ou usar o perfil atual se for o próprio usuário
   useEffect(() => {
     const fetchProviderData = async () => {
       if (!providerId && !user?.id) return;
@@ -51,10 +48,9 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
       setIsLoading(true);
       
       try {
-        // Buscar dados de preço do serviço
         const { data: pricingData, error } = await supabase
           .from('service_pricing')
-          .select('*')
+          .select('base_price, dynamic_pricing, peak_price_multiplier, id')
           .eq('user_id', targetId)
           .single();
         
@@ -62,17 +58,13 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
           throw error;
         }
         
-        // Se for outro provedor, buscar dados adicionais do perfil
         if (providerId && providerId !== user?.id) {
-          // Aqui poderia buscar dados do perfil do provedor de uma tabela profiles
-          // Por enquanto, usamos dados simulados
           setProfileData({
             profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
             name: "Dr. Carlos Silva",
             basePrice: pricingData?.base_price || 180
           });
         } else {
-          // Se for o próprio usuário, usar os dados do perfil armazenado
           setProfileData({
             profileImage: profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
             name: profile.fullName || "Dr. Carlos Silva",
@@ -80,7 +72,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
           });
         }
         
-        // Buscar horários disponíveis do provedor
         const { data: schedulesData } = await supabase
           .from('service_schedules')
           .select('start_time')
@@ -88,7 +79,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
           .eq('is_available', true);
         
         if (schedulesData && schedulesData.length > 0) {
-          // Extrair horários únicos
           const timeSlots = [...new Set(schedulesData.map(s => 
             s.start_time.substring(0, 5)
           ))];
@@ -107,7 +97,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
     
     fetchProviderData();
     
-    // Atualizar os dados quando o perfil mudar
     const handleProfileUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       const updatedProfile = customEvent.detail?.profile || getProfile() || {};
@@ -118,7 +107,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
         basePrice: updatedProfile.basePrice || 180
       });
       
-      // Atualizar horários disponíveis baseados nas configurações do usuário
       if (updatedProfile.availableTimeSlots) {
         setAvailableTimeSlots(updatedProfile.availableTimeSlots);
       }
@@ -143,9 +131,8 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
     }
     
     try {
-      const serviceDate = date.toISOString().split('T')[0]; // formato YYYY-MM-DD
+      const serviceDate = date.toISOString().split('T')[0];
       
-      // Verificar se já existe um agendamento para a mesma data e horário
       const { data: existingBooking } = await supabase
         .from('service_bookings')
         .select('id')
@@ -159,38 +146,36 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
         return;
       }
       
-      // Calcular horário de fim (1 hora após início)
       const [startHour, startMinute] = selectedTime.split(':').map(Number);
       let endHour = startHour + 1;
       const endMinute = startMinute;
       const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}:00`;
       
-      // Buscar preço base do serviço
       const { data: pricingData } = await supabase
         .from('service_pricing')
-        .select('base_price, dynamic_pricing, peak_price_multiplier')
+        .select('base_price, dynamic_pricing, peak_price_multiplier, id')
         .eq('user_id', providerId || user.id)
         .single();
       
       let price = profileData.basePrice;
+      let serviceId = null;
       
-      // Aplicar preço dinâmico se configurado
       if (pricingData) {
         price = pricingData.base_price;
+        serviceId = pricingData.id;
         
         if (pricingData.dynamic_pricing && 
-            (date.getDay() === 1 || date.getDay() === 5)) { // Segunda ou Sexta
-          price = Math.round(price * pricingData.peak_price_multiplier);
+            (date.getDay() === 1 || date.getDay() === 5)) {
+          price = Math.round(price * (pricingData.peak_price_multiplier || 1.2));
         }
       }
       
-      // Criar agendamento
       const { error } = await supabase
         .from('service_bookings')
         .insert({
           provider_id: providerId || user.id,
           client_id: user.id,
-          service_id: pricingData ? pricingData.id : null,
+          service_id: serviceId || '00000000-0000-0000-0000-000000000000',
           booking_date: serviceDate,
           start_time: `${selectedTime}:00`,
           end_time: endTime,
@@ -200,7 +185,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
       
       if (error) throw error;
       
-      // Mostrar drawer de sucesso
       setShowMatchSuccess(true);
       
     } catch (error) {
@@ -244,7 +228,6 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
         <ScheduleSuccessDrawer 
           date={date}
           selectedTime={selectedTime}
-          providerName={providerId ? profileData.name : undefined}
         />
       </Drawer>
     </div>

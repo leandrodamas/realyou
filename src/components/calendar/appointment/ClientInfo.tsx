@@ -13,22 +13,26 @@ interface ClientInfoProps {
 const ClientInfo: React.FC<ClientInfoProps> = ({ appointment }) => {
   if (
     appointment.type !== "scheduled" || 
-    !appointment.clientName
+    (!appointment.client?.name && !appointment.clientName)
   ) return null;
 
+  // Determine client name and image using either the client object or direct properties
+  const clientName = appointment.client?.name || appointment.clientName || "Cliente";
+  const clientImage = appointment.client?.avatar || appointment.clientImage || "";
+  
   return (
     <div className="mt-3 pt-2 border-t border-gray-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
             <img 
-              src={appointment.clientImage} 
-              alt={appointment.clientName}
+              src={clientImage} 
+              alt={clientName}
               className="h-full w-full object-cover"
             />
           </div>
           <div>
-            <p className="text-sm font-medium">{appointment.clientName}</p>
+            <p className="text-sm font-medium">{clientName}</p>
             <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
               <User className="h-3 w-3" />
               <span>Cliente</span>

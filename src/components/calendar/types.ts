@@ -1,3 +1,4 @@
+
 export interface VisualTimelineProps {
   initialDate?: Date;
   showBookingActions?: boolean;
@@ -16,6 +17,25 @@ export interface DayHeaderProps {
   selectedDate: Date;
 }
 
+export interface TimelineDay {
+  date: Date;
+  appointments: TimelineDayAppointment[];
+}
+
+export interface TimelineDayAppointment {
+  id: string;
+  title: string;
+  time: string;
+  duration: number;
+  type: 'scheduled' | 'free' | 'buffer' | 'blocked';
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'available';
+  clientName?: string;
+  clientImage?: string;
+  location?: 'online' | 'in-person' | null;
+  notes?: string;
+  price?: number;
+}
+
 export interface AppointmentType {
   id: string;
   date: Date;
@@ -27,6 +47,9 @@ export interface AppointmentType {
   location: string | null;
   notes: string | null;
   price?: number | null;
+  duration?: number;
+  clientName?: string;
+  clientImage?: string;
 }
 
 export interface Client {
@@ -42,7 +65,7 @@ export interface AppointmentItemProps {
   onTimeSelect: (time: string) => void;
 }
 
-// Adicionando tipos de agendamento real
+// Adding types for real appointment
 export interface RealAppointment {
   id: string;
   provider_id: string;

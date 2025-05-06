@@ -4,33 +4,27 @@ import { isSameDay, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { TimelineDay } from "./types";
-
-interface WeekDaySelectorProps {
-  weekDates: Date[];
-  currentDate: Date;
-  onDaySelect: (date: Date) => void;
-  mockAppointmentsData: TimelineDay[];
-}
+import { WeekDaySelectorProps, AppointmentType } from "./types";
 
 const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
   weekDates,
   currentDate,
   onDaySelect,
-  mockAppointmentsData,
+  appointments,
 }) => {
-  const getDayAppointments = (date: Date) => {
-    return mockAppointmentsData.find(day => 
-      isSameDay(day.date, date)
-    )?.appointments || [];
+  // Check if a day has any free appointments
+  const hasFreeAppointment = (date: Date) => {
+    return appointments.some(appointment => 
+      isSameDay(appointment.date, date) && 
+      appointment.type === "free"
+    );
   };
 
   return (
     <div className="flex border-b overflow-x-auto">
       {weekDates.map(date => {
         const isCurrentDay = isSameDay(date, currentDate);
-        const dayAppointments = getDayAppointments(date);
-        const hasAvailability = dayAppointments.some(apt => apt.type === "free");
+        const hasAvailability = hasFreeAppointment(date);
         
         return (
           <button
