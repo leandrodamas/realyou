@@ -32,6 +32,8 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     let timeoutId: NodeJS.Timeout;
     
     try {
+      console.log("Tentando iniciar a câmera...");
+      
       // Set a timeout for camera initialization
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
@@ -76,6 +78,15 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       }
 
       console.log("Tentativa de inicialização da câmera com configurações:", JSON.stringify(constraints));
+      
+      // Solicitar permissão explicitamente
+      try {
+        await navigator.mediaDevices.getUserMedia({video: true});
+        console.log("Permissão de câmera concedida");
+      } catch (permErr) {
+        console.error("Erro na permissão inicial:", permErr);
+        // Continue mesmo com erro aqui, vamos tentar novamente com configurações específicas
+      }
       
       // Force a small delay before initializing camera
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -170,6 +181,11 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
   // Adicionar um efeito para tentar reiniciar a câmera se ela não iniciar
   useEffect(() => {
     if (isCameraActive) {
+      console.log("Verificando inicialização da câmera");
+      
+      // Tentar iniciar a câmera imediatamente
+      startCamera();
+      
       // Verificar se a câmera inicializou corretamente após algum tempo
       const checkCameraTimeout = setTimeout(() => {
         const video = videoRef.current;
@@ -177,7 +193,7 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           console.log("Câmera não inicializada corretamente, tentando reiniciar");
           startCamera();
         }
-      }, 5000);
+      }, 2000);
       
       // Uma segunda verificação após mais tempo
       const secondCheckTimeout = setTimeout(() => {
@@ -186,14 +202,14 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
           console.log("Câmera iniciada, mas sem dimensões de vídeo. Tentando novamente.");
           startCamera();
         }
-      }, 8000);
+      }, 4000);
       
       return () => {
         clearTimeout(checkCameraTimeout);
         clearTimeout(secondCheckTimeout);
       };
     }
-  }, [isCameraActive, startCamera]);
+  }, [isCameraActive]);
 
   return;
 };

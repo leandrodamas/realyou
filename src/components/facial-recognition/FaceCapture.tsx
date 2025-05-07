@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
@@ -83,31 +82,22 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         if (onCaptureImage) onCaptureImage(tempImage);
       }
     }
-    
-    // Check for user profile
-    const userProfile = localStorage.getItem('userProfile');
-    if (userProfile && !capturedImage && !isCameraActive) {
-      try {
-        const profile = JSON.parse(userProfile);
-        if (profile.profileImage && setCapturedImage) {
-          console.log("Usando imagem de perfil como imagem capturada");
-          setCapturedImage(profile.profileImage);
-          if (onCaptureImage) onCaptureImage(profile.profileImage);
-        }
-      } catch (error) {
-        console.error("Erro ao processar perfil do usuário:", error);
-      }
-    }
   }, []);
 
   const handleStartCamera = () => {
+    console.log("Botão de ativar câmera pressionado");
     // Use this logic to force reset any previous state
     setCapturedImage(null);
     setNoMatchFound(false);
     
     // Set a flag that we're trying to access the camera
     setAttemptingCameraAccess(true);
+    toast.info("Iniciando câmera...");
 
+    // Force activate camera immediately
+    setIsCameraActive(true);
+    console.log("Camera active state set to:", true);
+    
     // Request necessary permissions
     const requestPermissions = async () => {
       try {
@@ -138,21 +128,13 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         console.error("Erro ao verificar permissões:", error);
         toast.error("Não foi possível acessar sua câmera. Verifique permissões.");
         return false;
+      } finally {
+        setAttemptingCameraAccess(false);
       }
     };
     
-    // Attempt to request permissions and activate camera
-    requestPermissions().then(hasPermission => {
-      setAttemptingCameraAccess(false);
-      
-      if (hasPermission) {
-        setIsCameraActive(true);
-        console.log("Câmera ativada com sucesso");
-      } else {
-        // Handle permission denied case
-        console.log("Não foi possível ativar a câmera devido a permissões");
-      }
-    });
+    // Attempt to request permissions in background
+    requestPermissions();
   };
 
   const handleCapture = () => {
@@ -162,22 +144,6 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         console.log("Imagem capturada com sucesso");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
-        
-        // Salvar no perfil do usuário também
-        try {
-          const userProfile = localStorage.getItem('userProfile');
-          const profile = userProfile ? JSON.parse(userProfile) : {};
-          
-          const updatedProfile = {
-            ...profile,
-            profileImage: tempImage,
-            lastUpdated: new Date().toISOString()
-          };
-          
-          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-        } catch (error) {
-          console.error("Erro ao atualizar perfil com nova imagem:", error);
-        }
         
         // Limpar após uso
         localStorage.removeItem('tempCapturedImage');

@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCameraStream } from "@/hooks/useCameraStream";
 import CameraError from "./CameraError";
@@ -38,26 +38,28 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   
-  React.useEffect(() => {
+  // Log component rendering and props
+  console.log("FaceCaptureCamera rendered with:", {
+    isCameraActive,
+    capturedImage: capturedImage ? "image exists" : null,
+    hasError,
+    isLoading,
+    hasCamera
+  });
+  
+  useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
 
-  React.useEffect(() => {
-    // When this component becomes active but isCameraActive is false, 
-    // check if we should auto-start the camera
-    if (!isCameraActive && !capturedImage && hasCamera) {
-      // Auto-start camera after a short delay to let the component mount properly
-      const timer = setTimeout(() => {
-        console.log("Auto-starting camera");
-        onStartCamera();
-      }, 500);
-      
-      return () => clearTimeout(timer);
+  // Auto-start camera if it's being requested
+  useEffect(() => {
+    if (isCameraActive) {
+      console.log("Camera activation detected in FaceCaptureCamera");
     }
-  }, []);
+  }, [isCameraActive]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -123,10 +125,12 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   };
 
   if (!isCameraActive && !capturedImage) {
+    console.log("Rendering IntroSection");
     return <IntroSection onStartCamera={onStartCamera} />;
   }
 
   if (isCameraActive) {
+    console.log("Camera active, loading:", isLoading);
     if (isLoading) {
       return <CameraLoading loadingProgress={0} />;
     }
@@ -143,7 +147,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           <>
             <CameraPreview
               videoRef={videoRef}
-              faceDetected={true} // Modo de captura estática, não precisamos de detecção em tempo real
+              faceDetected={true}
               onCapture={handleCapture}
               brightness={brightness}
               facingMode={facingMode}
