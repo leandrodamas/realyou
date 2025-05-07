@@ -5,7 +5,9 @@ import { useCameraState } from "./useCameraState";
 export const useCameraInitialization = (isCameraActive: boolean) => {
   const {
     videoRef,
+    hasCamera,
     setHasCamera,
+    isLoading,
     setIsLoading,
     handleCameraError,
     setIsVideoReady,
@@ -18,12 +20,15 @@ export const useCameraInitialization = (isCameraActive: boolean) => {
         console.log("Verificando disponibilidade de câmeras...");
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        const hasCamera = videoDevices.length > 0;
+        const hasVideoDevices = videoDevices.length > 0;
         
         console.log(`Encontradas ${videoDevices.length} câmeras:`, videoDevices.map(d => d.label || "câmera sem nome"));
-        setHasCamera(hasCamera);
         
-        if (!hasCamera) {
+        if (setHasCamera) {
+          setHasCamera(hasVideoDevices);
+        }
+        
+        if (!hasVideoDevices) {
           console.error("Nenhuma câmera detectada no dispositivo");
           handleCameraError({
             name: "NoCameraError",
@@ -32,7 +37,9 @@ export const useCameraInitialization = (isCameraActive: boolean) => {
         }
       } catch (error) {
         console.error("Erro ao verificar câmera:", error);
-        setHasCamera(false);
+        if (setHasCamera) {
+          setHasCamera(false);
+        }
         handleCameraError({
           name: "DeviceEnumerationError", 
           message: "Não foi possível acessar as câmeras do dispositivo"
