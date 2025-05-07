@@ -33,18 +33,23 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     hasCamera, 
     isLoading,
     errorMessage,
-    errorType
+    errorType,
+    isVideoReady
   } = useCameraStream(isCameraActive);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
+  const [startupAttempted, setStartupAttempted] = useState(false);
   
-  // Log component rendering and props
-  console.log("FaceCaptureCamera rendered with:", {
+  console.log("FaceCaptureCamera rendered:", {
     isCameraActive,
     capturedImage: capturedImage ? "image exists" : null,
     hasError,
     isLoading,
-    hasCamera
+    hasCamera,
+    startupAttempted,
+    isVideoReady,
+    videoRef: videoRef.current ? "exists" : "null",
+    videoReadyState: videoRef.current?.readyState
   });
   
   useEffect(() => {
@@ -56,15 +61,30 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
 
   // Auto-start camera if it's being requested
   useEffect(() => {
-    if (isCameraActive) {
-      console.log("Camera activation detected in FaceCaptureCamera");
+    if (isCameraActive && !startupAttempted) {
+      console.log("FaceCaptureCamera: Ativação de câmera detectada");
+      setStartupAttempted(true);
+      
+      // Try to kick-start camera initialization
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(() => console.log("FaceCaptureCamera: Permissão inicial concedida"))
+          .catch(err => console.error("FaceCaptureCamera: Erro na permissão inicial:", err));
+      }
+    }
+  }, [isCameraActive, startupAttempted]);
+
+  // Reset startup flag when camera is deactivated
+  useEffect(() => {
+    if (!isCameraActive) {
+      setStartupAttempted(false);
     }
   }, [isCameraActive]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
       try {
-        console.log("Capturando imagem estática da câmera");
+        console.log("FaceCaptureCamera: Capturando imagem estática da câmera");
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
@@ -72,7 +92,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
         const videoWidth = video.videoWidth || 640;
         const videoHeight = video.videoHeight || 480;
         
-        console.log("Dimensões do vídeo:", videoWidth, "x", videoHeight);
+        console.log("FaceCaptureCamera: Dimensões do vídeo:", videoWidth, "x", videoHeight);
         
         canvas.width = videoWidth;
         canvas.height = videoHeight;
@@ -91,12 +111,12 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           context.filter = 'none';
           
           const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
-          console.log("Imagem capturada com sucesso");
+          console.log("FaceCaptureCamera: Imagem capturada com sucesso");
           
           if (mountedRef.current) {
             if (typeof window !== 'undefined') {
               localStorage.setItem('tempCapturedImage', imageDataUrl);
-              console.log("Imagem salva no localStorage");
+              console.log("FaceCaptureCamera: Imagem salva no localStorage");
             }
             
             onCapture();
@@ -104,10 +124,8 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
           }
         }
       } catch (error) {
-        console.error("Erro ao capturar imagem:", error);
-        if (mountedRef.current) {
-          toast.error("Erro ao capturar imagem. Tente novamente.");
-        }
+        console.error("FaceCaptureCamera: Erro ao capturar imagem:", error);
+        toast.error("Erro ao capturar imagem. Tente novamente.");
       }
     } else if (!videoRef.current) {
       toast.error("Câmera não inicializada");
@@ -124,17 +142,22 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     toast.success("Brilho reduzido");
   };
 
+  // If camera is not active and no captured image, show the intro section
   if (!isCameraActive && !capturedImage) {
-    console.log("Rendering IntroSection");
+    console.log("FaceCaptureCamera: Exibindo IntroSection");
     return <IntroSection onStartCamera={onStartCamera} />;
   }
 
+  // If camera is active
   if (isCameraActive) {
-    console.log("Camera active, loading:", isLoading);
+    console.log("FaceCaptureCamera: Camera active, loading:", isLoading, "hasError:", hasError);
+    
+    // Show loading state
     if (isLoading) {
-      return <CameraLoading loadingProgress={0} />;
+      return <CameraLoading loadingProgress={50} />;
     }
 
+    // Show error or camera preview
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh]">
         {hasError || !hasCamera ? (
@@ -163,6 +186,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     );
   }
 
+  // If there's a captured image, show it
   return <CapturedImageView imageUrl={capturedImage || ''} onReset={onReset} />;
 };
 

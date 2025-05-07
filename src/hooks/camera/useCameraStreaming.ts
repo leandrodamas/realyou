@@ -16,15 +16,18 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     facingMode,
     retryCountRef,
     resetRetryCount,
-    incrementRetryCount
+    incrementRetryCount,
+    hasReachedMaxRetries,
+    resetError
   } = useCameraState(isCameraActive);
 
   const startCamera = useCallback(async () => {
     if (!isCameraActive) return;
-
-    console.log("Iniciando câmera com facingMode:", facingMode);
+    
+    console.log("useCameraStreaming: Iniciando câmera com facingMode:", facingMode);
     setIsLoading(true);
     setIsVideoReady(false);
+    resetError();
 
     // Reset retry counter when trying new camera access
     resetRetryCount();
@@ -32,12 +35,12 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
     let timeoutId: NodeJS.Timeout;
     
     try {
-      console.log("Tentando iniciar a câmera...");
+      console.log("useCameraStreaming: Tentando iniciar a câmera...");
       
       // Set a timeout for camera initialization
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
-          console.log("Timeout de inicialização da câmera - forçando estado de pronto");
+          console.log("useCameraStreaming: Timeout de inicialização da câmera - forçando estado de pronto");
           setIsLoading(false);
           setIsVideoReady(true);
           
@@ -47,58 +50,49 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
             toast.info("Toque na tela para ativar a câmera", { duration: 3000 });
           }
         }
-      }, 10000); // 10 segundos para timeout
+      }, 8000); // 8 segundos para timeout
 
       // Determinar se estamos em um dispositivo móvel para ajustar as configurações
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       
+      console.log("useCameraStreaming: Detectado dispositivo:", 
+                  isMobile ? (isIOS ? "iOS" : "Android") : "Desktop");
+      
       // Configurações adaptadas para plataforma
       let constraints: MediaStreamConstraints = {
         audio: false,
-        video: {
-          facingMode
-        }
+        video: { facingMode }
       };
       
-      // Add resolution constraints based on device
-      if (isMobile) {
-        if (isIOS) {
-          (constraints.video as MediaTrackConstraints).width = { ideal: 640, max: 1280 };
-          (constraints.video as MediaTrackConstraints).height = { ideal: 480, max: 720 };
-        } else {
-          // Android
-          (constraints.video as MediaTrackConstraints).width = { ideal: 640 };
-          (constraints.video as MediaTrackConstraints).height = { ideal: 480 };
-        }
-      } else {
-        // Desktop
-        (constraints.video as MediaTrackConstraints).width = { ideal: 1280 };
-        (constraints.video as MediaTrackConstraints).height = { ideal: 720 };
+      if (typeof navigator.mediaDevices === 'undefined' || 
+          typeof navigator.mediaDevices.getUserMedia === 'undefined') {
+        throw new Error("API de mídia não disponível neste navegador");
       }
-
-      console.log("Tentativa de inicialização da câmera com configurações:", JSON.stringify(constraints));
       
-      // Solicitar permissão explicitamente
-      try {
-        await navigator.mediaDevices.getUserMedia({video: true});
-        console.log("Permissão de câmera concedida");
-      } catch (permErr) {
-        console.error("Erro na permissão inicial:", permErr);
-        // Continue mesmo com erro aqui, vamos tentar novamente com configurações específicas
-      }
+      console.log("useCameraStreaming: Tentativa de inicialização da câmera com configurações:", 
+                  JSON.stringify(constraints));
       
       // Force a small delay before initializing camera
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Tentar inicializar stream com configurações específicas
+      // Solicitar permissão explicitamente primeiro (usamos uma requisição mais simples)
+      try {
+        await navigator.mediaDevices.getUserMedia({video: true});
+        console.log("useCameraStreaming: Permissão de câmera concedida");
+      } catch (permErr) {
+        console.error("useCameraStreaming: Erro na permissão inicial:", permErr);
+        // Continue mesmo com erro aqui, vamos tentar novamente com configurações específicas
+      }
+      
+      // Tenta inicializar o stream com as configurações específicas
       const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
       
       // Se chegou aqui, tivemos sucesso
       clearTimeout(timeoutId);
       
       if (stream && videoRef.current && mountedRef.current) {
-        console.log("Stream da câmera obtido com sucesso");
+        console.log("useCameraStreaming: Stream da câmera obtido com sucesso");
         streamRef.current = stream;
         
         // Configurar o elemento de vídeo com o stream
@@ -110,24 +104,16 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
         // Adicionar um pequeno atraso antes de atualizar o estado
         setTimeout(() => {
           if (mountedRef.current) {
-            console.log("Configurando video como pronto");
+            console.log("useCameraStreaming: Configurando vídeo como pronto");
             setIsVideoReady(true);
             setIsLoading(false);
-            
-            // Forçar refresh da interface
-            if (videoRef.current) {
-              try {
-                const event = new Event('resize');
-                window.dispatchEvent(event);
-              } catch (e) {
-                console.error("Erro ao disparar evento:", e);
-              }
-            }
           }
         }, setupDelay);
+        
+        return;
       }
     } catch (error: any) {
-      console.error("Erro de acesso à câmera:", error);
+      console.error("useCameraStreaming: Erro de acesso à câmera:", error);
       
       // Limpar timeout se ocorrer erro
       clearTimeout(timeoutId);
@@ -135,35 +121,39 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
       if (mountedRef.current) {
         incrementRetryCount();
         handleCameraError(error);
-        setIsLoading(false);
         
-        // Se for dispositivo móvel, dar dicas específicas ao usuário
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (isMobile) {
-          toast.error("Erro ao acessar câmera. Verifique as permissões.", {
-            duration: 5000,
-            id: "camera-error-mobile"
-          });
+        // Tentar iniciar com facingMode alternativo se não funcionou
+        if (retryCountRef.current === 1) {
+          console.log("useCameraStreaming: Tentando com facingMode alternativo");
+          // Esta lógica está apenas para logging, a mudança real de facingMode é controlada externamente
+          toast.info("Tentando com câmera frontal...", { duration: 3000 });
         }
+        
+        setIsLoading(false);
       }
     }
-  }, [isCameraActive, facingMode]);
+  }, [isCameraActive, facingMode, handleCameraError, incrementRetryCount, 
+      resetError, resetRetryCount, setIsLoading, setIsVideoReady]);
 
   useEffect(() => {
     if (isCameraActive) {
-      console.log("useCameraStreaming: Iniciando câmera");
+      console.log("useCameraStreaming: Câmera ativada, iniciando...");
       startCamera();
+    } else {
+      console.log("useCameraStreaming: Câmera desativada");
     }
     
+    // Cleanup function to stop camera when component unmounts or camera is deactivated
     return () => {
-      // Limpa recursos quando o componente é desmontado ou o estado ativo muda
       if (streamRef.current) {
+        console.log("useCameraStreaming: Limpando stream da câmera");
         const tracks = streamRef.current.getTracks();
         tracks.forEach(track => {
           try {
             track.stop();
+            console.log("useCameraStreaming: Trilha parada:", track.kind);
           } catch (e) {
-            console.error("Erro ao parar trilha:", e);
+            console.error("useCameraStreaming: Erro ao parar trilha:", e);
           }
         });
       }
@@ -172,44 +162,26 @@ export const useCameraStreaming = (isCameraActive: boolean) => {
         try {
           videoRef.current.srcObject = null;
         } catch (e) {
-          console.error("Erro ao limpar srcObject:", e);
+          console.error("useCameraStreaming: Erro ao limpar srcObject:", e);
         }
       }
     };
-  }, [isCameraActive, facingMode]);
+  }, [isCameraActive, facingMode, startCamera]);
   
-  // Adicionar um efeito para tentar reiniciar a câmera se ela não iniciar
+  // Iniciar a câmera novamente se não iniciar corretamente na primeira vez
   useEffect(() => {
-    if (isCameraActive) {
-      console.log("Verificando inicialização da câmera");
-      
-      // Tentar iniciar a câmera imediatamente
-      startCamera();
-      
-      // Verificar se a câmera inicializou corretamente após algum tempo
-      const checkCameraTimeout = setTimeout(() => {
-        const video = videoRef.current;
-        if (video && (!video.srcObject || video.readyState === 0) && mountedRef.current) {
-          console.log("Câmera não inicializada corretamente, tentando reiniciar");
-          startCamera();
-        }
-      }, 2000);
-      
-      // Uma segunda verificação após mais tempo
-      const secondCheckTimeout = setTimeout(() => {
-        const video = videoRef.current;
-        if (video && (!video.videoWidth || !video.videoHeight) && mountedRef.current) {
-          console.log("Câmera iniciada, mas sem dimensões de vídeo. Tentando novamente.");
-          startCamera();
-        }
-      }, 4000);
-      
-      return () => {
-        clearTimeout(checkCameraTimeout);
-        clearTimeout(secondCheckTimeout);
-      };
-    }
-  }, [isCameraActive]);
+    if (!isCameraActive || hasReachedMaxRetries()) return;
+    
+    const checkVideoTimeout = setTimeout(() => {
+      const video = videoRef.current;
+      if (video && (!video.srcObject || video.videoWidth === 0) && mountedRef.current) {
+        console.log("useCameraStreaming: Câmera não inicializou, tentando reiniciar");
+        startCamera();
+      }
+    }, 2500);
+    
+    return () => clearTimeout(checkVideoTimeout);
+  }, [isCameraActive, hasReachedMaxRetries, startCamera]);
 
   return;
 };

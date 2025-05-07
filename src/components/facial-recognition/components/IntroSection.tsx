@@ -11,9 +11,12 @@ interface IntroSectionProps {
 
 const IntroSection: React.FC<IntroSectionProps> = ({ onStartCamera }) => {
   const handleActivateCamera = () => {
-    console.log("Ativando câmera...");
+    console.log("IntroSection: Ativando câmera...");
     toast.info("Inicializando câmera...");
-    onStartCamera();
+    // Trigger the camera initialization immediately
+    setTimeout(() => {
+      onStartCamera();
+    }, 100);
   };
 
   return (

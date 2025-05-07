@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
@@ -49,7 +50,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     resetState
   } = useFacialRecognition();
 
-  // Cleanup on component unmount
+  // Reset camera state when component unmounts
   useEffect(() => {
     return () => {
       if (isCameraActive) {
@@ -62,7 +63,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   // Reset image from localStorage when starting camera
   useEffect(() => {
     if (isCameraActive && capturedImage) {
-      console.log("Câmera ativada, limpando imagem anterior");
+      console.log("FaceCapture: Câmera ativada, limpando imagem anterior");
       setCapturedImage(null);
       
       // Clear local storage
@@ -77,7 +78,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     if (!capturedImage && !isCameraActive && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setCapturedImage) {
-        console.log("Recuperando imagem do localStorage");
+        console.log("FaceCapture: Recuperando imagem do localStorage");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
       }
@@ -85,63 +86,42 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   }, []);
 
   const handleStartCamera = () => {
-    console.log("Botão de ativar câmera pressionado");
-    // Use this logic to force reset any previous state
+    console.log("FaceCapture: Botão de ativar câmera pressionado");
+    // Reset any previous state
     setCapturedImage(null);
     setNoMatchFound(false);
-    
-    // Set a flag that we're trying to access the camera
     setAttemptingCameraAccess(true);
-    toast.info("Iniciando câmera...");
-
-    // Force activate camera immediately
+    
+    // Set camera active immediately
     setIsCameraActive(true);
-    console.log("Camera active state set to:", true);
     
-    // Request necessary permissions
-    const requestPermissions = async () => {
-      try {
-        if ('permissions' in navigator) {
-          // Request camera permission explicitly
-          const cameraPermission = await navigator.permissions.query({ name: 'camera' as any });
-          console.log("Camera permission status:", cameraPermission.state);
-          
-          // If denied, show guidance
-          if (cameraPermission.state === 'denied') {
-            toast.error("Permissão de câmera negada. Por favor, configure nas preferências do seu dispositivo.");
-            return false;
-          }
-        }
-        
-        // Check for camera access by trying to enumerate devices
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cameras = devices.filter(device => device.kind === 'videoinput');
-        
-        if (cameras.length === 0) {
-          toast.error("Nenhuma câmera encontrada no seu dispositivo");
-          return false;
-        }
-
-        // All checks passed
-        return true;
-      } catch (error) {
-        console.error("Erro ao verificar permissões:", error);
-        toast.error("Não foi possível acessar sua câmera. Verifique permissões.");
-        return false;
-      } finally {
-        setAttemptingCameraAccess(false);
-      }
-    };
+    toast.info("Iniciando câmera...");
     
-    // Attempt to request permissions in background
-    requestPermissions();
+    console.log("FaceCapture: Camera active state set to:", true);
+    
+    // Log device info for debugging
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    console.log("FaceCapture: Dispositivo:", isIOS ? "iOS" : isAndroid ? "Android" : "Desktop");
+    
+    // Request permissions immediately to avoid delay
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(() => console.log("FaceCapture: Permissão de câmera concedida"))
+        .catch(err => console.error("FaceCapture: Erro de permissão:", err))
+        .finally(() => setAttemptingCameraAccess(false));
+    } else {
+      console.error("FaceCapture: API mediaDevices não disponível");
+      toast.error("Seu navegador não suporta acesso à câmera");
+      setAttemptingCameraAccess(false);
+    }
   };
 
   const handleCapture = () => {
     if (typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage) {
-        console.log("Imagem capturada com sucesso");
+        console.log("FaceCapture: Imagem capturada com sucesso");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
         

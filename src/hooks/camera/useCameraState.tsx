@@ -29,6 +29,7 @@ export const useCameraState = (isCameraActive: boolean = true) => {
     } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
       setErrorMessage("Nenhuma câmera encontrada neste dispositivo.");
       setErrorType("notFound");
+      setHasCamera(false);
     } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
       setErrorMessage("A câmera está sendo usada por outro aplicativo.");
       setErrorType("inUse");
@@ -46,6 +47,7 @@ export const useCameraState = (isCameraActive: boolean = true) => {
 
   const incrementRetryCount = useCallback(() => {
     retryCountRef.current += 1;
+    console.log("Incrementando contagem de tentativas para:", retryCountRef.current);
   }, []);
 
   const resetRetryCount = useCallback(() => {
@@ -54,6 +56,19 @@ export const useCameraState = (isCameraActive: boolean = true) => {
 
   const hasReachedMaxRetries = useCallback(() => {
     return retryCountRef.current >= 3;
+  }, []);
+  
+  const resetState = useCallback(() => {
+    setIsVideoReady(false);
+    resetError();
+    resetRetryCount();
+  }, [resetError, resetRetryCount]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   return {
@@ -80,6 +95,7 @@ export const useCameraState = (isCameraActive: boolean = true) => {
     resetError,
     incrementRetryCount,
     resetRetryCount,
-    hasReachedMaxRetries
+    hasReachedMaxRetries,
+    resetState
   };
 };
