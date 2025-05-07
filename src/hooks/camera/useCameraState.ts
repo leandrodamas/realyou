@@ -1,64 +1,71 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
+import { useCameraAccess } from "./useCameraAccess";
+import { useDeviceDetection } from "./useDeviceDetection";
 import { useCameraError } from "./useCameraError";
-import { cleanupCameraStream } from "../utils/cameraUtils";
+import { CameraStreamState } from "./types";
 
 export const useCameraState = (isCameraActive: boolean) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasCamera, setHasCamera] = useState(false);
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
-  const [faceDetected, setFaceDetected] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [isVideoReady, setIsVideoReady] = useState(false);
   const mountedRef = useRef<boolean>(true);
+  const streamRef = useRef<MediaStream | null>(null);
+  const retryCountRef = useRef<number>(0);
   
-  // Usar hook de erro da câmera diretamente
-  const {
-    hasError,
+  // Import necessary hooks
+  const { videoRef, isLoading, setIsLoading, initializeCamera } = useCameraAccess(isCameraActive, facingMode);
+  const { hasCamera, checkCameraAvailability } = useDeviceDetection();
+  const { 
+    hasError, 
     errorMessage,
-    lastErrorMessage,
     errorType,
-    retryCountRef,
+    lastErrorMessage,
     handleCameraError,
     resetError,
     incrementRetryCount,
     resetRetryCount,
-    hasReachedMaxRetries
+    hasReachedMaxRetries 
   } = useCameraError();
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      if (streamRef.current) {
-        cleanupCameraStream(streamRef.current, videoRef.current);
-      }
-    };
-  }, []);
-
+  const resetState = () => {
+    setIsVideoReady(false);
+    resetError();
+    resetRetryCount();
+  };
+  
   return {
+    // Camera state
     videoRef,
     streamRef,
+    facingMode,
+    setFacingMode,
+    isVideoReady,
+    setIsVideoReady,
     mountedRef,
+    
+    // Device state
+    hasCamera,
+    checkCameraAvailability,
+    
+    // Loading state
     isLoading,
     setIsLoading,
-    hasCamera,
-    setHasCamera,
+    
+    // Error state
     hasError,
-    resetError,
     errorMessage,
     errorType,
     lastErrorMessage,
     handleCameraError,
-    facingMode,
-    setFacingMode,
-    faceDetected,
-    setFaceDetected,
-    isVideoReady,
-    setIsVideoReady,
+    resetError,
+    
+    // Retry state
     retryCountRef,
+    incrementRetryCount,
     resetRetryCount,
-    incrementRetryCount
+    hasReachedMaxRetries,
+    
+    // Reset state
+    resetState
   };
 };

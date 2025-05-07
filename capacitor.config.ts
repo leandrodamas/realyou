@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
       splashImmersive: true
     },
     Permissions: {
-      permissions: ["camera", "storage"]
+      permissions: ["camera", "storage", "location", "calendar", "photos", "contacts"]
     },
     Camera: {
       presentationStyle: 'fullscreen',
@@ -44,7 +44,12 @@ const config: CapacitorConfig = {
     permissions: [
       "android.permission.CAMERA",
       "android.permission.READ_EXTERNAL_STORAGE",
-      "android.permission.WRITE_EXTERNAL_STORAGE"
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.READ_CONTACTS",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.READ_CALENDAR",
+      "android.permission.WRITE_CALENDAR"
     ],
     useLegacyBridge: false // Usar novo bridge para melhorar performance
   },
@@ -61,6 +66,18 @@ const config: CapacitorConfig = {
       {
         "name": "Photos",
         "purpose": "Permitir acesso às fotos para upload de imagens"
+      },
+      {
+        "name": "Location",
+        "purpose": "Permitir acesso à localização para encontrar outros usuários próximos"
+      },
+      {
+        "name": "Contacts",
+        "purpose": "Permitir acesso aos contatos para encontrar amigos"
+      },
+      {
+        "name": "Calendars",
+        "purpose": "Permitir acesso ao calendário para agendar eventos"
       }
     ],
     limitsNavigationsToAppBoundDomains: true // Melhoria de segurança

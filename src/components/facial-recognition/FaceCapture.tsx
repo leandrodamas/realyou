@@ -8,6 +8,7 @@ import ScheduleDialog from "./ScheduleDialog";
 import SearchButton from "./SearchButton";
 import NoMatchFound from "./NoMatchFound";
 import { useFacialRecognition } from "@/hooks/useFacialRecognition";
+import { toast } from "sonner";
 
 interface FaceCaptureProps {
   onCaptureImage?: (imageData: string) => void;
@@ -29,6 +30,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   const [internalIsCameraActive, setInternalIsCameraActive] = useState(false);
   const [internalCapturedImage, setInternalCapturedImage] = useState<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [attemptingCameraAccess, setAttemptingCameraAccess] = useState(false);
 
   // Determine which state to use (external if provided, otherwise internal)
   const isCameraActive = externalIsCameraActive !== undefined ? externalIsCameraActive : internalIsCameraActive;
@@ -58,9 +60,22 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     };
   }, []);
   
+  // Reset image from localStorage when starting camera
+  useEffect(() => {
+    if (isCameraActive && capturedImage) {
+      console.log("Câmera ativada, limpando imagem anterior");
+      setCapturedImage(null);
+      
+      // Clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('tempCapturedImage');
+      }
+    }
+  }, [isCameraActive]);
+  
   // Check for captured image in localStorage when component mounts
   useEffect(() => {
-    if (!capturedImage && typeof window !== 'undefined') {
+    if (!capturedImage && !isCameraActive && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setCapturedImage) {
         console.log("Recuperando imagem do localStorage");
@@ -71,7 +86,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     
     // Check for user profile
     const userProfile = localStorage.getItem('userProfile');
-    if (userProfile && !capturedImage) {
+    if (userProfile && !capturedImage && !isCameraActive) {
       try {
         const profile = JSON.parse(userProfile);
         if (profile.profileImage && setCapturedImage) {
@@ -86,14 +101,65 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   }, []);
 
   const handleStartCamera = () => {
-    setIsCameraActive(true);
+    // Use this logic to force reset any previous state
+    setCapturedImage(null);
     setNoMatchFound(false);
+    
+    // Set a flag that we're trying to access the camera
+    setAttemptingCameraAccess(true);
+
+    // Request necessary permissions
+    const requestPermissions = async () => {
+      try {
+        if ('permissions' in navigator) {
+          // Request camera permission explicitly
+          const cameraPermission = await navigator.permissions.query({ name: 'camera' as any });
+          console.log("Camera permission status:", cameraPermission.state);
+          
+          // If denied, show guidance
+          if (cameraPermission.state === 'denied') {
+            toast.error("Permissão de câmera negada. Por favor, configure nas preferências do seu dispositivo.");
+            return false;
+          }
+        }
+        
+        // Check for camera access by trying to enumerate devices
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(device => device.kind === 'videoinput');
+        
+        if (cameras.length === 0) {
+          toast.error("Nenhuma câmera encontrada no seu dispositivo");
+          return false;
+        }
+
+        // All checks passed
+        return true;
+      } catch (error) {
+        console.error("Erro ao verificar permissões:", error);
+        toast.error("Não foi possível acessar sua câmera. Verifique permissões.");
+        return false;
+      }
+    };
+    
+    // Attempt to request permissions and activate camera
+    requestPermissions().then(hasPermission => {
+      setAttemptingCameraAccess(false);
+      
+      if (hasPermission) {
+        setIsCameraActive(true);
+        console.log("Câmera ativada com sucesso");
+      } else {
+        // Handle permission denied case
+        console.log("Não foi possível ativar a câmera devido a permissões");
+      }
+    });
   };
 
   const handleCapture = () => {
     if (typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage) {
+        console.log("Imagem capturada com sucesso");
         setCapturedImage(tempImage);
         if (onCaptureImage) onCaptureImage(tempImage);
         
@@ -130,6 +196,11 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tempCapturedImage');
     }
+    
+    // Force a small delay before starting camera again
+    setTimeout(() => {
+      handleStartCamera();
+    }, 500);
   };
 
   return (
@@ -155,7 +226,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
 
         {capturedImage && !matchedPerson && !noMatchFound && !isRegistrationMode && (
           <SearchButton 
-            isSearching={isSearching}
+            isSearching={isSearching || attemptingCameraAccess}
             onClick={() => handleSearch(capturedImage)}
           />
         )}

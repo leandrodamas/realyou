@@ -1,7 +1,7 @@
 
 import React from "react";
+import { Camera, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Camera, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface IntroSectionProps {
@@ -10,35 +10,49 @@ interface IntroSectionProps {
 
 const IntroSection: React.FC<IntroSectionProps> = ({ onStartCamera }) => {
   return (
-    <div className="flex flex-col items-center text-center space-y-6 py-6">
-      <motion.div 
-        className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-full p-5"
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 15 }}
-      >
-        <User className="h-12 w-12 text-purple-600" />
-      </motion.div>
-
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Encontre pessoas no RealYou</h2>
-        <p className="text-gray-600 text-sm max-w-xs mx-auto">
-          Utilize o reconhecimento facial para encontrar pessoas cadastradas com características faciais semelhantes
+    <motion.div 
+      className="flex flex-col items-center justify-center space-y-6 p-6 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 shadow-inner min-h-[400px]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="text-center space-y-4">
+        <h3 className="text-xl font-semibold text-gray-800">
+          Busca por Foto
+        </h3>
+        <p className="text-gray-600 max-w-xs mx-auto">
+          Tire uma foto de alguém para encontrá-lo no RealYou e conectar-se
         </p>
       </div>
-
+      
+      <div className="relative">
+        <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 opacity-75 blur-sm"></div>
+        <motion.button
+          className="relative bg-white text-purple-600 rounded-full p-8 shadow-lg"
+          onClick={onStartCamera}
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+        >
+          <Camera className="h-12 w-12" />
+        </motion.button>
+      </div>
+      
       <Button 
         onClick={onStartCamera}
-        className="bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 rounded-xl px-8 py-6 flex items-center gap-2"
+        className="font-medium text-base bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90 transition-opacity w-full max-w-xs py-6"
       >
-        <Camera className="h-5 w-5" />
-        <span>Ativar câmera</span>
+        Ativar Câmera
       </Button>
-
-      <p className="text-xs text-gray-500 max-w-xs">
-        Precisamos de acesso à sua câmera. Permita o acesso quando solicitado pelo seu navegador.
-      </p>
-    </div>
+      
+      <div className="flex items-center text-sm text-gray-600 p-4 bg-white/80 backdrop-blur rounded-lg shadow-sm">
+        <Info className="h-4 w-4 mr-2 flex-shrink-0" />
+        <p>
+          Sua câmera será ativada em modo traseiro para capturar uma foto. Permita o acesso quando solicitado.
+        </p>
+      </div>
+    </motion.div>
   );
 };
 

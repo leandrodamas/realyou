@@ -25,7 +25,16 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   onReset,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, hasError, switchCamera, facingMode, hasCamera, isLoading } = useCameraStream(isCameraActive);
+  const { 
+    videoRef, 
+    hasError, 
+    switchCamera, 
+    facingMode, 
+    hasCamera, 
+    isLoading,
+    errorMessage,
+    errorType
+  } = useCameraStream(isCameraActive);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   
@@ -34,6 +43,20 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  React.useEffect(() => {
+    // When this component becomes active but isCameraActive is false, 
+    // check if we should auto-start the camera
+    if (!isCameraActive && !capturedImage && hasCamera) {
+      // Auto-start camera after a short delay to let the component mount properly
+      const timer = setTimeout(() => {
+        console.log("Auto-starting camera");
+        onStartCamera();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleCapture = () => {
@@ -111,7 +134,11 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh]">
         {hasError || !hasCamera ? (
-          <CameraError onReset={onReset} />
+          <CameraError 
+            onReset={onReset} 
+            errorMessage={errorMessage}
+            errorType={errorType}
+          />
         ) : (
           <>
             <CameraPreview
@@ -123,7 +150,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
               onSwitchCamera={switchCamera}
               onIncreaseBrightness={increaseBrightness}
               onDecreaseBrightness={decreaseBrightness}
-              errorMessage={null}
+              errorMessage={errorMessage}
             />
             <CaptureCanvas ref={canvasRef} />
           </>

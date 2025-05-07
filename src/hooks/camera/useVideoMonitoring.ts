@@ -1,31 +1,52 @@
 
 import { useEffect } from "react";
 import { useCameraState } from "./useCameraState";
-import { ensureVideoPlaying } from "./utils/cameraOperations";
 
 export const useVideoMonitoring = (isCameraActive: boolean, hasError: boolean) => {
-  const { videoRef } = useCameraState(isCameraActive);
+  const {
+    videoRef,
+    mountedRef,
+    isVideoReady,
+    setIsVideoReady
+  } = useCameraState(isCameraActive);
 
+  // Monitor video status to detect when it's ready or has errors
   useEffect(() => {
-    if (!isCameraActive || !videoRef.current || hasError) return;
+    if (!isCameraActive || hasError || !videoRef.current) return;
 
-    const checkInterval = setInterval(() => {
-      const video = videoRef.current;
-      if (video && video.paused && video.srcObject) {
-        console.log("Video is paused but should be playing, attempting to restart");
-        ensureVideoPlaying(video);
+    const video = videoRef.current;
+    
+    const handleVideoReady = () => {
+      if (mountedRef.current) {
+        console.log("Video ready event triggered, video dimensions:", video.videoWidth, "x", video.videoHeight);
+        setIsVideoReady(true);
       }
-      
-      if (video) {
-        console.log("Video status:", {
-          readyState: video.readyState,
-          paused: video.paused, 
-          width: video.videoWidth,
-          height: video.videoHeight
-        });
-      }
-    }, 1000);
+    };
 
-    return () => clearInterval(checkInterval);
-  }, [isCameraActive, hasError]);
+    const handleError = (e: Event) => {
+      console.error("Video element error event:", e);
+    };
+
+    // Events for video readiness
+    video.addEventListener('loadedmetadata', handleVideoReady);
+    video.addEventListener('loadeddata', handleVideoReady);
+    video.addEventListener('canplay', handleVideoReady);
+    video.addEventListener('error', handleError);
+
+    // Force ready state after a timeout
+    const forceReadyTimeout = setTimeout(() => {
+      if (mountedRef.current && !isVideoReady && video.srcObject) {
+        console.log("Force setting video ready after timeout");
+        setIsVideoReady(true);
+      }
+    }, 5000);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleVideoReady);
+      video.removeEventListener('loadeddata', handleVideoReady);
+      video.removeEventListener('canplay', handleVideoReady);
+      video.removeEventListener('error', handleError);
+      clearTimeout(forceReadyTimeout);
+    };
+  }, [isCameraActive, hasError, videoRef.current]);
 };
