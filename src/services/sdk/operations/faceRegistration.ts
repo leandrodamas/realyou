@@ -33,7 +33,7 @@ export async function registerFace(
       return false;
     }
     
-    // Use RPC to insert into face_registrations
+    // Fix: Define explicit parameters for the RPC function
     const { error } = await supabase.rpc('register_face', {
       user_id_param: userId,
       face_id_param: detectionResult.faceId || '',

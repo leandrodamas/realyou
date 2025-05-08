@@ -59,7 +59,7 @@ export const useSearchOperation = () => {
       // Registrar busca no histórico se o usuário estiver logado
       if (user) {
         try {
-          // Use the RPC function to log the search
+          // Fix: Use explicit types for RPC function parameters
           await supabase.rpc('log_face_search', {
             user_id_param: user.id,
             matched_param: matchResult.matches.length > 0,

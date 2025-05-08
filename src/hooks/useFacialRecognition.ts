@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import { detectAndMatchFace, registerFaceForUser } from "@/services/facialRecognitionService";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 
+/**
+ * Legacy hook for facial recognition.
+ * @deprecated Use the modular hooks from @/hooks/facial-recognition instead
+ */
 export const useFacialRecognition = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);

@@ -14,7 +14,7 @@ export async function matchFace(
   }
 
   try {
-    // Use RPC to get matching profiles
+    // Fix: Define specific parameters for the RPC call
     const { data, error } = await supabase.rpc('get_matching_profiles', {
       limit_count: 10
     });
@@ -24,7 +24,7 @@ export async function matchFace(
       return { success: true, matches: [] };
     }
     
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       // Sem correspondências no banco de dados
       return { success: true, matches: [] };
     }
@@ -42,7 +42,7 @@ export async function matchFace(
     return {
       success: true,
       matches: [{
-        userId: match.id,
+        userId: match.id || '',
         name: match.full_name || "Usuário",
         profession: match.profession || "Profissional",
         avatar: match.avatar_url || "",

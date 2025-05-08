@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useFacialRecognition } from "@/hooks/useFacialRecognition";
+import { useFacialRecognition } from "@/hooks/facial-recognition";
 import { toast } from "sonner";
 
 export const useFaceCaptureState = ({

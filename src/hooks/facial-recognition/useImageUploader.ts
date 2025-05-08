@@ -1,71 +1,57 @@
 
-import { useFileUpload } from "../useFileUpload";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 export const useImageUploader = () => {
   const { uploadFile } = useFileUpload();
-
+  
+  /**
+   * Upload a profile image to storage and return the public URL
+   */
   const uploadProfileImage = async (
     imageData: string, 
-    userId: string | undefined, 
+    userId: string, 
     purpose: string
-  ) => {
+  ): Promise<string | null> => {
     try {
-      console.log(`Starting image upload for purpose: ${purpose}, userId: ${userId || 'anonymous'}`);
+      // Convert Base64 to File
+      const byteString = atob(imageData.split(',')[1]);
+      const mimeString = imageData.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
       
-      // Convert base64 to file
-      const base64Response = await fetch(imageData);
-      const imageBlob = await base64Response.blob();
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
       
-      // Generate a truly unique filename with timestamp and random string
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const filename = `${timestamp}-${randomString}.jpg`;
+      const blob = new Blob([ab], { type: mimeString });
+      const fileName = `${purpose}_${Date.now()}.jpg`;
+      const imageFile = new File([blob], fileName, { type: mimeString });
       
-      const imageFile = new File(
-        [imageBlob], 
-        filename, 
-        { type: 'image/jpeg' }
-      );
+      // Upload to appropriate bucket based on purpose
+      const bucketName = purpose === 'face_registration' ? 'facial_recognition' : 'profile_images';
       
-      console.log(`Created file object: ${filename}, size: ${imageFile.size} bytes`);
-      
-      // Simple folder structure to prevent collisions
-      const folder = userId 
-        ? `${purpose === 'face_registration' ? 'registrations' : 'searches'}/${userId}` 
-        : `${purpose === 'face_registration' ? 'registrations' : 'searches'}/anonymous`;
-      
-      console.log(`Uploading to folder: ${folder}`);
-      
-      // Set minimal metadata to avoid RLS issues
-      const metadata = {
-        purpose,
-        created_at: new Date().toISOString()
-      };
-      
-      // Upload the image
+      // Upload image to storage
       const { publicUrl, error } = await uploadFile(imageFile, {
-        bucketName: 'facial_recognition',
-        folder,
-        metadata,
-        // Ensure we're not trying to use auth features for anonymous uploads
-        anonymous: !userId
+        bucketName,
+        folder: userId,
+        metadata: {
+          user_id: userId,
+          purpose
+        }
       });
       
-      if (error) {
-        console.error("Error uploading image:", error);
+      if (error || !publicUrl) {
         throw error;
       }
       
-      console.log(`Upload successful, URL: ${publicUrl}`);
       return publicUrl;
-      
     } catch (error) {
-      console.error("Error uploading profile image:", error);
-      toast.error("Não foi possível fazer upload da imagem");
+      console.error(`Erro ao enviar imagem (${purpose}):`, error);
       return null;
     }
   };
-
+  
   return { uploadProfileImage };
 };
