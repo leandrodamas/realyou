@@ -22,15 +22,22 @@ export async function matchFace(
       avatar_url: string | null;
     }
 
-    // Fix: Define specific parameters for the RPC call with proper type
+    // Define specific parameters for the RPC call with proper type
     interface GetMatchingProfilesParams {
       limit_count: number;
     }
 
-    // Fix: Use 2 type parameters, first for return type, second for input params
-    const { data, error } = await supabase.rpc<ProfileMatch[], GetMatchingProfilesParams>('get_matching_profiles', {
-      limit_count: 10
-    });
+    // Fix: Use correct type parameters for the RPC call
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, profession, avatar_url')
+      .limit(10)
+      .then(result => {
+        return {
+          data: result.data as ProfileMatch[],
+          error: result.error
+        };
+      });
     
     if (error) {
       console.error("Error fetching profiles:", error);

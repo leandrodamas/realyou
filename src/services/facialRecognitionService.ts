@@ -71,20 +71,6 @@ export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchRe
   }
 };
 
-// Interface for update_face_registration parameters
-interface UpdateFaceRegistrationParams {
-  user_id_param: string;
-  is_registered: boolean;
-}
-
-// Interface for register_face parameters
-interface RegisterFaceParams {
-  user_id_param: string;
-  face_id_param: string;
-  confidence_param: number;
-  status_param: string;
-}
-
 // Função para registrar rosto de um usuário
 export const registerFaceForUser = async (imageData: string, userId: string): Promise<boolean> => {
   try {
@@ -107,13 +93,17 @@ export const registerFaceForUser = async (imageData: string, userId: string): Pr
     const sdk = await getFacialRecognitionSDK();
     const success = await sdk.registerFace(imageData, userId);
     
-    // Se o registro foi bem-sucedido, atualizar o perfil do usuário usando RPC
+    // Se o registro foi bem-sucedido, atualizar o perfil do usuário
     if (success && !userId.startsWith('temp_')) {
-      // Fix: Use explicit typing for RPC function parameters
-      const { error } = await supabase.rpc<null, UpdateFaceRegistrationParams>('update_face_registration', {
-        user_id_param: userId,
-        is_registered: true
-      });
+      // Fix: Use direct update instead of RPC
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          face_registered: true,
+          face_registered_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
       
       if (error) {
         console.error("Error updating profile after face registration:", error);
