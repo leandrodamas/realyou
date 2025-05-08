@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import HomePage from './pages/Index';
 import SearchPage from './pages/SearchPage';
 import ChatsPage from './pages/ChatsPage';
@@ -11,6 +11,11 @@ import NavBar from './components/layout/NavBar';
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
 import { AuthProvider } from './hooks/useAuth';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import AdvancedSearchPage from './pages/AdvancedSearchPage';
+import TimelinePage from './pages/TimelinePage';
+import AuthPage from './pages/AuthPage';
+import SettingsPage from './pages/SettingsPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -20,12 +25,79 @@ function App() {
           <div className="App">
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/chats" element={<ChatsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/register" element={<FaceRegistrationPage />} />
-              <Route path="/facial-recognition" element={<FaceRecognitionPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route
+                path="/search"
+                element={
+                  <ProtectedRoute>
+                    <SearchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/advanced-search"
+                element={
+                  <ProtectedRoute>
+                    <AdvancedSearchPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chats"
+                element={
+                  <ProtectedRoute>
+                    <ChatsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <OnboardingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timeline"
+                element={
+                  <ProtectedRoute>
+                    <TimelinePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <ProtectedRoute>
+                    <FaceRegistrationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/facial-recognition"
+                element={
+                  <ProtectedRoute>
+                    <FaceRecognitionPage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
             <NavBar />
           </div>

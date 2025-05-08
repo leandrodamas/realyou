@@ -41,7 +41,7 @@ export const useSearchOperation = () => {
       // Inicializar SDK de reconhecimento facial
       const facialSDK = await getFacialRecognitionSDK();
       
-      // Check if SDK is initialized using the public API instead of accessing private property
+      // Check if SDK is initialized using the public API
       const detectionResult = await facialSDK.detectFace(imageUrl);
       if (!detectionResult.success) {
         toast.error("Sistema de reconhecimento facial não inicializado ou falha na detecção");
