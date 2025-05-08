@@ -21,11 +21,11 @@ export const useAppointments = (weekDates: Date[] = []) => {
         const startDate = format(weekDates[0], 'yyyy-MM-dd');
         const endDate = format(weekDates[weekDates.length - 1], 'yyyy-MM-dd');
         
-        const { data: bookingsData, error } = await supabase
+        // First fetch the bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('service_bookings')
           .select(`
             *,
-            profiles!client_id(full_name, avatar_url),
             service_pricing(title)
           `)
           .eq('provider_id', user.id)
@@ -34,11 +34,34 @@ export const useAppointments = (weekDates: Date[] = []) => {
           .order('booking_date', { ascending: true })
           .order('start_time', { ascending: true });
 
-        if (error) throw error;
+        if (bookingsError) throw bookingsError;
+
+        // Create a map to store client profile data
+        const clientProfiles: Record<string, any> = {};
+        
+        // If we have bookings, fetch the client profiles in a separate query
+        if (bookingsData && bookingsData.length > 0) {
+          const clientIds = bookingsData.map(booking => booking.client_id);
+          
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .in('id', clientIds);
+            
+          if (profilesError) {
+            console.error('Error fetching client profiles:', profilesError);
+          } else if (profilesData) {
+            // Create a map of client_id -> profile data for quick lookup
+            profilesData.forEach(profile => {
+              clientProfiles[profile.id] = profile;
+            });
+          }
+        }
 
         // Converter para o formato esperado pelo componente
         const formattedAppointments = (bookingsData || []).map((booking: any): AppointmentType => {
-          const clientProfile = booking.profiles || {};
+          // Get the client profile from our map, or use default values if not found
+          const clientProfile = clientProfiles[booking.client_id] || {};
           const serviceInfo = booking.service_pricing || {};
           
           // Extrair apenas a hora do formato do banco de dados
