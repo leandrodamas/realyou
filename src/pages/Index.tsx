@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Feed from "@/components/home/Feed";
@@ -9,7 +9,7 @@ import WelcomeBanner from "@/components/home/WelcomeBanner";
 import CameraButton from "@/components/home/CameraButton";
 import Stories from "@/components/home/Stories";
 import ForYouHeader from "@/components/home/ForYouHeader";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 

@@ -9,7 +9,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import FaceRegistrationPage from './pages/FaceRegistrationPage';
 import NavBar from './components/layout/NavBar';
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from './hooks/auth';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from 'sonner';
 import AdvancedSearchPage from './pages/AdvancedSearchPage';
