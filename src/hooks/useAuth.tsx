@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } else if (event === 'SIGNED_OUT') {
           toast.info("Sessão encerrada");
+          localStorage.removeItem('userProfile'); // Clear profile on sign out
         } else if (event === 'USER_UPDATED') {
           toast.info("Perfil atualizado");
         } else if (event === 'PASSWORD_RECOVERY') {
@@ -80,7 +81,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error("Sign in error:", error);
-        toast.error(`Erro ao fazer login: ${error.message}`);
+        
+        if (error.message.includes("Invalid login")) {
+          toast.error("Email ou senha incorretos");
+        } else if (error.message.includes("Email not confirmed")) {
+          toast.error("Por favor, confirme seu email antes de fazer login");
+        } else {
+          toast.error(`Erro ao fazer login: ${error.message}`);
+        }
         return false;
       }
       
@@ -103,17 +111,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: window.location.origin,
+          data: {
+            username: email.split('@')[0]
+          }
         }
       });
 
       if (error) {
         console.error("Sign up error:", error);
-        toast.error(`Erro ao criar conta: ${error.message}`);
+        
+        if (error.message.includes("already registered")) {
+          toast.error("Este email já está registrado. Tente fazer login.");
+        } else {
+          toast.error(`Erro ao criar conta: ${error.message}`);
+        }
         return false;
       }
       
-      console.log("Sign up successful:", data);
+      console.log("Sign up response:", data);
       
       // Check if email confirmation is required
       if (data.user && data.session) {

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, User, Lock } from "lucide-react";
+import { ArrowRight, User, Lock, Loader2 } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -26,16 +26,35 @@ const AuthPage: React.FC = () => {
     return <Navigate to={from} />;
   }
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    if (!email) {
+      toast.error("Por favor, insira seu email");
+      return false;
+    }
     
-    if (!email || !password) {
-      toast.error("Por favor, preencha todos os campos");
-      return;
+    if (!password) {
+      toast.error("Por favor, insira sua senha");
+      return false;
     }
     
     if (password.length < 6) {
       toast.error("A senha deve ter pelo menos 6 caracteres");
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Por favor, insira um email válido");
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
@@ -43,16 +62,24 @@ const AuthPage: React.FC = () => {
     
     try {
       if (activeTab === "login") {
+        console.log("Attempting login with:", email);
         const success = await signIn(email, password);
+        console.log("Login result:", success);
+        
         if (success) {
           toast.success("Login realizado com sucesso!");
           navigate(from);
         }
       } else {
+        console.log("Attempting signup with:", email);
         const success = await signUp(email, password);
+        console.log("Signup result:", success);
+        
         if (success) {
-          toast.success("Conta criada! Verifique seu email para confirmação.");
+          toast.success("Conta criada com sucesso!");
+          // Switch to login tab after successful registration
           setActiveTab("login");
+          toast.info("Por favor faça login com suas credenciais");
         }
       }
     } catch (error: any) {
@@ -67,7 +94,7 @@ const AuthPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Bem-vindo</CardTitle>
+          <CardTitle className="text-2xl font-bold">Bem-vindo ao RealYou</CardTitle>
           <CardDescription>
             Faça login ou crie uma conta para continuar
           </CardDescription>
@@ -113,8 +140,17 @@ const AuthPage: React.FC = () => {
                 className="w-full bg-purple-600 hover:bg-purple-700" 
                 disabled={isLoading || isSubmitting}
               >
-                {isSubmitting ? "Processando..." : activeTab === "login" ? "Entrar" : "Criar conta"}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    {activeTab === "login" ? "Entrar" : "Criar conta"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
