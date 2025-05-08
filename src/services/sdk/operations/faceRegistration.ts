@@ -17,15 +17,14 @@ export async function registerFace(
   }
 
   try {
-    // Verificar se a imagem é válida
+    // Verify if the image is valid
     const detectionResult = await detectFace(imageData, isInitialized, apiBaseURL, apiKey);
     if (!detectionResult.success) {
       console.error("Não foi possível detectar um rosto válido para registro");
       return false;
     }
     
-    // Em produção, aqui seria uma chamada à API real para registrar o rosto
-    // Para esta versão, simulamos o registro armazenando na tabela face_registrations
+    // Get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -33,15 +32,7 @@ export async function registerFace(
       return false;
     }
     
-    // Define register_face parameters interface
-    interface RegisterFaceParams {
-      user_id_param: string;
-      face_id_param: string;
-      confidence_param: number;
-      status_param: string;
-    }
-    
-    // Fix: Use the correct approach to insert data
+    // Insert face registration data
     const { error } = await supabase
       .from('face_registrations')
       .insert({

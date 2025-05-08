@@ -14,59 +14,47 @@ export async function matchFace(
   }
 
   try {
-    // Define explicit return type for the RPC call
-    interface ProfileMatch {
-      id: string;
-      full_name: string | null;
-      profession: string | null;
-      avatar_url: string | null;
+    // Fetch real registered faces from face_registrations table
+    const { data: registrations, error: regError } = await supabase
+      .from('face_registrations')
+      .select('user_id, confidence')
+      .eq('face_id', faceId)
+      .eq('status', 'active');
+    
+    if (regError) {
+      console.error("Error fetching face registrations:", regError);
+      return { success: false, matches: [], error: "Erro ao buscar registros faciais" };
     }
-
-    // Define specific parameters for the RPC call with proper type
-    interface GetMatchingProfilesParams {
-      limit_count: number;
+    
+    if (!registrations || registrations.length === 0) {
+      // No real face matches found
+      return { success: true, matches: [] };
     }
-
-    // Fix: Use correct type parameters for the RPC call
-    const { data, error } = await supabase
+    
+    // Get profile information for the matched users
+    const userIds = registrations.map(reg => reg.user_id);
+    
+    const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('id, full_name, profession, avatar_url')
-      .limit(10)
-      .then(result => {
-        return {
-          data: result.data as ProfileMatch[],
-          error: result.error
-        };
-      });
+      .in('id', userIds);
     
-    if (error) {
-      console.error("Error fetching profiles:", error);
+    if (profileError || !profiles || profiles.length === 0) {
+      console.error("Error fetching profiles:", profileError);
       return { success: true, matches: [] };
     }
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      // Sem correspondências no banco de dados
-      return { success: true, matches: [] };
-    }
-    
-    // Selecione um perfil aleatório como correspondência
-    // Em produção, isso seria baseado na correspondência real do rosto
-    const matchIndex = Math.floor(Math.random() * data.length);
-    const match = data[matchIndex];
-    
-    // Verificação de que há 20% de chance de não encontrar correspondência
-    if (Math.random() > 0.8) {
-      return { success: true, matches: [] };
-    }
-    
-    return {
-      success: true,
-      matches: [{
-        userId: match.id || '',
-        name: match.full_name || "Usuário",
-        profession: match.profession || "Profissional",
-        avatar: match.avatar_url || "",
-        confidence: 0.85,
+    // Map the profile data to the expected format
+    const matches = profiles.map(profile => {
+      // Find the corresponding registration to get confidence
+      const registration = registrations.find(reg => reg.user_id === profile.id);
+      
+      return {
+        userId: profile.id || '',
+        name: profile.full_name || "Usuário",
+        profession: profile.profession || "Profissional",
+        avatar: profile.avatar_url || "",
+        confidence: registration?.confidence || 0.75,
         schedule: [
           { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
           { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
@@ -76,7 +64,12 @@ export async function matchFace(
           { day: "Sábado", slots: [], active: false },
           { day: "Domingo", slots: [], active: false }
         ]
-      }]
+      };
+    });
+    
+    return {
+      success: true,
+      matches: matches
     };
   } catch (error) {
     console.error("Erro na correspondência facial:", error);

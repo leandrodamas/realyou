@@ -59,7 +59,6 @@ export const useSearchOperation = () => {
       // Registrar busca no histórico se o usuário estiver logado
       if (user) {
         try {
-          // Fix: Use direct insertion instead of RPC
           await supabase
             .from('face_search_history')
             .insert({
