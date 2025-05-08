@@ -1,16 +1,16 @@
-
 import { getFacialRecognitionSDK } from "./sdk/initializeSDK";
+import type { FaceMatchResult } from "./sdk/types/interfaces";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface FaceMatchResult {
+export interface FaceMatchResultExtended {
   matches: Array<MatchedPerson>;
   noMatch: boolean;
   errorMessage?: string;
 }
 
 // Função para detectar e buscar correspondência de rosto
-export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchResult | null> => {
+export const detectAndMatchFace = async (imageData: string): Promise<FaceMatchResultExtended | null> => {
   try {
     // Inicializar o SDK
     const sdk = await getFacialRecognitionSDK();
