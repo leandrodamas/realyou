@@ -114,10 +114,10 @@ export class FacialRecognitionSDK {
       // Em produção, aqui seria uma chamada à API real
       // Para esta versão, usamos dados reais de teste
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, profession, avatar_url')
-        .limit(10);
+      // Use RPC to get matching profiles
+      const { data, error } = await supabase.rpc('get_matching_profiles', {
+        limit_count: 10
+      });
       
       if (error || !data || data.length === 0) {
         // Sem correspondências no banco de dados
@@ -181,16 +181,13 @@ export class FacialRecognitionSDK {
         return false;
       }
       
-      // Registrar no banco de dados
-      const { error } = await supabase
-        .from('face_registrations')
-        .insert({
-          user_id: userId,
-          face_id: detectionResult.faceId,
-          confidence: detectionResult.confidence,
-          status: 'active',
-          created_at: new Date().toISOString()
-        });
+      // Use RPC to insert into face_registrations
+      const { error } = await supabase.rpc('register_face', {
+        user_id_param: userId,
+        face_id_param: detectionResult.faceId || '',
+        confidence_param: detectionResult.confidence || 0.75,
+        status_param: 'active'
+      });
       
       if (error) {
         console.error("Erro ao registrar rosto no banco de dados:", error);

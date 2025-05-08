@@ -9,6 +9,99 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      face_registrations: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          face_id: string
+          id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          face_id: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          face_id?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      face_search_history: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          matched: boolean
+          matched_person_id: string | null
+          search_timestamp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          matched?: boolean
+          matched_person_id?: string | null
+          search_timestamp?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          matched?: boolean
+          matched_person_id?: string | null
+          search_timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          face_registered: boolean | null
+          face_registered_at: string | null
+          full_name: string | null
+          id: string
+          profession: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          face_registered?: boolean | null
+          face_registered_at?: string | null
+          full_name?: string | null
+          id: string
+          profession?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          face_registered?: boolean | null
+          face_registered_at?: string | null
+          full_name?: string | null
+          id?: string
+          profession?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_bookings: {
         Row: {
           booking_date: string
