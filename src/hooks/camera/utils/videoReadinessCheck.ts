@@ -1,3 +1,8 @@
+
+/**
+ * Functions for checking if video element is ready for use
+ */
+
 export const waitForVideoReady = (video: HTMLVideoElement): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
     // Se o vídeo já tem dimensões, está pronto
