@@ -1,9 +1,11 @@
 
-import React, { useState } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Smile } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Smile, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface Post {
   id: number;
@@ -19,32 +21,19 @@ interface Post {
 }
 
 const Feed: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      username: "johndoe",
-      profilePic: "/placeholder.svg",
-      image: "/placeholder.svg",
-      caption: "Beautiful day at the beach! 🌊☀️ #summer #beach",
-      likes: 256,
-      comments: 42,
-      timestamp: "2h ago",
-      liked: false,
-      saved: false
-    },
-    {
-      id: 2,
-      username: "mariasilva",
-      profilePic: "/placeholder.svg",
-      image: "/placeholder.svg",
-      caption: "Just finished this amazing project! #coding #development",
-      likes: 128,
-      comments: 24,
-      timestamp: "4h ago",
-      liked: true,
-      saved: false
-    }
-  ]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
 
   const toggleLike = (id: number) => {
     setPosts(posts.map(post => 
@@ -76,6 +65,36 @@ const Feed: React.FC = () => {
     hidden: { opacity: 0, y: 50 },
     show: { opacity: 1, y: 0, transition: { type: "spring", damping: 15 } }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-10 px-4">
+        <h3 className="text-lg font-medium mb-2">Faça login para ver o feed</h3>
+        <p className="text-gray-500 mb-4">Conecte-se para ver posts de profissionais e compartilhar seu trabalho</p>
+        <Button>Entrar</Button>
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="text-center py-10 px-4 space-y-4">
+        <h3 className="text-lg font-medium">Seu feed está vazio</h3>
+        <p className="text-gray-500">Comece a seguir profissionais para ver seus posts aqui</p>
+        <div className="py-4">
+          <Button>Descobrir profissionais</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 

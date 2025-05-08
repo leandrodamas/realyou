@@ -13,18 +13,12 @@ export async function registerFace(
   apiKey: string
 ): Promise<boolean> {
   if (!isInitialized) {
+    console.error("SDK não inicializado para registro facial");
     return false;
   }
 
   try {
-    // Verify if the image is valid
-    const detectionResult = await detectFace(imageData, isInitialized, apiBaseURL, apiKey);
-    if (!detectionResult.success) {
-      console.error("Não foi possível detectar um rosto válido para registro");
-      return false;
-    }
-    
-    // Get authenticated user
+    // Verificar se o usuário está autenticado
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -32,7 +26,14 @@ export async function registerFace(
       return false;
     }
     
-    // Insert face registration data
+    // Verificar se a imagem é válida
+    const detectionResult = await detectFace(imageData, isInitialized, apiBaseURL, apiKey);
+    if (!detectionResult.success) {
+      console.error("Não foi possível detectar um rosto válido para registro");
+      return false;
+    }
+    
+    // Inserir dados de registro facial
     const { error } = await supabase
       .from('face_registrations')
       .insert({
@@ -45,6 +46,20 @@ export async function registerFace(
     if (error) {
       console.error("Erro ao registrar rosto no banco de dados:", error);
       return false;
+    }
+    
+    // Atualizar o perfil do usuário, marcando que o rosto foi registrado
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        face_registered: true,
+        face_registered_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+      
+    if (profileError) {
+      console.error("Erro ao atualizar status de registro facial no perfil:", profileError);
+      // Não impedimos o fluxo principal se a atualização do perfil falhar
     }
     
     console.log("Rosto registrado com sucesso");

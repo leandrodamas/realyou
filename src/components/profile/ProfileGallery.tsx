@@ -102,7 +102,7 @@ const ProfileGallery: React.FC<ProfileGalleryProps> = ({ isOwner = true }) => {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, index) => (
+          Array.from({ length: 2 }).map((_, index) => (
             <WorkItemSkeleton key={index} />
           ))
         ) : items.length > 0 ? (

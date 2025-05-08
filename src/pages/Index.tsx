@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Feed from "@/components/home/Feed";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -8,10 +8,20 @@ import WelcomeBanner from "@/components/home/WelcomeBanner";
 import CameraButton from "@/components/home/CameraButton";
 import Stories from "@/components/home/Stories";
 import ForYouHeader from "@/components/home/ForYouHeader";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    
+    const checkAuthStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+    
+    checkAuthStatus();
   }, []);
 
   return (
@@ -39,7 +49,7 @@ const Index: React.FC = () => {
         </motion.div>
       </div>
 
-      <CameraButton />
+      {isAuthenticated && <CameraButton />}
     </motion.div>
   );
 };

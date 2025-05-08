@@ -2,6 +2,8 @@
 import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Professional } from "@/types/Professional";
+import { MapIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ThreeDMapProps {
   professionals: Professional[];
@@ -12,28 +14,41 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
   const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    // This is a placeholder for actual 3D map implementation
-    // In a real implementation, we would use three.js, mapbox-gl, or another mapping library
+    // Esta é uma implementação placeholder para o mapa 3D
+    // Em uma implementação real, usaríamos three.js, mapbox-gl ou outra biblioteca de mapeamento
     
     console.log("Map initialized with professionals:", professionals);
     
-    // Clean up function
+    // Função de limpeza
     return () => {
       console.log("Map component unmounted");
     };
   }, [professionals]);
 
-  // This is a placeholder component for demonstration
-  // In a real implementation, this would render an actual 3D map
+  if (professionals.length === 0) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-blue-50 p-6">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <MapIcon className="h-8 w-8 text-blue-500" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">Nenhum profissional encontrado</h3>
+          <p className="text-gray-500 mb-6">Cadastre-se como profissional ou refine sua busca para encontrar profissionais na sua área</p>
+          <Button>Tornar-se Profissional</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={mapContainerRef}
       className="w-full h-full bg-blue-50 relative overflow-hidden"
     >
-      {/* Placeholder map background with gradient */}
+      {/* Background do mapa com gradiente */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-100 to-purple-100"></div>
       
-      {/* Mock floating 3D elements */}
+      {/* Elementos 3D mockados */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -41,17 +56,17 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
           transition={{ duration: 0.5 }}
           className="absolute w-full h-full"
         >
-          {/* Grid lines for 3D effect */}
+          {/* Linhas de grade para efeito 3D */}
           <div className="absolute inset-0 grid grid-cols-6 grid-rows-6">
             {Array(36).fill(0).map((_, i) => (
               <div key={i} className="border border-blue-200/20"></div>
             ))}
           </div>
           
-          {/* Professional markers on the map */}
+          {/* Marcadores de profissionais no mapa */}
           {professionals.map((pro) => {
-            // Convert geo coordinates to relative position on screen
-            // This is a simplified mock positioning
+            // Converter coordenadas geográficas para posição relativa na tela
+            // Esta é uma posição mock simplificada
             const x = ((pro.coordinates[0] + 43.19) * 1000) % 100;
             const y = ((pro.coordinates[1] + 22.96) * 1000) % 100;
             
@@ -77,14 +92,14 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
                     />
                   </div>
                 </div>
-                {/* Pulse effect */}
+                {/* Efeito de pulso */}
                 <div className="absolute inset-0 animate-ping rounded-full bg-purple-400 opacity-75"></div>
               </motion.div>
             );
           })}
         </motion.div>
         
-        {/* 3D Buildings Placeholder */}
+        {/* Placeholder de prédios 3D */}
         <div className="absolute bottom-0 left-0 right-0 h-1/3">
           <div className="flex justify-around items-end h-full">
             {[...Array(6)].map((_, i) => (
@@ -101,7 +116,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
         </div>
       </div>
       
-      {/* Map controls placeholder */}
+      {/* Controles do mapa */}
       <div className="absolute right-4 top-4 flex flex-col gap-2">
         <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -116,7 +131,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
         </button>
       </div>
       
-      {/* User location marker */}
+      {/* Marcador de localização do usuário */}
       <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 translate-y-1/2">
         <div className="relative">
           <div className="h-4 w-4 bg-blue-600 border-2 border-white rounded-full"></div>
@@ -124,7 +139,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
         </div>
       </div>
       
-      {/* Informational overlay */}
+      {/* Overlay informativo */}
       <div className="absolute left-4 top-4 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs">
         <p className="text-gray-700">
           <span className="font-medium">3D</span> mapa interativo

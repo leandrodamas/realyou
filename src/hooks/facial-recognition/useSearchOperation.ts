@@ -40,6 +40,10 @@ export const useSearchOperation = () => {
       
       // Inicializar SDK de reconhecimento facial
       const facialSDK = await getFacialRecognitionSDK();
+      if (!facialSDK.isInitialized) {
+        toast.error("Sistema de reconhecimento facial não inicializado");
+        return { success: false, data: null, error: "Sistema não inicializado" };
+      }
       
       // Detectar rosto na imagem
       const detectionResult = await facialSDK.detectFace(imageUrl);

@@ -1,55 +1,97 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Award, Medal, Star, Crown, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
-const achievements = [
-  { 
-    id: 1, 
-    name: "Content Creator", 
-    description: "Posted 100+ quality content pieces", 
-    progress: 75, 
-    icon: <Trophy className="h-5 w-5 text-amber-500" />,
-    color: "bg-amber-100 text-amber-700 border-amber-200"
-  },
-  { 
-    id: 2, 
-    name: "Social Butterfly", 
-    description: "Connected with 250+ people", 
-    progress: 68, 
-    icon: <Crown className="h-5 w-5 text-purple-500" />,
-    color: "bg-purple-100 text-purple-700 border-purple-200"
-  },
-  { 
-    id: 3, 
-    name: "Skill Master", 
-    description: "Verified expert in 10+ skills", 
-    progress: 100, 
-    icon: <Award className="h-5 w-5 text-blue-500" />,
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-    completed: true
-  },
-  { 
-    id: 4, 
-    name: "Rising Star", 
-    description: "Gained 1000+ profile views", 
-    progress: 92, 
-    icon: <Star className="h-5 w-5 text-yellow-500" />,
-    color: "bg-yellow-100 text-yellow-700 border-yellow-200"
-  },
-  { 
-    id: 5, 
-    name: "Consistent Creator", 
-    description: "Posted content for 30 days in a row", 
-    progress: 40, 
-    icon: <Flame className="h-5 w-5 text-orange-500" />,
-    color: "bg-orange-100 text-orange-700 border-orange-200"
-  },
-];
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  progress: number;
+  icon: React.ReactNode;
+  color: string;
+  completed?: boolean;
+}
 
 const ProfileAchievements: React.FC = () => {
+  const [achievements, setAchievements] = useState<Achievement[]>([
+    { 
+      id: 1, 
+      name: "Content Creator", 
+      description: "Posted 100+ quality content pieces", 
+      progress: 0, 
+      icon: <Trophy className="h-5 w-5 text-amber-500" />,
+      color: "bg-amber-100 text-amber-700 border-amber-200"
+    },
+    { 
+      id: 2, 
+      name: "Social Butterfly", 
+      description: "Connected with 250+ people", 
+      progress: 0, 
+      icon: <Crown className="h-5 w-5 text-purple-500" />,
+      color: "bg-purple-100 text-purple-700 border-purple-200"
+    },
+    { 
+      id: 3, 
+      name: "Skill Master", 
+      description: "Verified expert in 10+ skills", 
+      progress: 0, 
+      icon: <Award className="h-5 w-5 text-blue-500" />,
+      color: "bg-blue-100 text-blue-700 border-blue-200"
+    },
+    { 
+      id: 4, 
+      name: "Rising Star", 
+      description: "Gained 1000+ profile views", 
+      progress: 0, 
+      icon: <Star className="h-5 w-5 text-yellow-500" />,
+      color: "bg-yellow-100 text-yellow-700 border-yellow-200"
+    },
+    { 
+      id: 5, 
+      name: "Consistent Creator", 
+      description: "Posted content for 30 days in a row", 
+      progress: 0, 
+      icon: <Flame className="h-5 w-5 text-orange-500" />,
+      color: "bg-orange-100 text-orange-700 border-orange-200"
+    }
+  ]);
+  
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAchievements = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          return;
+        }
+        
+        // Configurar progresso inicial baseado em atividades do usuário
+        // Em uma implementação real, isso viria do banco de dados
+        
+        // Por enquanto, vamos definir valores iniciais baixos para mostrar progresso
+        setAchievements(prevAchievements => 
+          prevAchievements.map(achievement => ({
+            ...achievement,
+            progress: Math.floor(Math.random() * 25) // 0-25% de progresso para começar
+          }))
+        );
+        
+      } catch (error) {
+        console.error("Erro ao carregar conquistas:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadAchievements();
+  }, []);
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -64,6 +106,18 @@ const ProfileAchievements: React.FC = () => {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((_, index) => (
+          <div key={index} className="animate-pulse">
+            <div className="h-20 bg-gray-100 rounded-xl"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <motion.div

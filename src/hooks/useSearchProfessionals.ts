@@ -24,28 +24,78 @@ export const useSearchProfessionals = (query: string = "") => {
       try {
         setIsLoading(true);
 
-        // For now, we'll use demo data that would simulate search results
-        // In a real app, you'd query Supabase with the search term
-        const demoProfessionals: Professional[] = [
-          { id: "1", name: "John Doe", username: "johndoe", avatar: "/placeholder.svg", title: "Web Developer" },
-          { id: "2", name: "Maria Silva", username: "mariasilva", avatar: "/placeholder.svg", title: "UX Designer" },
-          { id: "3", name: "Alex Johnson", username: "alexj", avatar: "/placeholder.svg", title: "Marketing Specialist" },
-          { id: "4", name: "Sarah Parker", username: "sparker", avatar: "/placeholder.svg", title: "Business Consultant" },
-        ];
-
-        // Filter by query if provided
+        // Buscar profissionais reais do banco de dados
+        const { data: serviceProviders, error: serviceError } = await supabase
+          .from('service_pricing')
+          .select(`
+            id,
+            user_id,
+            title,
+            base_price
+          `);
+          
+        if (serviceError) {
+          console.error("Erro ao buscar serviços:", serviceError);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!serviceProviders || serviceProviders.length === 0) {
+          setProfessionals([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Obter IDs dos usuários para buscar seus perfis
+        const userIds = serviceProviders.map(provider => provider.user_id);
+        
+        // Buscar perfis dos profissionais
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            full_name,
+            profession,
+            avatar_url
+          `)
+          .in('id', userIds);
+          
+        if (profilesError) {
+          console.error("Erro ao buscar perfis:", profilesError);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Combinar dados de serviço e perfil
+        const professionalsList: Professional[] = serviceProviders.map(service => {
+          const profile = profiles?.find(p => p.id === service.user_id);
+          
+          return {
+            id: service.id,
+            name: profile?.full_name || "Profissional",
+            username: profile?.id || service.id,
+            avatar: profile?.avatar_url || "/placeholder.svg",
+            title: profile?.profession || service.title,
+            location: "São Paulo, SP", // Localização padrão por enquanto
+            rating: 4.5 + Math.random() * 0.5, // Avaliação aleatória entre 4.5-5.0
+            skills: ["Habilidade 1", "Habilidade 2"] // Habilidades padrão por enquanto
+          };
+        });
+        
+        // Filtrar por consulta, se fornecida
         const filteredResults = query
-          ? demoProfessionals.filter(
+          ? professionalsList.filter(
               prof => 
                 prof.name.toLowerCase().includes(query.toLowerCase()) ||
                 prof.username.toLowerCase().includes(query.toLowerCase()) ||
                 (prof.title && prof.title.toLowerCase().includes(query.toLowerCase()))
             )
-          : demoProfessionals;
+          : professionalsList;
 
         setProfessionals(filteredResults);
       } catch (error) {
         console.error("Error searching professionals:", error);
+        setProfessionals([]);
       } finally {
         setIsLoading(false);
       }

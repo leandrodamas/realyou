@@ -14,7 +14,7 @@ export async function matchFace(
   }
 
   try {
-    // Fetch real registered faces from face_registrations table
+    // Buscar rostos registrados da tabela face_registrations
     const { data: registrations, error: regError } = await supabase
       .from('face_registrations')
       .select('user_id, confidence')
@@ -22,16 +22,17 @@ export async function matchFace(
       .eq('status', 'active');
     
     if (regError) {
-      console.error("Error fetching face registrations:", regError);
+      console.error("Erro ao buscar registros faciais:", regError);
       return { success: false, matches: [], error: "Erro ao buscar registros faciais" };
     }
     
     if (!registrations || registrations.length === 0) {
-      // No real face matches found
+      // Nenhuma correspondência facial encontrada
+      console.log("Nenhuma correspondência facial encontrada");
       return { success: true, matches: [] };
     }
     
-    // Get profile information for the matched users
+    // Obter informações de perfil para os usuários correspondentes
     const userIds = registrations.map(reg => reg.user_id);
     
     const { data: profiles, error: profileError } = await supabase
@@ -40,13 +41,58 @@ export async function matchFace(
       .in('id', userIds);
     
     if (profileError || !profiles || profiles.length === 0) {
-      console.error("Error fetching profiles:", profileError);
+      console.error("Erro ao buscar perfis:", profileError);
       return { success: true, matches: [] };
     }
     
-    // Map the profile data to the expected format
+    // Obter informações de disponibilidade para usuários correspondentes
+    const { data: schedules, error: scheduleError } = await supabase
+      .from('service_schedules')
+      .select('user_id, day_of_week, start_time, end_time, is_available')
+      .in('user_id', userIds);
+    
+    if (scheduleError) {
+      console.error("Erro ao buscar agendas:", scheduleError);
+      // Continuamos mesmo se não conseguirmos obter os horários
+    }
+    
+    // Transformar os horários em dias da semana
+    const scheduleByUser: Record<string, any[]> = {};
+    
+    // Inicializar com estrutura padrão para todos os usuários
+    userIds.forEach(userId => {
+      scheduleByUser[userId] = [
+        { day: "Segunda", slots: [], active: false },
+        { day: "Terça", slots: [], active: false },
+        { day: "Quarta", slots: [], active: false },
+        { day: "Quinta", slots: [], active: false },
+        { day: "Sexta", slots: [], active: false },
+        { day: "Sábado", slots: [], active: false },
+        { day: "Domingo", slots: [], active: false }
+      ];
+    });
+    
+    // Preencher com dados reais se disponíveis
+    const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    
+    schedules?.forEach(schedule => {
+      const userId = schedule.user_id;
+      const dayIndex = schedule.day_of_week % 7; // Garantir que está entre 0-6
+      const dayName = dayNames[dayIndex];
+      const timeSlot = `${schedule.start_time} - ${schedule.end_time}`;
+      
+      const daySchedule = scheduleByUser[userId]?.find(day => day.day === dayName);
+      if (daySchedule) {
+        daySchedule.active = schedule.is_available;
+        if (schedule.is_available) {
+          daySchedule.slots.push(timeSlot);
+        }
+      }
+    });
+    
+    // Mapear os dados do perfil para o formato esperado
     const matches = profiles.map(profile => {
-      // Find the corresponding registration to get confidence
+      // Encontrar o registro correspondente para obter confiança
       const registration = registrations.find(reg => reg.user_id === profile.id);
       
       return {
@@ -55,12 +101,12 @@ export async function matchFace(
         profession: profile.profession || "Profissional",
         avatar: profile.avatar_url || "",
         confidence: registration?.confidence || 0.75,
-        schedule: [
-          { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-          { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
+        schedule: scheduleByUser[profile.id] || [
+          { day: "Segunda", slots: ["09:00 - 12:00"], active: true },
+          { day: "Terça", slots: ["09:00 - 12:00"], active: true },
+          { day: "Quarta", slots: ["09:00 - 12:00"], active: true },
+          { day: "Quinta", slots: ["09:00 - 12:00"], active: true },
+          { day: "Sexta", slots: ["09:00 - 12:00"], active: true },
           { day: "Sábado", slots: [], active: false },
           { day: "Domingo", slots: [], active: false }
         ]
