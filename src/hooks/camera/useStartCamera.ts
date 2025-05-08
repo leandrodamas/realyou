@@ -23,7 +23,7 @@ export const useStartCamera = (
   const startCamera = useCallback(async () => {
     if (!isCameraActive) return;
     
-    console.log("useStartCamera: Iniciando câmera com facingMode:", facingMode);
+    console.log("useStartCamera: Starting camera with facingMode:", facingMode);
     setIsLoading(true);
     setIsVideoReady(false);
     resetError();
@@ -34,31 +34,31 @@ export const useStartCamera = (
     let timeoutId: NodeJS.Timeout;
     
     try {
-      console.log("useStartCamera: Tentando iniciar a câmera...");
+      console.log("useStartCamera: Attempting to start camera...");
       
       // Set a timeout for camera initialization
       timeoutId = setTimeout(() => {
         if (mountedRef.current) {
-          console.log("useStartCamera: Timeout de inicialização da câmera - forçando estado de pronto");
+          console.log("useStartCamera: Camera initialization timeout - forcing ready state");
           setIsLoading(false);
           setIsVideoReady(true);
           
-          // Em alguns navegadores, podemos tentar forçar interação do usuário para ativar a câmera
+          // On some browsers, we may try to force user interaction to activate the camera
           const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isIOS) {
-            toast.info("Toque na tela para ativar a câmera", { duration: 3000 });
+            toast.info("Touch the screen to activate the camera", { duration: 3000 });
           }
         }
-      }, 8000); // 8 segundos para timeout
+      }, 8000); // 8 seconds timeout
 
-      // Determinar se estamos em um dispositivo móvel para ajustar as configurações
+      // Determine if we're on a mobile device to adjust settings
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       
-      console.log("useStartCamera: Detectado dispositivo:", 
+      console.log("useStartCamera: Detected device:", 
                   isMobile ? (isIOS ? "iOS" : "Android") : "Desktop");
       
-      // Configurações adaptadas para plataforma
+      // Platform-adapted configurations
       let constraints: MediaStreamConstraints = {
         audio: false,
         video: { facingMode }
@@ -66,44 +66,44 @@ export const useStartCamera = (
       
       if (typeof navigator.mediaDevices === 'undefined' || 
           typeof navigator.mediaDevices.getUserMedia === 'undefined') {
-        throw new Error("API de mídia não disponível neste navegador");
+        throw new Error("Media API not available in this browser");
       }
       
-      console.log("useStartCamera: Tentativa de inicialização da câmera com configurações:", 
+      console.log("useStartCamera: Trying camera initialization with settings:", 
                   JSON.stringify(constraints));
       
       // Force a small delay before initializing camera
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Solicitar permissão explicitamente primeiro (usamos uma requisição mais simples)
+      // Explicitly request permission first (using a simpler request)
       try {
         await navigator.mediaDevices.getUserMedia({video: true});
-        console.log("useStartCamera: Permissão de câmera concedida");
+        console.log("useStartCamera: Camera permission granted");
       } catch (permErr) {
-        console.error("useStartCamera: Erro na permissão inicial:", permErr);
-        // Continue mesmo com erro aqui, vamos tentar novamente com configurações específicas
+        console.error("useStartCamera: Error in initial permission:", permErr);
+        // Continue even with error here, we'll try again with specific settings
       }
       
-      // Tenta inicializar o stream com as configurações específicas
+      // Try to initialize the stream with specific settings
       const stream = await initializeVideoStream(constraints, videoRef, mountedRef);
       
-      // Se chegou aqui, tivemos sucesso
+      // If we got here, we had success
       clearTimeout(timeoutId);
       
       if (stream && videoRef.current && mountedRef.current) {
-        console.log("useStartCamera: Stream da câmera obtido com sucesso");
+        console.log("useStartCamera: Camera stream obtained successfully");
         streamRef.current = stream;
         
-        // Configurar o elemento de vídeo com o stream
+        // Set up the video element with the stream
         setupVideoElement(videoRef.current, stream);
         
-        // Para iOS, adicionar um pequeno atraso adicional
+        // For iOS, add a small additional delay
         const setupDelay = isIOS ? 800 : 500;
         
-        // Adicionar um pequeno atraso antes de atualizar o estado
+        // Add a small delay before updating state
         setTimeout(() => {
           if (mountedRef.current) {
-            console.log("useStartCamera: Configurando vídeo como pronto");
+            console.log("useStartCamera: Setting video as ready");
             setIsVideoReady(true);
             setIsLoading(false);
           }
@@ -112,20 +112,20 @@ export const useStartCamera = (
         return;
       }
     } catch (error: any) {
-      console.error("useStartCamera: Erro de acesso à câmera:", error);
+      console.error("useStartCamera: Camera access error:", error);
       
-      // Limpar timeout se ocorrer erro
+      // Clear timeout if error occurs
       clearTimeout(timeoutId);
       
       if (mountedRef.current) {
         incrementRetryCount();
         handleCameraError(error);
         
-        // Tentar iniciar com facingMode alternativo se não funcionou
+        // Try to start with alternate facingMode if it didn't work
         if (!hasRetried.current) {
-          console.log("useStartCamera: Tentando com facingMode alternativo");
-          // Esta lógica está apenas para logging, a mudança real de facingMode é controlada externamente
-          toast.info("Tentando com câmera frontal...", { duration: 3000 });
+          console.log("useStartCamera: Trying with alternate facingMode");
+          // This logic is just for logging, the actual facingMode change is controlled externally
+          toast.info("Trying with front camera...", { duration: 3000 });
           hasRetried.current = true;
         }
         
