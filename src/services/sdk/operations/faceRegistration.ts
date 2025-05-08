@@ -41,13 +41,13 @@ export async function registerFace(
       status_param: string;
     }
     
-    // Fix: Use explicit typing for RPC function parameters
-    const { error } = await supabase.rpc<null>('register_face', {
+    // Fix: Use explicit typing for RPC function parameters with both type arguments
+    const { error } = await supabase.rpc<null, RegisterFaceParams>('register_face', {
       user_id_param: userId,
       face_id_param: detectionResult.faceId || '',
       confidence_param: detectionResult.confidence || 0.75,
       status_param: 'active'
-    } as RegisterFaceParams);
+    });
     
     if (error) {
       console.error("Erro ao registrar rosto no banco de dados:", error);

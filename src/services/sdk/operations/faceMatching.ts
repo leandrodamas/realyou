@@ -23,7 +23,12 @@ export async function matchFace(
     }
 
     // Fix: Define specific parameters for the RPC call with proper type
-    const { data, error } = await supabase.rpc<ProfileMatch[]>('get_matching_profiles', {
+    interface GetMatchingProfilesParams {
+      limit_count: number;
+    }
+
+    // Fix: Use 2 type parameters, first for return type, second for input params
+    const { data, error } = await supabase.rpc<ProfileMatch[], GetMatchingProfilesParams>('get_matching_profiles', {
       limit_count: 10
     });
     

@@ -68,12 +68,12 @@ export const useSearchOperation = () => {
       if (user) {
         try {
           // Fix: Use explicit types for RPC function parameters
-          await supabase.rpc<null>('log_face_search', {
+          await supabase.rpc<null, LogFaceSearchParams>('log_face_search', {
             user_id_param: user.id,
             matched_param: matchResult.matches.length > 0,
             matched_person_id_param: matchResult.matches[0]?.userId || null,
             image_url_param: imageUrl
-          } as LogFaceSearchParams);
+          });
         } catch (error) {
           console.error("Erro ao registrar busca no histórico:", error);
           // Não impedimos o fluxo principal se o registro de histórico falhar

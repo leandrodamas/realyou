@@ -110,10 +110,10 @@ export const registerFaceForUser = async (imageData: string, userId: string): Pr
     // Se o registro foi bem-sucedido, atualizar o perfil do usuário usando RPC
     if (success && !userId.startsWith('temp_')) {
       // Fix: Use explicit typing for RPC function parameters
-      const { error } = await supabase.rpc<null>('update_face_registration', {
+      const { error } = await supabase.rpc<null, UpdateFaceRegistrationParams>('update_face_registration', {
         user_id_param: userId,
         is_registered: true
-      } as UpdateFaceRegistrationParams);
+      });
       
       if (error) {
         console.error("Error updating profile after face registration:", error);
