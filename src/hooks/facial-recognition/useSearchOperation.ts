@@ -59,18 +59,13 @@ export const useSearchOperation = () => {
       // Registrar busca no histórico se o usuário estiver logado
       if (user) {
         try {
-          // Here we're using raw SQL to insert into face_search_history since the TypeScript definitions
-          // might not be updated yet after our migration
-          const { error } = await supabase.rpc('log_face_search', {
+          // Use the RPC function to log the search
+          await supabase.rpc('log_face_search', {
             user_id_param: user.id,
             matched_param: matchResult.matches.length > 0,
             matched_person_id_param: matchResult.matches[0]?.userId || null,
             image_url_param: imageUrl
           });
-          
-          if (error) {
-            console.error("Erro ao registrar busca no histórico:", error);
-          }
         } catch (error) {
           console.error("Erro ao registrar busca no histórico:", error);
           // Não impedimos o fluxo principal se o registro de histórico falhar

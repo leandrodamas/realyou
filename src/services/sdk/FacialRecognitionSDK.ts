@@ -119,7 +119,12 @@ export class FacialRecognitionSDK {
         limit_count: 10
       });
       
-      if (error || !data || data.length === 0) {
+      if (error) {
+        console.error("Error fetching profiles:", error);
+        return { success: true, matches: [] };
+      }
+      
+      if (!data || data.length === 0) {
         // Sem correspondências no banco de dados
         return { success: true, matches: [] };
       }
