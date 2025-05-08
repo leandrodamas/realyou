@@ -14,8 +14,16 @@ export async function matchFace(
   }
 
   try {
-    // Fix: Define specific parameters for the RPC call
-    const { data, error } = await supabase.rpc('get_matching_profiles', {
+    // Define explicit return type for the RPC call
+    interface ProfileMatch {
+      id: string;
+      full_name: string | null;
+      profession: string | null;
+      avatar_url: string | null;
+    }
+
+    // Fix: Define specific parameters for the RPC call with proper type
+    const { data, error } = await supabase.rpc<ProfileMatch[]>('get_matching_profiles', {
       limit_count: 10
     });
     
