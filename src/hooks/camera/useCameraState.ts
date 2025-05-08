@@ -1,5 +1,5 @@
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 export const useCameraState = (isCameraActive: boolean = true) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,6 +29,7 @@ export const useCameraState = (isCameraActive: boolean = true) => {
     } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
       setErrorMessage("Nenhuma câmera encontrada neste dispositivo.");
       setErrorType("notFound");
+      setHasCamera(false);
     } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
       setErrorMessage("A câmera está sendo usada por outro aplicativo.");
       setErrorType("inUse");
@@ -62,6 +63,13 @@ export const useCameraState = (isCameraActive: boolean = true) => {
     resetError();
     resetRetryCount();
   }, [resetError, resetRetryCount]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return {
     videoRef,
