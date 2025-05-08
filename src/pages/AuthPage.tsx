@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, User, Lock } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const AuthPage: React.FC = () => {
@@ -16,10 +16,14 @@ const AuthPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signUp, isLoading, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the redirect path from location state, or default to "/"
+  const from = location.state?.from?.pathname || "/";
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/" />;
+    return <Navigate to={from} />;
   }
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -30,16 +34,26 @@ const AuthPage: React.FC = () => {
       return;
     }
     
+    if (password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       if (activeTab === "login") {
-        await signIn(email, password);
-        // Navigation happens in the auth context after successful login
+        const success = await signIn(email, password);
+        if (success) {
+          toast.success("Login realizado com sucesso!");
+          navigate(from);
+        }
       } else {
-        await signUp(email, password);
-        toast.success("Conta criada! Verifique seu email para confirmação.");
-        setActiveTab("login");
+        const success = await signUp(email, password);
+        if (success) {
+          toast.success("Conta criada! Verifique seu email para confirmação.");
+          setActiveTab("login");
+        }
       }
     } catch (error: any) {
       console.error("Authentication error:", error);

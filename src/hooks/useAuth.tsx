@@ -8,8 +8,8 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, currentSession?.user?.id);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       console.log("Signing in with:", email);
@@ -80,20 +80,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error("Sign in error:", error);
-        throw error;
+        toast.error(`Erro ao fazer login: ${error.message}`);
+        return false;
       }
       
       console.log("Sign in successful:", data.user?.id);
+      return true;
     } catch (error: any) {
       console.error("Sign in exception:", error);
       toast.error(`Erro ao fazer login: ${error.message}`);
-      throw error;
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       console.log("Signing up with:", email);
@@ -107,15 +109,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error("Sign up error:", error);
-        throw error;
+        toast.error(`Erro ao criar conta: ${error.message}`);
+        return false;
       }
       
-      console.log("Sign up successful:", data.user?.id);
-      toast.success("Conta criada com sucesso! Verifique seu email.");
+      console.log("Sign up successful:", data);
+      
+      // Check if email confirmation is required
+      if (data.user && data.session) {
+        // Auto-login if email confirmation is not enabled in Supabase
+        toast.success("Conta criada com sucesso!");
+        return true;
+      } else if (data.user && !data.session) {
+        // Email confirmation is required
+        toast.info("Conta criada! Por favor, verifique seu email para confirmar.");
+        return true;
+      }
+      
+      return false;
     } catch (error: any) {
       console.error("Sign up exception:", error);
       toast.error(`Erro ao criar conta: ${error.message}`);
-      throw error;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
-        throw error;
+        toast.error(`Erro ao fazer logout: ${error.message}`);
       }
     } catch (error: any) {
       console.error("Sign out exception:", error);
