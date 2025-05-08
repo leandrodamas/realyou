@@ -48,6 +48,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } else if (event === 'SIGNED_OUT') {
           toast.info("Sessão encerrada");
+        } else if (event === 'USER_UPDATED') {
+          toast.info("Perfil atualizado");
+        } else if (event === 'PASSWORD_RECOVERY') {
+          toast.info("Recuperação de senha solicitada");
         }
       }
     );
@@ -68,13 +72,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Signing in with:", email);
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Sign in error:", error);
+        throw error;
+      }
+      
+      console.log("Sign in successful:", data.user?.id);
     } catch (error: any) {
+      console.error("Sign in exception:", error);
       toast.error(`Erro ao fazer login: ${error.message}`);
       throw error;
     } finally {
@@ -85,14 +96,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Signing up with:", email);
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Sign up error:", error);
+        throw error;
+      }
+      
+      console.log("Sign up successful:", data.user?.id);
       toast.success("Conta criada com sucesso! Verifique seu email.");
     } catch (error: any) {
+      console.error("Sign up exception:", error);
       toast.error(`Erro ao criar conta: ${error.message}`);
       throw error;
     } finally {
@@ -104,8 +125,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+      }
     } catch (error: any) {
+      console.error("Sign out exception:", error);
       toast.error(`Erro ao fazer logout: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -114,12 +139,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshSession = useCallback(async () => {
     try {
+      console.log("Refreshing session");
       const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
+      if (error) {
+        console.error("Refresh session error:", error);
+        throw error;
+      }
       setSession(data.session);
       setUser(data.session?.user ?? null);
+      console.log("Session refreshed:", data.session?.user?.id);
     } catch (error: any) {
-      console.error("Error refreshing session:", error);
+      console.error("Refresh session exception:", error);
     }
   }, []);
 

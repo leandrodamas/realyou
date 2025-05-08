@@ -11,6 +11,7 @@ import NavBar from './components/layout/NavBar';
 import FaceRecognitionPage from "./pages/FaceRecognitionPage";
 import { AuthProvider } from './hooks/useAuth';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from 'sonner';
 import AdvancedSearchPage from './pages/AdvancedSearchPage';
 import TimelinePage from './pages/TimelinePage';
 import AuthPage from './pages/AuthPage';
@@ -21,6 +22,7 @@ function App() {
   return (
     <AuthProvider>
       <TooltipProvider>
+        <Toaster position="top-center" richColors />
         <Router>
           <div className="App">
             <Routes>

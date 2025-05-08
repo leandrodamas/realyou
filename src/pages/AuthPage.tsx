@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ const AuthPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signUp, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
@@ -29,17 +30,22 @@ const AuthPage: React.FC = () => {
       return;
     }
     
+    setIsSubmitting(true);
+    
     try {
       if (activeTab === "login") {
         await signIn(email, password);
-        navigate("/");
+        // Navigation happens in the auth context after successful login
       } else {
         await signUp(email, password);
-        // The user will be redirected after email confirmation
+        toast.success("Conta criada! Verifique seu email para confirmação.");
+        setActiveTab("login");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Authentication error:", error);
       // Error toast is shown in the auth context
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,7 +75,7 @@ const AuthPage: React.FC = () => {
                     className="pl-10" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
                   />
                 </div>
               </div>
@@ -83,7 +89,7 @@ const AuthPage: React.FC = () => {
                     className="pl-10" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
                   />
                 </div>
               </div>
@@ -91,9 +97,9 @@ const AuthPage: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full bg-purple-600 hover:bg-purple-700" 
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               >
-                {isLoading ? "Processando..." : activeTab === "login" ? "Entrar" : "Criar conta"}
+                {isSubmitting ? "Processando..." : activeTab === "login" ? "Entrar" : "Criar conta"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
