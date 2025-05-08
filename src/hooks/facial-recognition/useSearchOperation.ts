@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 import { useImageUploader } from "./useImageUploader";
+import { getFacialRecognitionSDK } from "@/services/sdk/initializeSDK";
 
 export const useSearchOperation = () => {
   const { uploadProfileImage } = useImageUploader();
@@ -33,68 +34,61 @@ export const useSearchOperation = () => {
         }
       }
       
-      // Simular um delay para análise
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
+        return { success: false, data: null };
+      }
+      
+      // Inicializar SDK de reconhecimento facial
+      const facialSDK = await getFacialRecognitionSDK();
+      
+      // Detectar rosto na imagem
+      const detectionResult = await facialSDK.detectFace(imageUrl);
+      
+      if (!detectionResult.success) {
+        toast.error("Não foi possível detectar um rosto na imagem");
+        return { success: false, data: null, noMatch: true };
+      }
+      
+      // Buscar correspondências usando o SDK
+      const matchResult = await facialSDK.matchFace(detectionResult.faceId || "");
       
       if (!isMounted.current || currentAttempt !== searchAttemptRef.current) {
         return { success: false, data: null };
       }
       
-      // 70% chance de encontrar uma correspondência para demonstração
-      const matchFound = Math.random() > 0.3;
-      
-      if (matchFound) {
-        const person: MatchedPerson = {
-          name: "Alex Johnson",
-          profession: "Terapeuta",
-          avatar: imageUrl,
-          schedule: [
-            { day: "Segunda", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-            { day: "Terça", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-            { day: "Quarta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-            { day: "Quinta", slots: ["09:00 - 12:00", "14:00 - 18:00"], active: true },
-            { day: "Sexta", slots: ["09:00 - 12:00", "14:00 - 16:00"], active: true },
-            { day: "Sábado", slots: ["10:00 - 14:00"], active: false },
-            { day: "Domingo", slots: [], active: false }
-          ]
-        };
-        
-        // Note: A tabela face_search_history não está implementada no esquema do banco de dados ainda
-        // Esta parte está comentada para evitar erros
-        /*
-        if (user) {
+      // Registrar busca no histórico se o usuário estiver logado
+      if (user) {
+        try {
           await supabase
             .from('face_search_history')
             .insert({
               user_id: user.id,
-              matched: true,
-              matched_person_name: person.name,
+              matched: matchResult.matches.length > 0,
+              matched_person_id: matchResult.matches[0]?.userId || null,
               image_url: imageUrl,
               search_timestamp: new Date().toISOString()
             });
+        } catch (error) {
+          console.error("Erro ao registrar busca no histórico:", error);
+          // Não impedimos o fluxo principal se o registro de histórico falhar
         }
-        */
+      }
+      
+      if (matchResult.matches.length === 0) {
+        toast.info("Nenhuma correspondência encontrada");
+        return { success: true, data: null, noMatch: true };
+      } else {
+        // Mapear o resultado para o formato esperado
+        const bestMatch = matchResult.matches[0];
+        const person: MatchedPerson = {
+          name: bestMatch.name,
+          profession: bestMatch.profession,
+          avatar: bestMatch.avatar || imageUrl,
+          schedule: bestMatch.schedule || []
+        };
         
         toast.success("Correspondência encontrada com sucesso!");
         return { success: true, data: person };
-      } else {
-        // Note: A tabela face_search_history não está implementada no esquema do banco de dados ainda
-        // Esta parte está comentada para evitar erros
-        /*
-        if (user) {
-          await supabase
-            .from('face_search_history')
-            .insert({
-              user_id: user.id,
-              matched: false,
-              image_url: imageUrl,
-              search_timestamp: new Date().toISOString()
-            });
-        }
-        */
-        
-        toast.info("Nenhuma correspondência encontrada");
-        return { success: true, data: null, noMatch: true };
       }
     } catch (error) {
       console.error("Erro durante a busca por foto:", error);

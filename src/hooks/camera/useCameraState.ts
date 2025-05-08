@@ -12,6 +12,8 @@ export const useCameraState = (isCameraActive: boolean = true) => {
   const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
 
   // Use the extracted error handling hook
+  const cameraErrorState = useCameraError();
+
   const {
     hasError,
     setHasError,
@@ -27,7 +29,7 @@ export const useCameraState = (isCameraActive: boolean = true) => {
     incrementRetryCount,
     resetRetryCount,
     hasReachedMaxRetries
-  } = useCameraError();
+  } = cameraErrorState;
 
   const resetState = () => {
     setIsVideoReady(false);
