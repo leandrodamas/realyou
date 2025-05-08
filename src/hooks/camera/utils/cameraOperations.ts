@@ -4,5 +4,4 @@
  */
 
 export { initializeVideoStream } from './streamInitializer';
-export { setupVideoElement, ensureVideoPlaying, initializeVideoPlayback } from './videoElementSetup';
-export { waitForVideoReady } from './videoReadinessCheck';
+export { setupVideoElement, ensureVideoPlaying, initializeVideoPlayback, waitForVideoReady } from './videoElementSetup';

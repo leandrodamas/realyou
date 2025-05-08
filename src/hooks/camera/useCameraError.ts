@@ -70,9 +70,13 @@ export const useCameraError = (): CameraErrorState => {
 
   return {
     hasError,
+    setHasError,
     errorMessage,
+    setErrorMessage,
     lastErrorMessage,
+    setLastErrorMessage,
     errorType,
+    setErrorType,
     retryCountRef,
     handleCameraError,
     resetError,
