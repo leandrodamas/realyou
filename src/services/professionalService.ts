@@ -38,8 +38,8 @@ export const getProfessionals = async (): Promise<Professional[]> => {
       `)
       .in('id', userIds);
       
-    if (profilesError) {
-      console.error("Erro ao buscar perfis:", profilesError);
+    if (profilesErrors) {
+      console.error("Erro ao buscar perfis:", profilesErrors);
       return [];
     }
     

@@ -40,13 +40,13 @@ export const useSearchOperation = () => {
       
       // Inicializar SDK de reconhecimento facial
       const facialSDK = await getFacialRecognitionSDK();
-      if (!facialSDK.isInitialized) {
-        toast.error("Sistema de reconhecimento facial não inicializado");
-        return { success: false, data: null, error: "Sistema não inicializado" };
-      }
       
-      // Detectar rosto na imagem
+      // Check if SDK is initialized using the public API instead of accessing private property
       const detectionResult = await facialSDK.detectFace(imageUrl);
+      if (!detectionResult.success) {
+        toast.error("Sistema de reconhecimento facial não inicializado ou falha na detecção");
+        return { success: false, data: null, error: "Sistema não inicializado ou falha na detecção" };
+      }
       
       if (!detectionResult.success) {
         toast.error("Não foi possível detectar um rosto na imagem");

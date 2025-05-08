@@ -52,7 +52,7 @@ const ProfilePage: React.FC = () => {
             name: profileData.full_name || "Seu Perfil",
             title: profileData.profession || "Configure seu perfil profissional",
             avatar: profileData.avatar_url || "/placeholder.svg",
-            coverImage: profileData.cover_image || "",
+            coverImage: "", // Default empty string as profiles table doesn't have cover_image field yet
             postCount: 0, // Será atualizado quando implementarmos posts
             connectionCount: 0, // Será atualizado quando implementarmos conexões
             skillsCount: 0 // Será atualizado quando implementarmos habilidades
