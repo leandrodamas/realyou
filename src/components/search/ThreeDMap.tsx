@@ -42,14 +42,28 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
       }
     };
     
+    const handleAuthStateChange = (e: Event) => {
+      if (e instanceof CustomEvent) {
+        console.log("Auth state changed, refreshing 3D map");
+        setIsLoggedIn(!!user);
+        if (mapContainerRef.current) {
+          mapContainerRef.current.classList.add("refresh-map");
+          setTimeout(() => {
+            mapContainerRef.current?.classList.remove("refresh-map");
+          }, 300);
+        }
+      }
+    };
+    
     document.addEventListener('profileLoaded', handleProfileLoaded);
+    document.addEventListener('authStateChange', handleAuthStateChange);
     
     // Cleanup function
     return () => {
-      console.log("Map component unmounted");
       document.removeEventListener('profileLoaded', handleProfileLoaded);
+      document.removeEventListener('authStateChange', handleAuthStateChange);
     };
-  }, [professionals, isLoggedIn]);
+  }, [professionals, isLoggedIn, user]);
 
   const handleBecomeProfessional = () => {
     if (!isLoggedIn) {
@@ -102,8 +116,8 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
           {professionals.map((pro) => {
             // Converter coordenadas geográficas para posição relativa na tela
             // Esta é uma posição mock simplificada
-            const x = ((pro.coordinates[0] + 43.19) * 1000) % 100;
-            const y = ((pro.coordinates[1] + 22.96) * 1000) % 100;
+            const x = ((pro.coordinates?.[0] || 0) + 43.19) % 100;
+            const y = ((pro.coordinates?.[1] || 0) + 22.96) % 100;
             
             return (
               <motion.div
@@ -151,10 +165,14 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
         </div>
       </div>
       
-      {/* Login status indicator for debugging */}
-      {isLoggedIn && (
+      {/* Login status indicator */}
+      {isLoggedIn ? (
         <div className="absolute left-4 bottom-4 bg-green-500/80 text-white px-2 py-1 rounded-md text-xs">
           Usuário logado ✓
+        </div>
+      ) : (
+        <div className="absolute left-4 bottom-4 bg-yellow-500/80 text-white px-2 py-1 rounded-md text-xs">
+          Faça login para ver mais profissionais
         </div>
       )}
       

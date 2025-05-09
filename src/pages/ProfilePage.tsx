@@ -6,6 +6,8 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import FloatingActionButton from "@/components/profile/FloatingActionButton";
+import { useAuth } from "@/hooks/auth";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
@@ -19,6 +21,16 @@ const ProfilePage: React.FC = () => {
     skillsCount: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect to login if no user
+  useEffect(() => {
+    if (!isLoading && !user) {
+      toast.error("Faça login para acessar seu perfil");
+      navigate("/auth");
+    }
+  }, [user, isLoading, navigate]);
   
   useEffect(() => {
     const loadProfile = async () => {
@@ -26,8 +38,6 @@ const ProfilePage: React.FC = () => {
       
       try {
         // Obter usuário autenticado
-        const { data: { user } } = await supabase.auth.getUser();
-        
         if (!user) {
           setIsLoading(false);
           return;
@@ -66,16 +76,22 @@ const ProfilePage: React.FC = () => {
     };
     
     loadProfile();
-  }, []);
+  }, [user]);
 
   const openSettings = (section?: string) => {
     if (section) {
       localStorage.setItem("settingsSection", section);
     }
+    navigate("/settings");
+  };
+  
+  const handleNewPublication = () => {
+    toast.info("Funcionalidade de nova publicação em desenvolvimento");
+    // Open upload work dialog later
   };
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 bg-gray-50 min-h-screen">
       <ProfilePageHeader 
         openSettings={openSettings} 
         isOwner={true}
@@ -97,8 +113,27 @@ const ProfilePage: React.FC = () => {
           openSettings={openSettings}
           isOwner={true}
         />
+        
+        {/* Simple no content state for empty profile */}
+        {activeTab === "posts" && (
+          <div className="text-center py-8 bg-white rounded-lg shadow-sm mt-4">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 mb-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19ZM11 17H13V13H17V11H13V7H11V11H7V13H11V17Z" fill="#3B82F6"/>
+              </svg>
+            </div>
+            <h3 className="text-md font-medium mb-2">Nenhuma publicação</h3>
+            <p className="text-sm text-gray-500 mb-4">Adicione seu primeiro trabalho para mostrar aos clientes</p>
+            <button 
+              onClick={handleNewPublication}
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500"
+            >
+              Nova Publicação
+            </button>
+          </div>
+        )}
       </div>
-      <FloatingActionButton />
+      <FloatingActionButton onNewPost={handleNewPublication} />
     </div>
   );
 };

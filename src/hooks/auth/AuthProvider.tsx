@@ -11,12 +11,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const handleSessionRefresh = useCallback(async () => {
     try {
       const { session } = await refreshSession();
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Dispatch an event to notify components of auth state changes
+      const event = new CustomEvent('authStateChange', { detail: { user: session?.user } });
+      document.dispatchEvent(event);
     } catch (error) {
       console.error("Error refreshing session:", error);
     }
@@ -49,8 +54,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('userProfile', JSON.stringify(profileData));
         
         // Dispatch an event to notify components that the profile was loaded
-        const event = new CustomEvent('profileLoaded', { detail: { profile: profileData } });
+        const event = new CustomEvent('profileLoaded', { detail: { profile: data } });
         document.dispatchEvent(event);
+        setProfileLoaded(true);
       }
     } catch (err) {
       console.error("Error loading user profile:", err);
@@ -71,17 +77,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Initialize user profile if needed
           if (currentSession?.user) {
             // Load user profile from Supabase
-            loadUserProfile(currentSession.user.id);
-            
             setTimeout(() => {
+              loadUserProfile(currentSession.user.id);
+              
+              // Initialize user profile
               initializeUserProfile(currentSession.user.id, currentSession.user.email);
-            }, 0);
+              
+              // Dispatch auth state change event
+              const authChangeEvent = new CustomEvent('authStateChange', { 
+                detail: { user: currentSession.user } 
+              });
+              document.dispatchEvent(authChangeEvent);
+            }, 100);
           }
         } else if (event === 'SIGNED_OUT') {
           toast.info("Sessão encerrada");
           clearUserProfile(); // Clear profile on sign out
+          setProfileLoaded(false);
+          
+          // Dispatch auth state change event
+          const authChangeEvent = new CustomEvent('authStateChange', { 
+            detail: { user: null } 
+          });
+          document.dispatchEvent(authChangeEvent);
         } else if (event === 'USER_UPDATED') {
           toast.info("Perfil atualizado");
+          
+          if (currentSession?.user) {
+            loadUserProfile(currentSession.user.id);
+          }
         } else if (event === 'PASSWORD_RECOVERY') {
           toast.info("Recuperação de senha solicitada");
         }
@@ -99,6 +123,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loadUserProfile(currentSession.user.id);
       }
       
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error getting session:", error);
       setIsLoading(false);
     });
 
@@ -128,7 +155,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signIn: handleSignIn,
         signUp: handleSignUp,
         signOut: handleSignOut,
-        refreshSession: handleSessionRefresh
+        refreshSession: handleSessionRefresh,
+        profileLoaded
       }}
     >
       {children}

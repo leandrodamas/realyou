@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AppointmentType, RealAppointment } from "@/components/calendar/types";
@@ -9,11 +10,26 @@ export const useAppointments = (weekDates: Date[] = []) => {
   const [appointments, setAppointments] = useState<AppointmentType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { user } = useAuth();
+
+  // Retry mechanism
+  const retryFetch = useCallback(() => {
+    if (retryCount < 3) {
+      console.log(`Retry attempt ${retryCount + 1}/3...`);
+      setRetryCount(prev => prev + 1);
+      setError(null);
+    } else {
+      console.error('Max retry attempts reached');
+    }
+  }, [retryCount]);
 
   // Memoize the fetch function to prevent unnecessary rerenders
   const fetchAppointments = useCallback(async () => {
-    if (!user || weekDates.length === 0) return;
+    if (!user || weekDates.length === 0) {
+      setAppointments([]);
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
@@ -23,7 +39,7 @@ export const useAppointments = (weekDates: Date[] = []) => {
       const startDate = format(weekDates[0], 'yyyy-MM-dd');
       const endDate = format(weekDates[weekDates.length - 1], 'yyyy-MM-dd');
       
-      console.log(`Fetching appointments from ${startDate} to ${endDate}`);
+      console.log(`Fetching appointments from ${startDate} to ${endDate} for user ${user.id}`);
       
       // First fetch the bookings
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -51,17 +67,21 @@ export const useAppointments = (weekDates: Date[] = []) => {
           );
         
         if (serviceIds.length > 0) {
-          const { data: serviceData, error: serviceError } = await supabase
-            .from('service_pricing')
-            .select('id, title');
-            
-          if (serviceError) {
-            console.error("Error fetching service pricing:", serviceError);
-          } else if (serviceData) {
-            serviceTitles = serviceData.reduce((acc, service) => {
-              acc[service.id] = service.title;
-              return acc;
-            }, {} as Record<string, string>);
+          try {
+            const { data: serviceData, error: serviceError } = await supabase
+              .from('service_pricing')
+              .select('id, title');
+              
+            if (serviceError) {
+              console.error("Error fetching service pricing:", serviceError);
+            } else if (serviceData) {
+              serviceTitles = serviceData.reduce((acc, service) => {
+                acc[service.id] = service.title;
+                return acc;
+              }, {} as Record<string, string>);
+            }
+          } catch (err) {
+            console.error("Error in service pricing fetch:", err);
           }
         }
       }
@@ -76,17 +96,22 @@ export const useAppointments = (weekDates: Date[] = []) => {
           .filter(Boolean);
         
         if (clientIds.length > 0) {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url');
-            
-          if (profilesError) {
-            console.error('Error fetching client profiles:', profilesError);
-          } else if (profilesData) {
-            // Create a map of client_id -> profile data for quick lookup
-            profilesData.forEach(profile => {
-              clientProfiles[profile.id] = profile;
-            });
+          try {
+            const { data: profilesData, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url')
+              .in('id', clientIds);
+              
+            if (profilesError) {
+              console.error('Error fetching client profiles:', profilesError);
+            } else if (profilesData) {
+              // Create a map of client_id -> profile data for quick lookup
+              profilesData.forEach(profile => {
+                clientProfiles[profile.id] = profile;
+              });
+            }
+          } catch (err) {
+            console.error("Error in profiles fetch:", err);
           }
         }
       }
@@ -174,29 +199,45 @@ export const useAppointments = (weekDates: Date[] = []) => {
       });
       
       setAppointments(allAppointments);
+      setRetryCount(0); // Reset retry count on success
       
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       setError("Não foi possível carregar seus agendamentos");
-      toast.error('Não foi possível carregar seus agendamentos');
+      setAppointments([]); // Clear appointments on error
+      
+      // Don't show toast on first load error to prevent spamming
+      if (retryCount > 0) {
+        toast.error('Não foi possível carregar seus agendamentos', {
+          description: 'Tente novamente mais tarde'
+        });
+      }
+      
+      // Auto retry mechanism
+      if (retryCount < 3) {
+        setTimeout(() => {
+          retryFetch();
+        }, 3000); // Wait 3 seconds before retry
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [weekDates, user]);
+  }, [weekDates, user, retryCount, retryFetch]);
 
   useEffect(() => {
     fetchAppointments();
     
-    // Setup refresh interval - update data every minute
+    // Setup refresh interval - update data every 2 minutes
     const intervalId = setInterval(() => {
       fetchAppointments();
-    }, 60000); // 1 minute
+    }, 120000); // 2 minutes
     
     return () => clearInterval(intervalId);
   }, [fetchAppointments]);
 
   // Add a manual refresh function
   const refreshAppointments = () => {
+    setRetryCount(0); // Reset retry count
     fetchAppointments();
     toast.info("Atualizando agendamentos...");
   };

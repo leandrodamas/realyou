@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import HomePage from './pages/Index';
 import SearchPage from './pages/SearchPage';
 import ChatsPage from './pages/ChatsPage';
@@ -18,13 +18,46 @@ import AuthPage from './pages/AuthPage';
 import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// Add scroll to top component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
+
 function App() {
+  // Detect if running on mobile device
+  useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      document.documentElement.classList.add('mobile');
+      
+      // Handle viewport for iOS Safari to prevent zooming
+      const metaViewport = document.querySelector('meta[name=viewport]');
+      if (metaViewport) {
+        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+      }
+      
+      // Handle safe area for notched phones
+      document.documentElement.style.setProperty('--safe-area-top', 'env(safe-area-inset-top)');
+      document.documentElement.style.setProperty('--safe-area-bottom', 'env(safe-area-inset-bottom)');
+      document.documentElement.style.setProperty('--safe-area-left', 'env(safe-area-inset-left)');
+      document.documentElement.style.setProperty('--safe-area-right', 'env(safe-area-inset-right)');
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <TooltipProvider>
         <Toaster position="top-center" richColors />
         <Router>
-          <div className="App">
+          <ScrollToTop />
+          <div className="App pb-safe">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<AuthPage />} />

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CreditCard, Calendar, AlertCircle } from "lucide-react";
@@ -8,7 +9,6 @@ import { PaymentMethodList } from "./subscription/PaymentMethodList";
 import { PlanSelector } from "./subscription/PlanSelector";
 import { usePlans } from "./subscription/usePlans";
 import { usePaymentMethods } from "./subscription/usePaymentMethods";
-import { SubscriptionPlanTest } from "./subscription/SubscriptionPlanTest"; // New import
 
 interface SubscriptionSectionProps {
   fadeIn: any;
@@ -63,11 +63,6 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ fadeIn }) => 
           onChangePlan={handleChangePlan}
           onTogglePlans={() => setShowPlans(!showPlans)}
         />
-      </div>
-
-      {/* New Test Component Added */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <SubscriptionPlanTest />
       </div>
 
       <PaymentMethodDialog 
