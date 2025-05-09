@@ -30,14 +30,45 @@ export const initializeVideoStream = async (
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       console.log(`Available video devices: ${videoDevices.length}`);
       
-      if (videoDevices.length > 0 && !(constraints.video as MediaTrackConstraints)?.deviceId) {
-        console.log("Adding configuration with specific deviceId");
+      for (const device of videoDevices) {
+        console.log(`Device: ${device.deviceId.substring(0, 8)}... - ${device.label || 'No label'}`);
+      }
+      
+      // Prioritize rear camera on mobile
+      if (videoDevices.length > 0) {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const facingMode = (constraints.video as MediaTrackConstraints)?.facingMode || 'user';
+        
+        if (isMobile && facingMode === 'environment') {
+          // Try to identify rear camera
+          const rearCameraKeywords = ['back', 'rear', 'environment', '0'];
+          const potentialRearCamera = videoDevices.find(device => 
+            device.label && rearCameraKeywords.some(keyword => 
+              device.label.toLowerCase().includes(keyword)
+            )
+          );
+          
+          if (potentialRearCamera) {
+            console.log("Found potential rear camera:", potentialRearCamera.label);
+            attemptConfigurations.unshift({
+              audio: false,
+              video: {
+                deviceId: { exact: potentialRearCamera.deviceId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            });
+          }
+        }
+        
+        // Always add a configuration with the first available device as fallback
         const preferredDevice = videoDevices[0].deviceId;
         attemptConfigurations.unshift({
           audio: false,
           video: {
             deviceId: { exact: preferredDevice },
-            facingMode: (constraints.video as MediaTrackConstraints)?.facingMode || 'user'
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
           }
         });
       }
@@ -58,6 +89,7 @@ export const initializeVideoStream = async (
           await new Promise(r => setTimeout(r, 300));
         }
         
+        // Set default camera permissions
         const stream = await navigator.mediaDevices.getUserMedia(config);
         
         if (!mountedRef.current) {

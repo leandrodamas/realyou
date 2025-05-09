@@ -8,14 +8,29 @@ import { toast } from "sonner";
 const CameraButton: React.FC = () => {
   const navigate = useNavigate();
   
-  const handleCameraClick = () => {
+  const handleCameraClick = async () => {
     try {
-      // Navegar para a página de reconhecimento facial em vez de registro
+      // Request camera permission explicitly before navigating
+      try {
+        await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: "environment" } 
+          }, 
+          audio: false 
+        });
+        console.log("Camera permission granted successfully");
+      } catch (err) {
+        console.warn("Could not get environment camera, trying any camera:", err);
+        // Try again with just any camera
+        await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      
+      // Navigate to facial recognition page
       navigate("/facial-recognition");
       toast.info("Abrindo reconhecimento facial...");
     } catch (error) {
-      console.error("Erro na navegação:", error);
-      toast.error("Não foi possível abrir a câmera");
+      console.error("Erro ao acessar câmera:", error);
+      toast.error("Não foi possível acessar a câmera. Verifique suas permissões.");
     }
   };
 

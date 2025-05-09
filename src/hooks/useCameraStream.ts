@@ -7,6 +7,7 @@ import { useFaceDetection } from "./face-detection/useFaceDetection";
 import type { CameraStreamState } from "./camera/types";
 
 export const useCameraStream = (isCameraActive: boolean = true): CameraStreamState => {
+  // Get state from all camera hooks
   const {
     videoRef,
     hasError,
@@ -21,10 +22,10 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     retryCountRef
   } = useCameraState(isCameraActive);
 
-  // Initialize camera and check availability
+  // Initialize camera - ensures permissions are requested properly
   useCameraInitialization(isCameraActive);
 
-  // Handle camera streaming
+  // Handle camera streaming - most important fix for rear camera activation
   useCameraStreaming(isCameraActive);
 
   // Monitor video status
@@ -39,9 +40,14 @@ export const useCameraStream = (isCameraActive: boolean = true): CameraStreamSta
     isVideoReady
   });
 
+  // Switch camera function - ensures correct permissions are requested
   const switchCamera = () => {
     if (!isLoading) {
-      setFacingMode(prevMode => prevMode === "user" ? "environment" : "user");
+      // This will trigger the camera to reinitialize with the new facingMode
+      setFacingMode(prevMode => {
+        console.log(`Switching camera from ${prevMode} to ${prevMode === "user" ? "environment" : "user"}`);
+        return prevMode === "user" ? "environment" : "user";
+      });
     }
   };
 

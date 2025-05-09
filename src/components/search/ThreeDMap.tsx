@@ -1,9 +1,11 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Professional } from "@/types/Professional";
 import { MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/auth";
+import { toast } from "sonner";
 
 interface ThreeDMapProps {
   professionals: Professional[];
@@ -12,18 +14,51 @@ interface ThreeDMapProps {
 const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
+
+  // Update login state when user changes
+  useEffect(() => {
+    setIsLoggedIn(!!user);
+  }, [user]);
 
   useEffect(() => {
-    // Esta é uma implementação placeholder para o mapa 3D
-    // Em uma implementação real, usaríamos three.js, mapbox-gl ou outra biblioteca de mapeamento
-    
+    // This is a placeholder for the 3D map
     console.log("Map initialized with professionals:", professionals);
+    console.log("User logged in status:", isLoggedIn);
     
-    // Função de limpeza
+    // Refresh the component when login state changes
+    const handleProfileLoaded = () => {
+      console.log("Profile loaded, refreshing 3D map");
+      if (mapContainerRef.current) {
+        // Force refresh the map visualization
+        const currentOpacity = mapContainerRef.current.style.opacity;
+        mapContainerRef.current.style.opacity = "0";
+        setTimeout(() => {
+          if (mapContainerRef.current) {
+            mapContainerRef.current.style.opacity = currentOpacity || "1";
+          }
+        }, 100);
+      }
+    };
+    
+    document.addEventListener('profileLoaded', handleProfileLoaded);
+    
+    // Cleanup function
     return () => {
       console.log("Map component unmounted");
+      document.removeEventListener('profileLoaded', handleProfileLoaded);
     };
-  }, [professionals]);
+  }, [professionals, isLoggedIn]);
+
+  const handleBecomeProfessional = () => {
+    if (!isLoggedIn) {
+      toast.info("Faça login para se tornar um profissional");
+    } else {
+      // Logic for registered users
+      toast.info("Preparando seu cadastro profissional...");
+    }
+  };
 
   if (professionals.length === 0) {
     return (
@@ -34,7 +69,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
           </div>
           <h3 className="text-lg font-medium mb-2">Nenhum profissional encontrado</h3>
           <p className="text-gray-500 mb-6">Cadastre-se como profissional ou refine sua busca para encontrar profissionais na sua área</p>
-          <Button>Tornar-se Profissional</Button>
+          <Button onClick={handleBecomeProfessional}>Tornar-se Profissional</Button>
         </div>
       </div>
     );
@@ -43,7 +78,7 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
   return (
     <div
       ref={mapContainerRef}
-      className="w-full h-full bg-blue-50 relative overflow-hidden"
+      className="w-full h-full bg-blue-50 relative overflow-hidden transition-opacity duration-300"
     >
       {/* Background do mapa com gradiente */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-100 to-purple-100"></div>
@@ -115,6 +150,13 @@ const ThreeDMap: React.FC<ThreeDMapProps> = ({ professionals }) => {
           </div>
         </div>
       </div>
+      
+      {/* Login status indicator for debugging */}
+      {isLoggedIn && (
+        <div className="absolute left-4 bottom-4 bg-green-500/80 text-white px-2 py-1 rounded-md text-xs">
+          Usuário logado ✓
+        </div>
+      )}
       
       {/* Controles do mapa */}
       <div className="absolute right-4 top-4 flex flex-col gap-2">

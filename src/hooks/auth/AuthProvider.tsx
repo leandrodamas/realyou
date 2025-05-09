@@ -22,6 +22,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  // Function to load user profile from Supabase
+  const loadUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Erro ao carregar perfil:", error);
+        return;
+      }
+      
+      if (data) {
+        // Save profile data to localStorage for other components to access
+        const profileData = {
+          userId,
+          username: data.full_name || user?.email?.split('@')[0] || 'user',
+          lastUpdated: new Date().toISOString(),
+          profession: data.profession,
+          avatar_url: data.avatar_url,
+          // Add other profile fields as needed
+        };
+        localStorage.setItem('userProfile', JSON.stringify(profileData));
+        
+        // Dispatch an event to notify components that the profile was loaded
+        const event = new CustomEvent('profileLoaded', { detail: { profile: profileData } });
+        document.dispatchEvent(event);
+      }
+    } catch (err) {
+      console.error("Error loading user profile:", err);
+    }
+  }, [user]);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -35,6 +70,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // Initialize user profile if needed
           if (currentSession?.user) {
+            // Load user profile from Supabase
+            loadUserProfile(currentSession.user.id);
+            
             setTimeout(() => {
               initializeUserProfile(currentSession.user.id, currentSession.user.email);
             }, 0);
@@ -55,13 +93,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Checking existing session:", currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      // If there's an existing session, load the user profile
+      if (currentSession?.user) {
+        loadUserProfile(currentSession.user.id);
+      }
+      
       setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadUserProfile]);
 
   const handleSignIn = async (email: string, password: string): Promise<boolean> => {
     return await signIn(email, password, setIsLoading);

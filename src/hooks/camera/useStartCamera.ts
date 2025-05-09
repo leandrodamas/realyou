@@ -61,7 +61,11 @@ export const useStartCamera = (
       // Platform-adapted configurations
       let constraints: MediaStreamConstraints = {
         audio: false,
-        video: { facingMode }
+        video: { 
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       };
       
       if (typeof navigator.mediaDevices === 'undefined' || 
@@ -75,10 +79,13 @@ export const useStartCamera = (
       // Force a small delay before initializing camera
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Explicitly request permission first (using a simpler request)
+      // First explicitly request permission with simple constraints
       try {
-        await navigator.mediaDevices.getUserMedia({video: true});
-        console.log("useStartCamera: Camera permission granted");
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        console.log("useStartCamera: Basic camera permission granted");
       } catch (permErr) {
         console.error("useStartCamera: Error in initial permission:", permErr);
         // Continue even with error here, we'll try again with specific settings
@@ -121,11 +128,10 @@ export const useStartCamera = (
         incrementRetryCount();
         handleCameraError(error);
         
-        // Try to start with alternate facingMode if it didn't work
+        // Try alternate facingMode
         if (!hasRetried.current) {
           console.log("useStartCamera: Trying with alternate facingMode");
-          // This logic is just for logging, the actual facingMode change is controlled externally
-          toast.info("Trying with front camera...", { duration: 3000 });
+          toast.info(`Trying with ${facingMode === "user" ? "rear" : "front"} camera...`, { duration: 3000 });
           hasRetried.current = true;
         }
         
@@ -133,7 +139,7 @@ export const useStartCamera = (
       }
     }
   }, [isCameraActive, facingMode, handleCameraError, incrementRetryCount, 
-      resetError, resetRetryCount, setIsLoading, setIsVideoReady]);
+      resetError, resetRetryCount, setIsLoading, setIsVideoReady, videoRef, streamRef, mountedRef]);
 
   // Track retries in the current render cycle
   const hasRetried = useCallback(() => {
