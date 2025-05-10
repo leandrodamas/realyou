@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UserProfile {
@@ -8,18 +9,45 @@ export interface UserProfile {
   avatar_url?: string;
   lastUpdated: string; // Made required to match with dispatchProfileUpdate usage
   profileImage?: string; // For compatibility with existing code
+  basePrice?: number;
+  currency?: string;
+  title?: string;
 }
+
+// Maximum number of retries for profile operations
+const MAX_RETRIES = 3;
+
+// Helper function to implement retry logic with exponential backoff
+const withRetry = async (operation: () => Promise<any>, retries = MAX_RETRIES): Promise<any> => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    // Calculate backoff time - starts at 300ms and increases exponentially
+    const backoff = Math.min(300 * Math.pow(2, MAX_RETRIES - retries), 5000);
+    console.log(`Operation failed, retrying in ${backoff}ms (${retries} retries left)`);
+    
+    // Wait for the backoff period
+    await new Promise(resolve => setTimeout(resolve, backoff));
+    
+    // Retry the operation with one less retry
+    return withRetry(operation, retries - 1);
+  }
+};
 
 export const initializeUserProfile = async (userId: string, email: string | undefined): Promise<void> => {
   console.log(`Initializing user profile for: ${userId}`);
   
   try {
     // First try to get profile from Supabase
-    const { data: profileData, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    const { data: profileData, error } = await withRetry(() => 
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+    );
     
     if (error) {
       console.error("Error fetching profile from Supabase:", error);
@@ -35,7 +63,10 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         fullName: profileData.full_name,
         avatar_url: profileData.avatar_url,
         profileImage: profileData.avatar_url,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        basePrice: 180,
+        currency: 'BRL',
+        title: 'Serviço Profissional'
       };
       
       localStorage.setItem('userProfile', JSON.stringify(profile));
@@ -46,13 +77,15 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       console.log("No profile found in Supabase, creating one");
       const username = email?.split('@')[0] || 'user';
       
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          full_name: username,
-          updated_at: new Date().toISOString()
-        });
+      const { error: insertError } = await withRetry(() => 
+        supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: username,
+            updated_at: new Date().toISOString()
+          })
+      );
         
       if (insertError) {
         console.error("Error creating profile in Supabase:", insertError);
@@ -66,7 +99,10 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         id: userId,
         username: username,
         fullName: username,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        basePrice: 180,
+        currency: 'BRL',
+        title: 'Serviço Profissional'
       };
       localStorage.setItem('userProfile', JSON.stringify(initialProfile));
       dispatchProfileUpdate(initialProfile);
@@ -83,7 +119,10 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         userId: userId,
         id: userId,
         username: email?.split('@')[0] || 'user',
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        basePrice: 180,
+        currency: 'BRL',
+        title: 'Serviço Profissional'
       };
       localStorage.setItem('userProfile', JSON.stringify(initialProfile));
     }
@@ -122,10 +161,12 @@ export const syncProfileWithSupabase = async (userId: string, profileData: Parti
     if (Object.keys(supabaseData).length > 0) {
       supabaseData.updated_at = new Date().toISOString();
       
-      const { error } = await supabase
-        .from('profiles')
-        .update(supabaseData)
-        .eq('id', userId);
+      const { error } = await withRetry(() => 
+        supabase
+          .from('profiles')
+          .update(supabaseData)
+          .eq('id', userId)
+      );
         
       if (error) {
         console.error("Error updating profile in Supabase:", error);
