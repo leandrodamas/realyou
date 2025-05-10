@@ -1,13 +1,12 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UserProfile {
-  userId?: string; // Changed from required to optional to match with useProfileStorage
-  id: string; // Made required to match with useProfileStorage
+  userId: string; // Made required to match useProfileStorage
+  id: string; // Required to match with useProfileStorage
   username?: string;
   fullName?: string;
   avatar_url?: string;
-  lastUpdated: string;
+  lastUpdated: string; // Made required to match with dispatchProfileUpdate usage
   profileImage?: string; // For compatibility with existing code
 }
 

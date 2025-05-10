@@ -17,7 +17,7 @@ export interface UserProfile {
   postCount?: number;
   connectionCount?: number;
   skillsCount?: number;
-  lastUpdated?: string;
+  lastUpdated: string; // Changed from optional to required to match userProfileManager
   createdAt?: string;
 }
 
@@ -51,7 +51,11 @@ export const useProfileStorage = () => {
       const savedProfile = localStorage.getItem('userProfile');
       const existingProfile: UserProfile = savedProfile 
         ? JSON.parse(savedProfile) 
-        : { id: currentUserId, userId: currentUserId };
+        : { 
+            id: currentUserId, 
+            userId: currentUserId, 
+            lastUpdated: new Date().toISOString() 
+          };
         
       // Merge and save
       const updatedProfile: UserProfile = {

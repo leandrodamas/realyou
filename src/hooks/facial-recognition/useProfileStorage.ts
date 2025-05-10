@@ -5,14 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFileUpload } from "@/hooks/useFileUpload";
 
 export interface UserProfile {
-  userId?: string;
+  userId: string; // Changed from optional to required for consistency
   username?: string;
   fullName?: string;
   profileImage?: string;
   coverImage?: string;
   faceRegistered?: boolean;
   registrationTimestamp?: string;
-  lastUpdated?: string;
+  lastUpdated: string; // Changed from optional to required for consistency
   [key: string]: any;
 }
 
@@ -23,11 +23,12 @@ export const useProfileStorage = () => {
   const saveProfile = (profileData: Partial<UserProfile>): void => {
     try {
       const savedProfile = localStorage.getItem('userProfile');
-      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      const profile: Partial<UserProfile> = savedProfile ? JSON.parse(savedProfile) : {};
       
-      const updatedProfile = {
-        ...profile,
+      const updatedProfile: UserProfile = {
+        ...profile as UserProfile,
         ...profileData,
+        userId: profile.userId || user?.id || '', // Ensure userId is always set
         lastUpdated: new Date().toISOString()
       };
       
