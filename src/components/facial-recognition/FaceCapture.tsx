@@ -6,6 +6,7 @@ import InitializationScreen from "./components/InitializationScreen";
 import SearchResults from "./components/SearchResults";
 import FaceCaptureHeader from "./components/FaceCaptureHeader";
 import type { FaceCaptureProps } from "@/hooks/facial-recognition";
+import { toast } from "sonner";
 
 const FaceCapture: React.FC<FaceCaptureProps> = ({
   onCaptureImage,
@@ -21,6 +22,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
   useEffect(() => {
     // Simulando inicialização dos recursos de reconhecimento facial
     const timer = setTimeout(() => {
+      console.log("FaceCapture: Initialization complete");
       setIsInitializing(false);
     }, 1000);
     
@@ -65,8 +67,56 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     setIsCameraActive: setExternalIsCameraActive,
   });
 
+  // Debugging functions
+  const debugStartCamera = () => {
+    console.log("FaceCapture: Start camera button clicked");
+    try {
+      handleStartCamera();
+      toast.info("Iniciando câmera...");
+    } catch (error) {
+      console.error("FaceCapture: Error starting camera", error);
+      toast.error("Erro ao iniciar câmera");
+    }
+  };
+
+  const debugCapture = () => {
+    console.log("FaceCapture: Capture button clicked");
+    try {
+      handleCapture();
+    } catch (error) {
+      console.error("FaceCapture: Error capturing image", error);
+      toast.error("Erro ao capturar imagem");
+    }
+  };
+
+  const debugReset = () => {
+    console.log("FaceCapture: Reset button clicked");
+    try {
+      handleReset();
+      toast.info("Reiniciando câmera...");
+    } catch (error) {
+      console.error("FaceCapture: Error resetting camera", error);
+      toast.error("Erro ao reiniciar câmera");
+    }
+  };
+
   // Retry function for error state
-  const handleRetry = () => window.location.reload();
+  const handleRetry = () => {
+    console.log("FaceCapture: Retry button clicked");
+    setHasError(false);
+    setIsInitializing(true);
+    setTimeout(() => setIsInitializing(false), 1000);
+    window.location.reload();
+  };
+
+  console.log("FaceCapture render state:", {
+    isInitializing, 
+    hasError, 
+    isCameraActive, 
+    capturedImage: !!capturedImage,
+    isSearching,
+    matchedPerson: !!matchedPerson
+  });
 
   // Render initialization or error screen when needed
   if (isInitializing || hasError) {
@@ -87,9 +137,9 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
         <FaceCaptureCamera
           isCameraActive={isCameraActive}
           capturedImage={capturedImage}
-          onStartCamera={handleStartCamera}
-          onCapture={handleCapture}
-          onReset={handleReset}
+          onStartCamera={debugStartCamera}
+          onCapture={debugCapture}
+          onReset={debugReset}
         />
 
         <SearchResults 
@@ -101,7 +151,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
           isRegistrationMode={isRegistrationMode}
           attemptingCameraAccess={attemptingCameraAccess}
           showScheduleDialog={showScheduleDialog}
-          onReset={handleReset}
+          onReset={debugReset}
           onSearch={handleSearch}
           onSendConnectionRequest={sendConnectionRequest}
           onShowScheduleDialog={setShowScheduleDialog}

@@ -1,6 +1,7 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface InitializationScreenProps {
   isInitializing: boolean;
@@ -13,11 +14,17 @@ const InitializationScreen: React.FC<InitializationScreenProps> = ({
   hasError,
   onRetry 
 }) => {
+  useEffect(() => {
+    console.log("InitializationScreen mounted", { isInitializing, hasError });
+  }, [isInitializing, hasError]);
+
   if (!isInitializing && !hasError) {
+    console.log("InitializationScreen: No initialization or error, returning null");
     return null;
   }
   
   if (hasError) {
+    console.log("InitializationScreen: Rendering error state");
     return (
       <div className="flex flex-col items-center p-8 text-center">
         <div className="bg-red-50 rounded-lg p-6 max-w-md">
@@ -32,17 +39,21 @@ const InitializationScreen: React.FC<InitializationScreenProps> = ({
           <p className="text-gray-600 mb-4">
             Não foi possível inicializar os recursos de reconhecimento facial. Verifique sua conexão ou permissões do navegador.
           </p>
-          <button
-            onClick={onRetry}
+          <Button
+            onClick={(e) => {
+              console.log("InitializationScreen: Retry button clicked", e);
+              onRetry();
+            }}
             className="px-4 py-2 bg-primary text-white rounded-md"
           >
             Tentar novamente
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
   
+  console.log("InitializationScreen: Rendering initializing state");
   return (
     <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
       <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />

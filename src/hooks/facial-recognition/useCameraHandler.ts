@@ -19,10 +19,19 @@ export const useCameraHandler = (
   const image = capturedImage !== undefined ? capturedImage : internalCapturedImage;
   const setImage = setCapturedImage || setInternalCapturedImage;
 
+  // Ensure we log state changes
+  useEffect(() => {
+    console.log("useCameraHandler: Camera active state changed:", isActive);
+  }, [isActive]);
+
+  useEffect(() => {
+    console.log("useCameraHandler: Image state changed:", image ? "Image exists" : "No image");
+  }, [image]);
+
   // Reset image from localStorage when starting camera
   useEffect(() => {
     if (isActive && image) {
-      console.log("FaceCapture: Câmera ativada, limpando imagem anterior");
+      console.log("useCameraHandler: Camera activated, clearing previous image");
       setImage(null);
       
       // Clear local storage
@@ -37,14 +46,14 @@ export const useCameraHandler = (
     if (!image && !isActive && typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage && setImage) {
-        console.log("FaceCapture: Recuperando imagem do localStorage");
+        console.log("useCameraHandler: Retrieving image from localStorage");
         setImage(tempImage);
       }
     }
   }, []);
 
   const handleStartCamera = () => {
-    console.log("FaceCapture: Botão de ativar câmera pressionado");
+    console.log("useCameraHandler: Start camera called");
     // Reset any previous state
     setImage(null);
     setAttemptingCameraAccess(true);
@@ -52,37 +61,49 @@ export const useCameraHandler = (
     // Set camera active immediately
     setIsActive(true);
     
-    toast.info("Iniciando câmera...");
-    
-    console.log("FaceCapture: Camera active state set to:", true);
+    console.log("useCameraHandler: Camera active state set to:", true);
     
     // Log device info for debugging
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
-    console.log("FaceCapture: Dispositivo:", isIOS ? "iOS" : isAndroid ? "Android" : "Desktop");
+    console.log("useCameraHandler: Device:", isIOS ? "iOS" : isAndroid ? "Android" : "Desktop");
     
     // Request permissions immediately to avoid delay
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ video: true })
-        .then(() => console.log("FaceCapture: Permissão de câmera concedida"))
-        .catch(err => console.error("FaceCapture: Erro de permissão:", err))
+        .then(() => {
+          console.log("useCameraHandler: Camera permission granted");
+          toast.success("Permissão de câmera concedida");
+        })
+        .catch(err => {
+          console.error("useCameraHandler: Camera permission error:", err);
+          toast.error("Erro na permissão da câmera: " + (err.message || "Acesso negado"));
+          // If there's an error, we should reset the camera active state
+          setIsActive(false);
+        })
         .finally(() => setAttemptingCameraAccess(false));
     } else {
-      console.error("FaceCapture: API mediaDevices não disponível");
+      console.error("useCameraHandler: mediaDevices API not available");
       toast.error("Seu navegador não suporta acesso à câmera");
       setAttemptingCameraAccess(false);
+      setIsActive(false);
     }
   };
 
   const handleCapture = () => {
+    console.log("useCameraHandler: Capture called");
+    
     if (typeof window !== 'undefined') {
       const tempImage = localStorage.getItem('tempCapturedImage');
       if (tempImage) {
-        console.log("FaceCapture: Imagem capturada com sucesso");
+        console.log("useCameraHandler: Image captured successfully from localStorage");
         setImage(tempImage);
         
-        // Limpar após uso
+        // Clear after use
         localStorage.removeItem('tempCapturedImage');
+      } else {
+        console.warn("useCameraHandler: No image found in localStorage");
+        toast.error("Não foi possível capturar a imagem");
       }
     }
     
@@ -90,6 +111,7 @@ export const useCameraHandler = (
   };
 
   const handleReset = () => {
+    console.log("useCameraHandler: Reset called");
     setImage(null);
     setIsActive(false);
     
