@@ -57,8 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle()
-        .timeout(5000); // Set a reasonable timeout
+        .maybeSingle();
       
       if (error) {
         console.error("Error fetching profile:", error);

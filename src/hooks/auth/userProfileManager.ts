@@ -41,13 +41,14 @@ export const initializeUserProfile = async (userId: string, email: string | unde
   
   try {
     // First try to get profile from Supabase
-    const { data: profileData, error } = await withRetry(() => 
-      supabase
+    const { data: profileData, error } = await withRetry(async () => { 
+      const response = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle()
-    );
+        .maybeSingle();
+      return response;
+    });
     
     if (error) {
       console.error("Error fetching profile from Supabase:", error);
@@ -77,15 +78,16 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       console.log("No profile found in Supabase, creating one");
       const username = email?.split('@')[0] || 'user';
       
-      const { error: insertError } = await withRetry(() => 
-        supabase
+      const { error: insertError } = await withRetry(async () => {
+        const response = await supabase
           .from('profiles')
           .insert({
             id: userId,
             full_name: username,
             updated_at: new Date().toISOString()
-          })
-      );
+          });
+        return response;
+      });
         
       if (insertError) {
         console.error("Error creating profile in Supabase:", insertError);
@@ -161,12 +163,13 @@ export const syncProfileWithSupabase = async (userId: string, profileData: Parti
     if (Object.keys(supabaseData).length > 0) {
       supabaseData.updated_at = new Date().toISOString();
       
-      const { error } = await withRetry(() => 
-        supabase
+      const { error } = await withRetry(async () => {
+        const response = await supabase
           .from('profiles')
           .update(supabaseData)
-          .eq('id', userId)
-      );
+          .eq('id', userId);
+        return response;
+      });
         
       if (error) {
         console.error("Error updating profile in Supabase:", error);
