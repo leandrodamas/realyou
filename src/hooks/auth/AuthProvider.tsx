@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AuthContext } from "./AuthContext";
 import { signIn, signUp, signOut, refreshSession } from "./authOperations";
-import { initializeUserProfile, clearUserProfile } from "./userProfileManager";
+import { initializeUserProfile, clearUserProfile, syncProfileWithSupabase } from "./userProfileManager";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -30,25 +30,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Function to load user profile from Supabase
   const loadUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log("Loading profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        console.error("Erro ao carregar perfil:", error);
+        console.error("Error fetching profile:", error);
+        
+        // If we get a "no rows" error, try to initialize the profile
+        if (error.code === 'PGRST116') {
+          console.log("No profile found, initializing profile for:", userId);
+          await initializeUserProfile(userId, user?.email);
+          return;
+        }
         return;
       }
       
       if (data) {
+        console.log("Profile loaded successfully:", data);
         // Save profile data to localStorage for other components to access
         const profileData = {
           userId,
           username: data.full_name || user?.email?.split('@')[0] || 'user',
+          fullName: data.full_name,
           lastUpdated: new Date().toISOString(),
-          profession: data.profession,
           avatar_url: data.avatar_url,
+          profileImage: data.avatar_url,
           // Add other profile fields as needed
         };
         localStorage.setItem('userProfile', JSON.stringify(profileData));
@@ -57,9 +67,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const event = new CustomEvent('profileLoaded', { detail: { profile: data } });
         document.dispatchEvent(event);
         setProfileLoaded(true);
+      } else {
+        // No profile found, let's create one
+        console.log("No profile data returned from Supabase, initializing profile");
+        await initializeUserProfile(userId, user?.email);
       }
     } catch (err) {
       console.error("Error loading user profile:", err);
+      
+      // Try to initialize profile in case of error
+      if (userId) {
+        await initializeUserProfile(userId, user?.email);
+      }
     }
   }, [user]);
 
@@ -79,9 +98,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // Load user profile from Supabase
             setTimeout(() => {
               loadUserProfile(currentSession.user.id);
-              
-              // Initialize user profile
-              initializeUserProfile(currentSession.user.id, currentSession.user.email);
               
               // Dispatch auth state change event
               const authChangeEvent = new CustomEvent('authStateChange', { 
@@ -121,9 +137,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // If there's an existing session, load the user profile
       if (currentSession?.user) {
         loadUserProfile(currentSession.user.id);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     }).catch(error => {
       console.error("Error getting session:", error);
       setIsLoading(false);

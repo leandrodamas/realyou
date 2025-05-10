@@ -19,48 +19,95 @@ const CameraButton: React.FC = () => {
       console.log("Requesting camera access...");
       console.log("Device is mobile:", isMobile);
       
-      // Use ideal:environment camera setting for mobile devices
-      const constraints = isMobile 
-        ? { video: { facingMode: { exact: "environment" } }, audio: false }
-        : { video: { facingMode: "environment" }, audio: false };
-        
+      toast.info("Acessando câmera...");
+      
+      // Check if we can enumerate devices (this helps detect permissions issues early)
       try {
-        toast.info("Acessando câmera...");
-        await navigator.mediaDevices.getUserMedia(constraints);
-        console.log("Camera permission granted successfully (environment camera)");
-      } catch (err) {
-        console.warn("Could not access environment camera:", err);
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        console.log(`Found ${videoDevices.length} video devices:`, videoDevices.map(d => d.label || 'unnamed device'));
         
-        // Fallback logic - try user-facing camera
-        try {
-          await navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: false 
-          });
-          console.log("Camera permission granted successfully (any camera)");
-        } catch (innerErr) {
-          console.error("Failed to access any camera:", innerErr);
-          toast.error("Não foi possível acessar nenhuma câmera do dispositivo");
+        // No cameras detected case
+        if (videoDevices.length === 0) {
+          toast.error("Nenhuma câmera detectada no dispositivo");
           setIsActivating(false);
           return;
         }
+      } catch (enumErr) {
+        console.warn("Could not enumerate devices:", enumErr);
+        // Continue anyway as we might still be able to access the camera
       }
       
-      // Device-specific handling
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        toast.info("Em dispositivos iOS, você pode precisar permitir acesso à câmera nas configurações");
-      } else if (/Android/i.test(navigator.userAgent)) {
-        toast.info("Ao abrir a câmera, permita acesso quando solicitado");
+      // First, try environment camera (rear camera) with exact constraint
+      try {
+        console.log("Trying to access environment camera with exact constraint");
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: { exact: "environment" } },
+          audio: false 
+        });
+        
+        // If we get here, we successfully got the rear camera
+        console.log("Successfully accessed rear-facing camera");
+        stopStreamTracks(stream); // Clean up the test stream
+        navigate("/facial-recognition");
+        return;
+      } catch (exactEnvError) {
+        console.log("Couldn't access exact environment camera:", exactEnvError);
+        
+        // Second, try environment camera as preference (not exact)
+        try {
+          console.log("Trying to access environment camera as preference");
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment" },
+            audio: false 
+          });
+          
+          console.log("Successfully accessed camera with environment preference");
+          stopStreamTracks(stream); // Clean up the test stream
+          navigate("/facial-recognition");
+          return;
+        } catch (envError) {
+          console.log("Couldn't access environment camera as preference:", envError);
+          
+          // Third, try any camera
+          try {
+            console.log("Trying to access any camera");
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+              video: true,
+              audio: false 
+            });
+            
+            console.log("Successfully accessed a camera");
+            stopStreamTracks(stream); // Clean up the test stream
+            
+            // If on mobile, warn user that we might be using front camera
+            if (isMobile) {
+              toast.info("Câmera frontal detectada. Para melhores resultados, use a câmera traseira se disponível.");
+            }
+            
+            navigate("/facial-recognition");
+            return;
+          } catch (anyError) {
+            console.error("Couldn't access any camera:", anyError);
+            toast.error("Não foi possível acessar nenhuma câmera do dispositivo");
+            throw new Error("Camera access failed");
+          }
+        }
       }
       
-      // Navigate to facial recognition page
-      navigate("/facial-recognition");
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
       toast.error("Não foi possível acessar a câmera. Verifique suas permissões.");
     } finally {
       setIsActivating(false);
     }
+  };
+  
+  // Helper function to clean up camera streams
+  const stopStreamTracks = (stream: MediaStream) => {
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
   };
 
   return (

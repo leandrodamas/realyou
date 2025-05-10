@@ -75,6 +75,27 @@ export const signUp = async (
     if (data.user && data.session) {
       // Auto-login if email confirmation is not enabled in Supabase
       toast.success("Conta criada com sucesso!");
+      
+      // Create initial profile for the user
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: email.split('@')[0],
+            avatar_url: '/placeholder.svg',
+            updated_at: new Date().toISOString()
+          });
+          
+        if (profileError) {
+          console.error("Error creating user profile:", profileError);
+        } else {
+          console.log("Created initial profile for user:", data.user.id);
+        }
+      } catch (profileError) {
+        console.error("Exception creating profile:", profileError);
+      }
+      
       return true;
     } else if (data.user && !data.session) {
       // Email confirmation is required

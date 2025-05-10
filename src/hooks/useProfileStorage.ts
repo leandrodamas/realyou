@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { toast } from "sonner";
+import { syncProfileWithSupabase, dispatchProfileUpdate } from "@/hooks/auth/userProfileManager";
 
 export interface UserProfile {
   id: string;
@@ -61,6 +62,19 @@ export const useProfileStorage = () => {
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       
+      // Dispatch the profile updated event
+      dispatchProfileUpdate(updatedProfile);
+      
+      // Sync with Supabase in the background
+      if (user) {
+        syncProfileWithSupabase(currentUserId, updatedProfile)
+          .then(success => {
+            if (!success) {
+              console.warn("Failed to sync profile with Supabase");
+            }
+          });
+      }
+      
       return true;
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -82,6 +96,19 @@ export const useProfileStorage = () => {
       });
 
       if (result.error) throw result.error;
+      
+      // Update profile in Supabase
+      if (result.publicUrl) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: result.publicUrl })
+          .eq('id', user.id);
+          
+        if (updateError) {
+          console.error("Error updating profile with new avatar:", updateError);
+        }
+      }
+      
       return result.publicUrl;
     } catch (error) {
       console.error("Error uploading profile image:", error);
