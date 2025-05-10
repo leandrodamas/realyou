@@ -7,6 +7,7 @@ import { syncProfileWithSupabase, dispatchProfileUpdate } from "@/hooks/auth/use
 
 export interface UserProfile {
   id: string;
+  userId?: string; // Add userId as optional to match with userProfileManager's interface
   username?: string;
   fullName?: string;
   title?: string;
@@ -57,6 +58,7 @@ export const useProfileStorage = () => {
         ...existingProfile,
         ...profile,
         id: currentUserId,
+        userId: currentUserId, // Add userId field to match userProfileManager's interface
         lastUpdated: new Date().toISOString()
       };
       
