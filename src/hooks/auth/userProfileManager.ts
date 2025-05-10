@@ -2,8 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UserProfile {
-  userId: string;
-  id?: string; // Add id as optional to match with useProfileStorage's interface
+  userId?: string; // Changed from required to optional to match with useProfileStorage
+  id: string; // Made required to match with useProfileStorage
   username?: string;
   fullName?: string;
   avatar_url?: string;
@@ -31,7 +31,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       console.log("Found existing profile in Supabase:", profileData);
       const profile: UserProfile = {
         userId: userId,
-        id: userId, // Add id field to match useProfileStorage's interface
+        id: userId,
         username: profileData.full_name || email?.split('@')[0] || 'user',
         fullName: profileData.full_name,
         avatar_url: profileData.avatar_url,
@@ -64,7 +64,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       // Set up local storage
       const initialProfile: UserProfile = {
         userId: userId,
-        id: userId, // Add id field to match useProfileStorage's interface
+        id: userId,
         username: username,
         fullName: username,
         lastUpdated: new Date().toISOString()
@@ -82,7 +82,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
     if (!savedProfile) {
       const initialProfile: UserProfile = {
         userId: userId,
-        id: userId, // Add id field to match useProfileStorage's interface
+        id: userId,
         username: email?.split('@')[0] || 'user',
         lastUpdated: new Date().toISOString()
       };
