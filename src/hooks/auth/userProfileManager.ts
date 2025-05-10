@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface UserProfile {
   userId: string; // Made required to match useProfileStorage
@@ -36,8 +37,37 @@ const withRetry = async (operation: () => Promise<any>, retries = MAX_RETRIES): 
   }
 };
 
+// Função para obter dados do perfil do localStorage com segurança
+const getLocalProfile = (userId: string): UserProfile | null => {
+  try {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (!savedProfile) return null;
+    
+    const parsedProfile = JSON.parse(savedProfile);
+    if (parsedProfile && parsedProfile.userId === userId) {
+      return parsedProfile;
+    }
+    return null;
+  } catch (error) {
+    console.error("Erro ao ler perfil local:", error);
+    return null;
+  }
+};
+
+// Função para salvar dados do perfil no localStorage com segurança
+const saveLocalProfile = (profile: UserProfile): void => {
+  try {
+    localStorage.setItem('userProfile', JSON.stringify(profile));
+  } catch (error) {
+    console.error("Erro ao salvar perfil localmente:", error);
+  }
+};
+
 export const initializeUserProfile = async (userId: string, email: string | undefined): Promise<void> => {
   console.log(`Initializing user profile for: ${userId}`);
+  
+  // Cache de dados locais antes de tentar buscar do servidor
+  const localProfile = getLocalProfile(userId);
   
   try {
     // First try to get profile from Supabase
@@ -52,6 +82,12 @@ export const initializeUserProfile = async (userId: string, email: string | unde
     
     if (error) {
       console.error("Error fetching profile from Supabase:", error);
+      
+      // Se já existir um perfil local, use ele
+      if (localProfile) {
+        dispatchProfileUpdate(localProfile);
+        return;
+      }
     }
     
     // If profile exists in Supabase, use it
@@ -65,55 +101,74 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         avatar_url: profileData.avatar_url,
         profileImage: profileData.avatar_url,
         lastUpdated: new Date().toISOString(),
-        basePrice: 180,
-        currency: 'BRL',
-        title: 'Serviço Profissional'
+        basePrice: profileData.base_price || 180,
+        currency: profileData.currency || 'BRL',
+        title: profileData.profession || 'Serviço Profissional'
       };
       
-      localStorage.setItem('userProfile', JSON.stringify(profile));
+      saveLocalProfile(profile);
       dispatchProfileUpdate(profile);
+      
+      // Sincronizar alterações não sincronizadas
+      if (localProfile && new Date(localProfile.lastUpdated) > new Date(profileData.updated_at || 0)) {
+        console.log("Local profile is newer, syncing to server");
+        await syncProfileWithSupabase(userId, localProfile);
+      }
       
     } else {
       // If no profile in Supabase, create one
       console.log("No profile found in Supabase, creating one");
       const username = email?.split('@')[0] || 'user';
       
-      const { error: insertError } = await withRetry(async () => {
-        const response = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: username,
-            updated_at: new Date().toISOString()
-          });
-        return response;
-      });
-        
-      if (insertError) {
-        console.error("Error creating profile in Supabase:", insertError);
-      } else {
-        console.log("Successfully created profile in Supabase for user:", userId);
-      }
-      
-      // Set up local storage
-      const initialProfile: UserProfile = {
+      // Utilizar dados locais se disponíveis
+      const baseProfile = localProfile || {
         userId: userId,
         id: userId,
-        username: username,
+        username,
         fullName: username,
         lastUpdated: new Date().toISOString(),
         basePrice: 180,
         currency: 'BRL',
         title: 'Serviço Profissional'
       };
-      localStorage.setItem('userProfile', JSON.stringify(initialProfile));
-      dispatchProfileUpdate(initialProfile);
+      
+      // Tentar criar perfil no Supabase
+      try {
+        const { error: insertError } = await withRetry(async () => {
+          const response = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              full_name: baseProfile.fullName || baseProfile.username,
+              updated_at: new Date().toISOString()
+            });
+          return response;
+        });
+          
+        if (insertError) {
+          console.error("Error creating profile in Supabase:", insertError);
+        } else {
+          console.log("Successfully created profile in Supabase for user:", userId);
+        }
+      } catch (error) {
+        console.error("Failed to create profile in Supabase:", error);
+      }
+      
+      // Sempre usar dados locais em caso de erro
+      saveLocalProfile(baseProfile);
+      dispatchProfileUpdate(baseProfile);
     }
     
   } catch (error) {
     console.error("Exception during profile initialization:", error);
     
     // Fallback to local storage only if there's an error
+    if (localProfile) {
+      console.log("Using cached local profile due to error");
+      dispatchProfileUpdate(localProfile);
+      return;
+    }
+    
     const savedProfile = localStorage.getItem('userProfile');
     
     if (!savedProfile) {
@@ -126,7 +181,8 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         currency: 'BRL',
         title: 'Serviço Profissional'
       };
-      localStorage.setItem('userProfile', JSON.stringify(initialProfile));
+      saveLocalProfile(initialProfile);
+      dispatchProfileUpdate(initialProfile);
     }
   }
 };
@@ -149,6 +205,23 @@ export const dispatchProfileUpdate = (profile: UserProfile): void => {
 
 export const syncProfileWithSupabase = async (userId: string, profileData: Partial<UserProfile>): Promise<boolean> => {
   try {
+    // Verificar conexão antes de tentar a sincronização
+    const online = navigator.onLine;
+    if (!online) {
+      console.log("Device is offline, will sync later");
+      
+      // Marcar dados para sincronização posterior quando online
+      try {
+        const pendingSyncs = JSON.parse(localStorage.getItem('pendingProfileSyncs') || '[]');
+        pendingSyncs.push({userId, profileData, timestamp: new Date().toISOString()});
+        localStorage.setItem('pendingProfileSyncs', JSON.stringify(pendingSyncs));
+      } catch (error) {
+        console.error("Error saving pending sync data:", error);
+      }
+      
+      return false;
+    }
+    
     // Fields to sync with Supabase
     const supabaseData: any = {};
     
@@ -158,6 +231,14 @@ export const syncProfileWithSupabase = async (userId: string, profileData: Parti
     
     if (profileData.profileImage) {
       supabaseData.avatar_url = profileData.profileImage;
+    }
+    
+    if (profileData.basePrice) {
+      supabaseData.base_price = profileData.basePrice;
+    }
+    
+    if (profileData.title) {
+      supabaseData.profession = profileData.title;
     }
     
     if (Object.keys(supabaseData).length > 0) {
@@ -179,9 +260,76 @@ export const syncProfileWithSupabase = async (userId: string, profileData: Parti
       console.log("Successfully updated profile in Supabase:", supabaseData);
     }
     
+    // Processar qualquer sincronização pendente
+    try {
+      const pendingSyncs = JSON.parse(localStorage.getItem('pendingProfileSyncs') || '[]');
+      if (pendingSyncs.length > 0) {
+        // Tentar processar apenas as sincronizações do usuário atual
+        const userSyncs = pendingSyncs.filter((sync: any) => sync.userId === userId);
+        const otherSyncs = pendingSyncs.filter((sync: any) => sync.userId !== userId);
+        
+        for (const sync of userSyncs) {
+          await syncProfileWithSupabase(sync.userId, sync.profileData);
+        }
+        
+        // Atualizar apenas as sincronizações pendentes que não foram processadas
+        localStorage.setItem('pendingProfileSyncs', JSON.stringify(otherSyncs));
+      }
+    } catch (error) {
+      console.error("Error processing pending syncs:", error);
+    }
+    
     return true;
   } catch (error) {
     console.error("Exception during profile sync with Supabase:", error);
     return false;
+  }
+};
+
+// Adicionar função para manter o perfil atualizado com os dados mais recentes
+export const refreshUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  try {
+    const localProfile = getLocalProfile(userId);
+    
+    // Tentar buscar dados mais recentes do servidor
+    const { data: profileData, error } = await withRetry(async () => {
+      const response = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      return response;
+    });
+    
+    if (error) {
+      console.error("Error refreshing profile from Supabase:", error);
+      return localProfile;
+    }
+    
+    if (profileData) {
+      // Mesclar dados do servidor com dados locais para garantir que temos todas as informações
+      const updatedProfile: UserProfile = {
+        userId: userId,
+        id: userId,
+        username: profileData.full_name || localProfile?.username || 'user',
+        fullName: profileData.full_name || localProfile?.fullName,
+        avatar_url: profileData.avatar_url,
+        profileImage: profileData.avatar_url || localProfile?.profileImage,
+        lastUpdated: new Date().toISOString(),
+        basePrice: profileData.base_price || localProfile?.basePrice || 180,
+        currency: profileData.currency || localProfile?.currency || 'BRL',
+        title: profileData.profession || localProfile?.title || 'Serviço Profissional'
+      };
+      
+      saveLocalProfile(updatedProfile);
+      dispatchProfileUpdate(updatedProfile);
+      return updatedProfile;
+    }
+    
+    return localProfile;
+    
+  } catch (error) {
+    console.error("Exception during profile refresh:", error);
+    return getLocalProfile(userId);
   }
 };
