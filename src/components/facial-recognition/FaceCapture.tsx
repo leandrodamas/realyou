@@ -1,20 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import FaceCaptureCamera from "./FaceCaptureCamera";
 import SearchResults from "./components/SearchResults";
 import FaceCaptureHeader from "./components/FaceCaptureHeader";
-import { useFaceCaptureState } from "@/hooks/facial-recognition/useFaceCaptureState";
+import { useFaceCaptureState } from "@/hooks/facial-recognition";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-
-interface FaceCaptureProps {
-  onCaptureImage?: (imageData: string) => void;
-  capturedImage?: string | null;
-  setCapturedImage?: (image: string | null) => void;
-  isCameraActive?: boolean;
-  setIsCameraActive?: (active: boolean) => void;
-  isRegistrationMode?: boolean;
-}
+import type { FaceCaptureProps } from "@/hooks/facial-recognition";
 
 const FaceCapture: React.FC<FaceCaptureProps> = ({
   onCaptureImage,
