@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { DollarSign, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
+import { useProfileStorage, DEFAULT_PROFILE } from "@/hooks/facial-recognition/useProfileStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,7 +13,7 @@ interface ServicePricingProps {
 
 const ServicePricing: React.FC<ServicePricingProps> = ({ isOwner = false }) => {
   const { saveProfile, getProfile } = useProfileStorage();
-  const profile = getProfile() || {};
+  const profile = getProfile() || DEFAULT_PROFILE;
   
   const [isEditing, setIsEditing] = useState(false);
   const [basePrice, setBasePrice] = useState(profile.basePrice || 180);

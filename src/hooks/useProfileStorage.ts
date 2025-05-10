@@ -19,7 +19,21 @@ export interface UserProfile {
   skillsCount?: number;
   lastUpdated: string; // Changed from optional to required to match userProfileManager
   createdAt?: string;
+  basePrice?: number;
+  currency?: string;
 }
+
+// Default profile with required fields
+export const DEFAULT_PROFILE: UserProfile = {
+  id: '',
+  userId: '',
+  lastUpdated: new Date().toISOString(),
+  profileImage: '',
+  fullName: '',
+  basePrice: 180,
+  currency: 'BRL',
+  title: 'Serviço Profissional'
+};
 
 export const useProfileStorage = () => {
   const { user } = useAuth();

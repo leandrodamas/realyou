@@ -13,8 +13,22 @@ export interface UserProfile {
   faceRegistered?: boolean;
   registrationTimestamp?: string;
   lastUpdated: string; // Changed from optional to required for consistency
+  basePrice?: number; // Added to match usage in components
+  currency?: string; // Added to match usage in components
+  title?: string; // Added to match usage in components
   [key: string]: any;
 }
+
+// Default profile with required fields and common optional fields
+export const DEFAULT_PROFILE: UserProfile = {
+  userId: '',
+  lastUpdated: new Date().toISOString(),
+  profileImage: '',
+  fullName: '',
+  basePrice: 180,
+  currency: 'BRL',
+  title: 'Serviço Profissional'
+};
 
 export const useProfileStorage = () => {
   const { user } = useAuth();
@@ -26,6 +40,7 @@ export const useProfileStorage = () => {
       const profile: Partial<UserProfile> = savedProfile ? JSON.parse(savedProfile) : {};
       
       const updatedProfile: UserProfile = {
+        ...DEFAULT_PROFILE,
         ...profile as UserProfile,
         ...profileData,
         userId: profile.userId || user?.id || '', // Ensure userId is always set

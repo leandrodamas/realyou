@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Drawer } from "@/components/ui/drawer";
@@ -6,7 +7,7 @@ import ScheduleSuccessDrawer from "./schedule/ScheduleSuccessDrawer";
 import PublicToggle from "./service/PublicToggle";
 import MarketingPrompt from "./service/MarketingPrompt";
 import ServiceInformation from "./service/ServiceInformation";
-import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
+import { useProfileStorage, DEFAULT_PROFILE } from "@/hooks/facial-recognition/useProfileStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -32,7 +33,7 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
   
   const { getProfile } = useProfileStorage();
   const { user } = useAuth();
-  const profile = getProfile() || {};
+  const profile = getProfile() || DEFAULT_PROFILE;
   
   const [profileData, setProfileData] = useState({
     profileImage: profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
