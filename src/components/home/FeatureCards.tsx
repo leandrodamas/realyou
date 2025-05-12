@@ -33,6 +33,8 @@ const FeatureCards: React.FC = () => {
       navigate("/auth");
       return;
     }
+    
+    console.log("Navigating to:", path);
     navigate(path);
   };
 
@@ -62,7 +64,10 @@ const FeatureCards: React.FC = () => {
           variants={item}
           className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 h-full cursor-pointer"
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-          onClick={() => handleProtectedLink("/advanced-search")}
+          onClick={() => {
+            console.log("3D Search clicked");
+            handleProtectedLink("/advanced-search");
+          }}
         >
           <div className="h-24 bg-gradient-to-r from-purple-500/20 to-blue-500/20 flex items-center justify-center">
             <div className="rounded-full bg-white p-3 shadow-md">
@@ -80,7 +85,10 @@ const FeatureCards: React.FC = () => {
           variants={item}
           className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 h-full cursor-pointer"
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-          onClick={() => handleProtectedLink("/timeline")}
+          onClick={() => {
+            console.log("Timeline clicked");
+            handleProtectedLink("/timeline");
+          }}
         >
           <div className="h-24 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
             <div className="rounded-full bg-white p-3 shadow-md">
@@ -98,7 +106,10 @@ const FeatureCards: React.FC = () => {
           variants={item}
           className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 h-full cursor-pointer"
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-          onClick={() => handleProtectedLink("/onboarding")}
+          onClick={() => {
+            console.log("Onboarding clicked");
+            handleProtectedLink("/onboarding");
+          }}
         >
           <div className="h-24 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 flex items-center justify-center">
             <div className="rounded-full bg-white p-3 shadow-md">
@@ -116,7 +127,10 @@ const FeatureCards: React.FC = () => {
           variants={item}
           className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 h-full cursor-pointer"
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-          onClick={() => handleProtectedLink("/search")}
+          onClick={() => {
+            console.log("Search clicked");
+            handleProtectedLink("/search");
+          }}
         >
           <div className="h-24 bg-gradient-to-r from-green-500/20 to-teal-500/20 flex items-center justify-center">
             <div className="rounded-full bg-white p-3 shadow-md">

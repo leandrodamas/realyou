@@ -10,6 +10,8 @@ interface ViewToggleProps {
 }
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
+  console.log("ViewToggle: Current view:", view);
+  
   return (
     <div className="bg-white border-b">
       <div className="flex justify-center p-2">
@@ -21,7 +23,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               "rounded-full",
               view === "map" && "bg-white shadow-sm"
             )}
-            onClick={() => setView("map")}
+            onClick={() => {
+              console.log("Switching to map view");
+              setView("map");
+            }}
           >
             <Layers className="h-4 w-4 mr-1" />
             Mapa 3D
@@ -33,7 +38,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               "rounded-full",
               view === "list" && "bg-white shadow-sm"
             )}
-            onClick={() => setView("list")}
+            onClick={() => {
+              console.log("Switching to list view");
+              setView("list");
+            }}
           >
             <Users className="h-4 w-4 mr-1" />
             Lista

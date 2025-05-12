@@ -19,6 +19,7 @@ const Index: React.FC = () => {
   
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    console.log("Index page loaded, auth state:", user ? "logged in" : "not logged in");
   }, []);
 
   return (
@@ -52,7 +53,10 @@ const Index: React.FC = () => {
                 </p>
                 <Button 
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:opacity-90"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => {
+                    console.log("Navigating to /auth");
+                    navigate("/auth");
+                  }}
                 >
                   Entrar ou Criar Conta <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

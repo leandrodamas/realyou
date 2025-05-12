@@ -14,7 +14,11 @@ const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
 }) => {
   // Check if a day has any free appointments
   const hasFreeAppointment = (date: Date) => {
+    if (!appointments || appointments.length === 0) return false;
+    
     return appointments.some(appointment => 
+      appointment && 
+      appointment.date && 
       isSameDay(appointment.date, date) && 
       appointment.type === "free"
     );
@@ -35,7 +39,10 @@ const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
                 ? "bg-purple-50 border-b-2 border-b-purple-500" 
                 : "hover:bg-gray-50"
             )}
-            onClick={() => onDaySelect(date)}
+            onClick={() => {
+              console.log("Day selected:", format(date, "yyyy-MM-dd"));
+              onDaySelect(date);
+            }}
           >
             <p className="text-xs uppercase text-gray-500">
               {format(date, "EEE", { locale: ptBR })}
