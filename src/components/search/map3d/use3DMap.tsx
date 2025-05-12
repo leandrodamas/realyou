@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Professional } from "@/types/Professional";
 
@@ -8,6 +9,7 @@ export const use3DMap = (professionals: Professional[]) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Update login state when user changes
   useEffect(() => {
@@ -53,11 +55,17 @@ export const use3DMap = (professionals: Professional[]) => {
   }, [professionals, user]);
 
   const handleBecomeProfessional = () => {
+    console.log("handleBecomeProfessional chamado, estado de login:", isLoggedIn);
+    
     if (!isLoggedIn) {
+      console.log("Usuário não está logado, redirecionando para autenticação");
       toast.info("Faça login para se tornar um profissional");
+      navigate("/auth");
     } else {
-      // Logic for registered users
-      toast.info("Preparando seu cadastro profissional...");
+      // Logic for registered users - redirect to onboarding
+      console.log("Usuário logado, redirecionando para onboarding");
+      toast.success("Preparando seu cadastro profissional...");
+      navigate("/onboarding");
     }
   };
   

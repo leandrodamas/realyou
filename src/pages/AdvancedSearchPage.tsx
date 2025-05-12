@@ -24,18 +24,18 @@ const AdvancedSearchPage: React.FC = () => {
   useEffect(() => {
     const fetchProfessionals = async () => {
       setIsLoading(true);
-      console.log("Fetching professionals data");
+      console.log("Buscando dados de profissionais");
       
       try {
         const data = await getProfessionals();
-        console.log("Fetched professionals:", data.length);
+        console.log(`Encontrados ${data.length} profissionais`);
         setProfessionals(data);
         
         if (data.length === 0) {
           toast.info("Nenhum profissional encontrado. Tente novamente mais tarde.");
         }
       } catch (error) {
-        console.error("Error fetching professionals:", error);
+        console.error("Erro ao buscar profissionais:", error);
         setProfessionals([]);
         toast.error("Erro ao buscar profissionais");
       } finally {
@@ -47,7 +47,7 @@ const AdvancedSearchPage: React.FC = () => {
   }, []);
 
   const addRemoveFilter = (filter: string) => {
-    console.log("Toggle filter:", filter);
+    console.log("Toggle filtro:", filter);
     
     if (activeFilters.includes(filter)) {
       setActiveFilters(activeFilters.filter(f => f !== filter));
@@ -59,7 +59,7 @@ const AdvancedSearchPage: React.FC = () => {
   };
 
   const resetAllFilters = () => {
-    console.log("Resetting all filters");
+    console.log("Redefinindo todos os filtros");
     setPriceRange([50, 200]);
     setMaxDistance(10);
     setActiveFilters([]);
@@ -76,7 +76,7 @@ const AdvancedSearchPage: React.FC = () => {
     activeFilters
   );
   
-  console.log("Filtered professionals:", filteredProfessionals.length);
+  console.log(`Profissionais filtrados: ${filteredProfessionals.length}`);
 
   return (
     <div className="bg-gray-50 min-h-screen">
