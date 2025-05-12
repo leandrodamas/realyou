@@ -8,6 +8,7 @@ import ActiveFilters from "@/components/search/ActiveFilters";
 import ViewToggle from "@/components/search/ViewToggle";
 import MapView from "@/components/search/MapView";
 import ListView from "@/components/search/ListView";
+import { toast } from "sonner";
 
 const AdvancedSearchPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,12 +24,20 @@ const AdvancedSearchPage: React.FC = () => {
   useEffect(() => {
     const fetchProfessionals = async () => {
       setIsLoading(true);
+      console.log("Fetching professionals data");
+      
       try {
         const data = await getProfessionals();
+        console.log("Fetched professionals:", data.length);
         setProfessionals(data);
+        
+        if (data.length === 0) {
+          toast.info("Nenhum profissional encontrado. Tente novamente mais tarde.");
+        }
       } catch (error) {
         console.error("Error fetching professionals:", error);
         setProfessionals([]);
+        toast.error("Erro ao buscar profissionais");
       } finally {
         setIsLoading(false);
       }
@@ -38,18 +47,24 @@ const AdvancedSearchPage: React.FC = () => {
   }, []);
 
   const addRemoveFilter = (filter: string) => {
+    console.log("Toggle filter:", filter);
+    
     if (activeFilters.includes(filter)) {
       setActiveFilters(activeFilters.filter(f => f !== filter));
+      toast.success(`Filtro "${filter}" removido`);
     } else {
       setActiveFilters([...activeFilters, filter]);
+      toast.success(`Filtro "${filter}" adicionado`);
     }
   };
 
   const resetAllFilters = () => {
+    console.log("Resetting all filters");
     setPriceRange([50, 200]);
     setMaxDistance(10);
     setActiveFilters([]);
     setSearchTerm("");
+    toast.success("Todos os filtros foram limpos");
   };
 
   // Filter professionals based on active filters and search term
@@ -60,6 +75,8 @@ const AdvancedSearchPage: React.FC = () => {
     maxDistance,
     activeFilters
   );
+  
+  console.log("Filtered professionals:", filteredProfessionals.length);
 
   return (
     <div className="bg-gray-50 min-h-screen">

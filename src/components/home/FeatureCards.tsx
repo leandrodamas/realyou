@@ -27,15 +27,22 @@ const FeatureCards: React.FC = () => {
   };
 
   // Handler for protected routes
-  const handleProtectedLink = (path: string) => {
+  const handleProtectedLink = (path: string, featureName: string) => {
+    console.log(`${featureName} clicked, navigating to: ${path}`);
+    
     if (!user) {
       toast.error("Você precisa estar logado para acessar esta funcionalidade");
       navigate("/auth");
       return;
     }
     
-    console.log("Navigating to:", path);
-    navigate(path);
+    try {
+      navigate(path);
+      toast.success(`Navegando para ${featureName}`);
+    } catch (error) {
+      console.error(`Navigation error for ${path}:`, error);
+      toast.error(`Erro ao navegar para ${featureName}`);
+    }
   };
 
   return (
@@ -66,7 +73,7 @@ const FeatureCards: React.FC = () => {
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
           onClick={() => {
             console.log("3D Search clicked");
-            handleProtectedLink("/advanced-search");
+            handleProtectedLink("/advanced-search", "Busca 3D");
           }}
         >
           <div className="h-24 bg-gradient-to-r from-purple-500/20 to-blue-500/20 flex items-center justify-center">
@@ -87,7 +94,7 @@ const FeatureCards: React.FC = () => {
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
           onClick={() => {
             console.log("Timeline clicked");
-            handleProtectedLink("/timeline");
+            handleProtectedLink("/timeline", "Agenda Visual");
           }}
         >
           <div className="h-24 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
@@ -108,7 +115,7 @@ const FeatureCards: React.FC = () => {
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
           onClick={() => {
             console.log("Onboarding clicked");
-            handleProtectedLink("/onboarding");
+            handleProtectedLink("/onboarding", "Perfil Completo");
           }}
         >
           <div className="h-24 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 flex items-center justify-center">
@@ -129,7 +136,7 @@ const FeatureCards: React.FC = () => {
           whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
           onClick={() => {
             console.log("Search clicked");
-            handleProtectedLink("/search");
+            handleProtectedLink("/search", "Match Pro");
           }}
         >
           <div className="h-24 bg-gradient-to-r from-green-500/20 to-teal-500/20 flex items-center justify-center">

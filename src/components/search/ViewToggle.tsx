@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Layers, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ViewToggleProps {
   view: "map" | "list";
@@ -11,6 +12,18 @@ interface ViewToggleProps {
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
   console.log("ViewToggle: Current view:", view);
+  
+  const handleViewChange = (newView: "map" | "list") => {
+    console.log(`Switching to ${newView} view`);
+    
+    try {
+      setView(newView);
+      toast.success(`Visualização alterada para ${newView === "map" ? "Mapa 3D" : "Lista"}`);
+    } catch (error) {
+      console.error("Error changing view:", error);
+      toast.error("Erro ao mudar a visualização");
+    }
+  };
   
   return (
     <div className="bg-white border-b">
@@ -23,10 +36,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               "rounded-full",
               view === "map" && "bg-white shadow-sm"
             )}
-            onClick={() => {
-              console.log("Switching to map view");
-              setView("map");
-            }}
+            onClick={() => handleViewChange("map")}
           >
             <Layers className="h-4 w-4 mr-1" />
             Mapa 3D
@@ -38,10 +48,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               "rounded-full",
               view === "list" && "bg-white shadow-sm"
             )}
-            onClick={() => {
-              console.log("Switching to list view");
-              setView("list");
-            }}
+            onClick={() => handleViewChange("list")}
           >
             <Users className="h-4 w-4 mr-1" />
             Lista
