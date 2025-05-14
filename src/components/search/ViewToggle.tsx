@@ -14,6 +14,11 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
   console.log("ViewToggle: Current view:", view);
   
   const handleViewChange = (newView: "map" | "list") => {
+    if (newView === view) {
+      console.log(`Already in ${newView} view, no change needed`);
+      return;
+    }
+    
     console.log(`Switching to ${newView} view`);
     
     try {
@@ -37,6 +42,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               view === "map" && "bg-white shadow-sm"
             )}
             onClick={() => handleViewChange("map")}
+            data-testid="map-view-toggle"
           >
             <Layers className="h-4 w-4 mr-1" />
             Mapa 3D
@@ -49,6 +55,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
               view === "list" && "bg-white shadow-sm"
             )}
             onClick={() => handleViewChange("list")}
+            data-testid="list-view-toggle"
           >
             <Users className="h-4 w-4 mr-1" />
             Lista
