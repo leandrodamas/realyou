@@ -1,11 +1,11 @@
 
 import React from "react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, MapPin, Clock, Star } from "lucide-react";
 
-interface ActiveFiltersProps {
-  priceRange: number[];
+export interface ActiveFiltersProps {
+  priceRange: [number, number];
   maxDistance: number;
   activeFilters: string[];
   resetFilters: () => void;
@@ -17,38 +17,52 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
   activeFilters,
   resetFilters
 }) => {
-  if (activeFilters.length === 0) {
+  if (
+    priceRange[0] === 0 &&
+    priceRange[1] === 500 &&
+    maxDistance === 10 &&
+    activeFilters.length === 0
+  ) {
     return null;
   }
 
   return (
-    <div className="bg-white px-4 py-2 border-b flex items-center gap-2 overflow-x-auto scrollbar-none">
-      <Badge variant="outline" className="flex gap-1 bg-purple-50 border-purple-200">
-        <DollarSign className="h-3 w-3" />
-        R${priceRange[0]} - R${priceRange[1]}
-      </Badge>
-      <Badge variant="outline" className="flex gap-1 bg-purple-50 border-purple-200">
-        <MapPin className="h-3 w-3" />
-        Até {maxDistance}km
-      </Badge>
+    <div className="mt-2 flex flex-wrap gap-2" data-testid="active-filters">
+      {priceRange[0] > 0 || priceRange[1] < 500 ? (
+        <Badge variant="outline" className="flex items-center gap-1">
+          R${priceRange[0]} - R${priceRange[1]}
+          <X className="h-3 w-3 cursor-pointer" />
+        </Badge>
+      ) : null}
+
+      {maxDistance !== 10 ? (
+        <Badge variant="outline" className="flex items-center gap-1">
+          Até {maxDistance}km
+          <X className="h-3 w-3 cursor-pointer" />
+        </Badge>
+      ) : null}
+
       {activeFilters.includes("today") && (
-        <Badge variant="outline" className="flex gap-1 bg-purple-50 border-purple-200">
-          <Clock className="h-3 w-3" />
-          Hoje
+        <Badge variant="outline" className="flex items-center gap-1">
+          Disponível hoje
+          <X className="h-3 w-3 cursor-pointer" />
         </Badge>
       )}
+
       {activeFilters.includes("highRated") && (
-        <Badge variant="outline" className="flex gap-1 bg-purple-50 border-purple-200">
-          <Star className="h-3 w-3" />
-          4.8+
+        <Badge variant="outline" className="flex items-center gap-1">
+          Bem avaliados
+          <X className="h-3 w-3 cursor-pointer" />
         </Badge>
       )}
-      <Button 
-        variant="ghost" 
-        className="text-xs text-gray-500 p-0 h-auto"
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-2 text-xs text-muted-foreground"
         onClick={resetFilters}
       >
-        Limpar
+        Limpar filtros
       </Button>
     </div>
   );
