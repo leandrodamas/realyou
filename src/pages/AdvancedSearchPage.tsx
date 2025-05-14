@@ -85,7 +85,11 @@ const AdvancedSearchPage: React.FC = () => {
       </div>
       
       {view === "list" ? (
-        <ListView professionals={professionals || []} isLoading={isLoading} />
+        <ListView 
+          professionals={professionals || []} 
+          isLoading={isLoading} 
+          resetAllFilters={resetFilters} 
+        />
       ) : (
         <MapView professionals={professionals || []} isLoading={isLoading} />
       )}
