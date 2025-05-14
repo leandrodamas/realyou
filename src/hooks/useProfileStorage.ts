@@ -1,26 +1,9 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { toast } from "sonner";
 import { syncProfileWithSupabase, dispatchProfileUpdate, UserProfile } from "@/hooks/auth/profile";
-
-export interface UserProfile {
-  id: string;
-  userId: string; // Changed from optional to required to match userProfileManager
-  username?: string;
-  fullName?: string;
-  title?: string;
-  bio?: string;
-  profileImage?: string;
-  coverImage?: string;
-  postCount?: number;
-  connectionCount?: number;
-  skillsCount?: number;
-  lastUpdated: string; // Changed from optional to required to match userProfileManager
-  createdAt?: string;
-  basePrice?: number;
-  currency?: string;
-}
 
 // Default profile with required fields
 export const DEFAULT_PROFILE: UserProfile = {

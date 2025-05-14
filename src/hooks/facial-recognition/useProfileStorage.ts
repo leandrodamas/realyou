@@ -2,7 +2,8 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useFileUpload } from "@/hooks/useFileUpload";
+import { useFileUpload } from "@/hooks/file-upload";
+import { UserProfile as ProfileType } from "@/hooks/auth/profile/types";
 
 export interface UserProfile {
   userId: string; // Changed from optional to required for consistency

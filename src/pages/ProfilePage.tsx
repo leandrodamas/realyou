@@ -8,6 +8,7 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import FloatingActionButton from "@/components/profile/FloatingActionButton";
 import { useAuth } from "@/hooks/auth";
 import { useNavigate } from "react-router-dom";
+import { initializeUserProfile } from "@/hooks/auth/profile";
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
