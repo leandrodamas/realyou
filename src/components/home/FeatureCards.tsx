@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Map, Calendar, Award, Users, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
@@ -75,6 +75,7 @@ const FeatureCards: React.FC = () => {
             console.log("3D Search clicked");
             handleProtectedLink("/advanced-search", "Busca 3D");
           }}
+          data-testid="advanced-search-card"
         >
           <div className="h-24 bg-gradient-to-r from-purple-500/20 to-blue-500/20 flex items-center justify-center">
             <div className="rounded-full bg-white p-3 shadow-md">
