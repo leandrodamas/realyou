@@ -1,130 +1,54 @@
 
-import React, { useState, useEffect } from "react";
-import { Professional } from "@/types/Professional";
-import { getProfessionals, filterProfessionals } from "@/services/professionalService";
+import React, { useEffect } from "react";
+import { motion } from "framer-motion";
 import SearchHeader from "@/components/search/SearchHeader";
+import ViewToggle from "@/components/search/ViewToggle";
+import ListView from "@/components/search/ListView";
+import MapView from "@/components/search/MapView";
 import FilterDrawer from "@/components/search/FilterDrawer";
 import ActiveFilters from "@/components/search/ActiveFilters";
-import ViewToggle from "@/components/search/ViewToggle";
-import MapView from "@/components/search/MapView";
-import ListView from "@/components/search/ListView";
+import { useSearchProfessionals } from "@/hooks/useSearchProfessionals";
 import { toast } from "sonner";
 
 const AdvancedSearchPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [view, setView] = useState<"map" | "list">("map");
-  const [priceRange, setPriceRange] = useState([50, 200]); // Min-max price range
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
-  const [maxDistance, setMaxDistance] = useState(10); // km
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Fetch professionals data on component mount
+  const [view, setView] = React.useState<"list" | "map">("map");
+  const { professionals, isLoading, error } = useSearchProfessionals();
+
   useEffect(() => {
-    const fetchProfessionals = async () => {
-      setIsLoading(true);
-      console.log("Buscando dados de profissionais");
-      
-      try {
-        const data = await getProfessionals();
-        console.log(`Encontrados ${data.length} profissionais`);
-        setProfessionals(data);
-        
-        if (data.length === 0) {
-          toast.info("Nenhum profissional encontrado. Tente novamente mais tarde.");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar profissionais:", error);
-        setProfessionals([]);
-        toast.error("Erro ao buscar profissionais");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    console.log("Advanced Search Page loaded, showing", view, "view");
     
-    fetchProfessionals();
-  }, []);
-
-  const addRemoveFilter = (filter: string) => {
-    console.log("Toggle filtro:", filter);
-    
-    if (activeFilters.includes(filter)) {
-      setActiveFilters(activeFilters.filter(f => f !== filter));
-      toast.success(`Filtro "${filter}" removido`);
-    } else {
-      setActiveFilters([...activeFilters, filter]);
-      toast.success(`Filtro "${filter}" adicionado`);
+    if (error) {
+      console.error("Error loading professionals:", error);
+      toast.error("Não foi possível carregar os profissionais");
     }
-  };
-
-  const resetAllFilters = () => {
-    console.log("Redefinindo todos os filtros");
-    setPriceRange([50, 200]);
-    setMaxDistance(10);
-    setActiveFilters([]);
-    setSearchTerm("");
-    toast.success("Todos os filtros foram limpos");
-  };
-
-  // Filter professionals based on active filters and search term
-  const filteredProfessionals = filterProfessionals(
-    professionals,
-    searchTerm,
-    priceRange,
-    maxDistance,
-    activeFilters
-  );
-  
-  console.log(`Profissionais filtrados: ${filteredProfessionals.length}`);
+    
+    // Log when page is loaded
+    console.log("Advanced Search Page mounted with professionals:", professionals?.length || 0);
+  }, [view, error, professionals]);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <SearchHeader 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        showFilterDrawer={showFilterDrawer}
-        setShowFilterDrawer={setShowFilterDrawer}
-      />
+    <motion.div
+      className="pb-16"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      data-testid="advanced-search-page"
+    >
+      <SearchHeader />
       
-      <ActiveFilters 
-        priceRange={priceRange}
-        maxDistance={maxDistance}
-        activeFilters={activeFilters}
-        resetFilters={resetAllFilters}
-      />
+      <div className="px-4 pt-2">
+        <ViewToggle view={view} setView={setView} />
+        <ActiveFilters />
+      </div>
       
-      <ViewToggle view={view} setView={setView} />
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-        </div>
+      {view === "list" ? (
+        <ListView professionals={professionals || []} isLoading={isLoading} />
       ) : (
-        <>
-          {view === "map" && <MapView professionals={filteredProfessionals} />}
-          
-          {view === "list" && (
-            <ListView 
-              professionals={filteredProfessionals} 
-              resetAllFilters={resetAllFilters}
-            />
-          )}
-        </>
+        <MapView professionals={professionals || []} isLoading={isLoading} />
       )}
 
-      <FilterDrawer
-        open={showFilterDrawer}
-        onOpenChange={setShowFilterDrawer}
-        priceRange={priceRange}
-        setPriceRange={setPriceRange}
-        maxDistance={maxDistance}
-        setMaxDistance={setMaxDistance}
-        activeFilters={activeFilters}
-        addRemoveFilter={addRemoveFilter}
-        resetFilters={resetAllFilters}
-      />
-    </div>
+      <FilterDrawer />
+    </motion.div>
   );
 };
 

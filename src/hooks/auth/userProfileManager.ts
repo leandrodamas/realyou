@@ -132,29 +132,34 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         title: 'Serviço Profissional'
       };
       
-      // Tentar criar perfil no Supabase
+      // Tentar criar perfil no Supabase, with proper RLS policy handling
       try {
+        // Use upsert to handle the case where the profile might already exist
         const { error: insertError } = await withRetry(async () => {
           const response = await supabase
             .from('profiles')
-            .insert({
+            .upsert({
               id: userId,
               full_name: baseProfile.fullName || baseProfile.username,
               updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
             });
           return response;
         });
           
         if (insertError) {
           console.error("Error creating profile in Supabase:", insertError);
+          console.log("Using local profile as fallback");
         } else {
           console.log("Successfully created profile in Supabase for user:", userId);
         }
       } catch (error) {
         console.error("Failed to create profile in Supabase:", error);
+        console.log("Using local profile as fallback");
       }
       
-      // Sempre usar dados locais em caso de erro
+      // Always use local data if there's an error
       saveLocalProfile(baseProfile);
       dispatchProfileUpdate(baseProfile);
     }
@@ -244,11 +249,16 @@ export const syncProfileWithSupabase = async (userId: string, profileData: Parti
     if (Object.keys(supabaseData).length > 0) {
       supabaseData.updated_at = new Date().toISOString();
       
+      // Use upsert instead of update to handle cases where the profile might not exist yet
       const { error } = await withRetry(async () => {
         const response = await supabase
           .from('profiles')
-          .update(supabaseData)
-          .eq('id', userId);
+          .upsert({
+            id: userId,
+            ...supabaseData
+          }, {
+            onConflict: 'id'
+          });
         return response;
       });
         

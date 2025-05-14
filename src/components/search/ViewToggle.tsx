@@ -1,66 +1,65 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Layers, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Map, List } from "lucide-react";
 
 interface ViewToggleProps {
-  view: "map" | "list";
-  setView: (view: "map" | "list") => void;
+  view: "list" | "map";
+  setView: (view: "list" | "map") => void;
 }
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView }) => {
-  console.log("ViewToggle: Current view:", view);
-  
-  const handleViewChange = (newView: "map" | "list") => {
-    if (newView === view) {
-      console.log(`Already in ${newView} view, no change needed`);
-      return;
-    }
+  const handleViewChange = (newView: "list" | "map") => {
+    if (newView === view) return; // Don't change if it's already the active view
     
-    console.log(`Switching to ${newView} view`);
-    
-    try {
-      setView(newView);
-      toast.success(`Visualização alterada para ${newView === "map" ? "Mapa 3D" : "Lista"}`);
-    } catch (error) {
-      console.error("Error changing view:", error);
-      toast.error("Erro ao mudar a visualização");
-    }
+    console.log(`Changing view from ${view} to ${newView}`);
+    setView(newView);
   };
-  
+
   return (
-    <div className="bg-white border-b">
-      <div className="flex justify-center p-2">
-        <div className="bg-gray-100 rounded-full p-1 flex">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "rounded-full",
-              view === "map" && "bg-white shadow-sm"
-            )}
-            onClick={() => handleViewChange("map")}
-            data-testid="map-view-toggle"
-          >
-            <Layers className="h-4 w-4 mr-1" />
-            Mapa 3D
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "rounded-full",
-              view === "list" && "bg-white shadow-sm"
-            )}
-            onClick={() => handleViewChange("list")}
-            data-testid="list-view-toggle"
-          >
-            <Users className="h-4 w-4 mr-1" />
-            Lista
-          </Button>
-        </div>
+    <div className="flex items-center justify-between mb-3">
+      <div className="text-sm font-medium text-gray-500">Visualização:</div>
+      
+      <div className="flex items-center bg-gray-100 rounded-full p-1">
+        <button
+          onClick={() => handleViewChange("list")}
+          className={`relative px-3 py-1 rounded-full flex items-center text-xs font-medium transition-colors ${
+            view === "list" ? "text-white" : "text-gray-500 hover:text-gray-700"
+          }`}
+          data-testid="list-view-button"
+          aria-label="Visualização em lista"
+        >
+          {view === "list" && (
+            <motion.div
+              className="absolute inset-0 bg-blue-600 rounded-full"
+              layoutId="viewSelection"
+              initial={false}
+              transition={{ type: "spring", duration: 0.6 }}
+            />
+          )}
+          <List className="h-3 w-3 mr-1" />
+          <span className="relative z-10">Lista</span>
+        </button>
+        
+        <button
+          onClick={() => handleViewChange("map")}
+          className={`relative px-3 py-1 rounded-full flex items-center text-xs font-medium transition-colors ${
+            view === "map" ? "text-white" : "text-gray-500 hover:text-gray-700"
+          }`}
+          data-testid="map-view-button"
+          aria-label="Visualização em mapa"
+        >
+          {view === "map" && (
+            <motion.div
+              className="absolute inset-0 bg-blue-600 rounded-full"
+              layoutId="viewSelection"
+              initial={false}
+              transition={{ type: "spring", duration: 0.6 }}
+            />
+          )}
+          <Map className="h-3 w-3 mr-1" />
+          <span className="relative z-10">Mapa 3D</span>
+        </button>
       </div>
     </div>
   );
