@@ -169,7 +169,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
     
     // Fallback to local storage only if there's an error
     if (localProfile) {
-      console.log("Using cached local profile due to error");
+      console.log("Using local profile as fallback");
       dispatchProfileUpdate(localProfile);
       return;
     }

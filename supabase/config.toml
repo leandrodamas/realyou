@@ -6,3 +6,16 @@ verify_jwt = false
 
 [functions.create-subscription-plan]
 verify_jwt = true
+
+[auth.email]
+enable_sign_up = true
+double_confirm_changes = true
+
+[realtime]
+enable_permissions = true
+
+[postgres]
+enable_restart = true
+
+[postgres.extensions]
+pgcrypto = true

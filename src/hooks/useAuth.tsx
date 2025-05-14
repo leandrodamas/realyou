@@ -1,5 +1,5 @@
 
-import { useAuth } from './auth';
-import { AuthProvider } from './auth';
+import { useAuth as useAuthHook } from './auth/AuthContext';
+import { AuthProvider } from './auth/AuthProvider';
 
-export { useAuth, AuthProvider };
+export { useAuthHook as useAuth, AuthProvider };

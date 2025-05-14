@@ -5,7 +5,7 @@ import { Search, Bell, User, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { useProfileStorage } from "@/hooks/facial-recognition/useProfileStorage";
+import { useProfileStorage } from "@/hooks/useProfileStorage";
 
 const HomeHeader: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -14,6 +14,8 @@ const HomeHeader: React.FC = () => {
   
   // Função para calcular iniciais com base no nome
   const calculateInitials = (name: string): string => {
+    if (!name) return "ME";
+    
     const nameParts = name.trim().split(' ');
     let initials = '';
     
@@ -36,12 +38,16 @@ const HomeHeader: React.FC = () => {
     
     if (profile.profileImage) {
       setProfileImage(profile.profileImage);
+    } else if (profile.avatar_url) {
+      setProfileImage(profile.avatar_url);
     }
     
     if (profile.fullName) {
       setUserInitials(calculateInitials(profile.fullName));
     } else if (profile.username) {
       setUserInitials(profile.username.substring(0, 2).toUpperCase());
+    } else if (profile.full_name) {
+      setUserInitials(calculateInitials(profile.full_name));
     }
   };
   
@@ -76,12 +82,25 @@ const HomeHeader: React.FC = () => {
       }
     };
     
-    // Adiciona o listener de eventos
-    document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    const handleProfileLoaded = (event: CustomEvent<{profile: any}>) => {
+      try {
+        console.log("HomeHeader: Recebido evento de carregamento de perfil");
+        if (event.detail && event.detail.profile) {
+          updateProfileDisplay(event.detail.profile);
+        }
+      } catch (error) {
+        console.error("HomeHeader: Erro ao processar carregamento de perfil:", error);
+      }
+    };
     
-    // Limpa o listener quando o componente for desmontado
+    // Adiciona os listeners de eventos
+    document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    document.addEventListener('profileLoaded', handleProfileLoaded as EventListener);
+    
+    // Limpa os listeners quando o componente for desmontado
     return () => {
       document.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+      document.removeEventListener('profileLoaded', handleProfileLoaded as EventListener);
     };
   }, [getProfile]);
 

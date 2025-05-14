@@ -43,16 +43,39 @@ const ProfilePage: React.FC = () => {
           return;
         }
         
-        // Buscar dados do perfil
+        // First check localStorage for cached profile
+        const cachedProfile = localStorage.getItem('userProfile');
+        if (cachedProfile) {
+          try {
+            const profileData = JSON.parse(cachedProfile);
+            setProfile({
+              name: profileData.fullName || profileData.username || "Seu Perfil",
+              title: profileData.title || "Configure seu perfil profissional",
+              avatar: profileData.profileImage || profileData.avatar_url || "/placeholder.svg",
+              coverImage: profileData.coverImage || "",
+              postCount: profileData.postCount || 0,
+              connectionCount: profileData.connectionCount || 0,
+              skillsCount: profileData.skillsCount || 0
+            });
+          } catch (error) {
+            console.error("Error parsing cached profile:", error);
+          }
+        }
+        
+        // Then try to fetch from Supabase
         const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error("Erro ao carregar perfil:", error);
-          toast.error("Não foi possível carregar seu perfil");
+          
+          // Still using the cached profile if we have it
+          if (!cachedProfile) {
+            toast.error("Não foi possível carregar seu perfil");
+          }
           setIsLoading(false);
           return;
         }
@@ -76,6 +99,28 @@ const ProfilePage: React.FC = () => {
     };
     
     loadProfile();
+    
+    // Listen for profile updates
+    const handleProfileUpdate = (e: Event) => {
+      if (e instanceof CustomEvent && e.detail?.profile) {
+        const updatedProfile = e.detail.profile;
+        setProfile({
+          name: updatedProfile.fullName || updatedProfile.username || "Seu Perfil",
+          title: updatedProfile.title || "Configure seu perfil profissional",
+          avatar: updatedProfile.profileImage || updatedProfile.avatar_url || "/placeholder.svg",
+          coverImage: updatedProfile.coverImage || "",
+          postCount: 0,
+          connectionCount: 0,
+          skillsCount: 0
+        });
+      }
+    };
+    
+    document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    
+    return () => {
+      document.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
   }, [user]);
 
   const openSettings = (section?: string) => {

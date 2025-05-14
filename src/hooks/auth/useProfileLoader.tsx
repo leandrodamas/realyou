@@ -89,7 +89,7 @@ export const useProfileLoader = () => {
           profileImage: data.avatar_url,
           basePrice: 180,
           currency: 'BRL',
-          title: 'Serviço Profissional'
+          title: data.profession || 'Serviço Profissional'
         };
         localStorage.setItem('userProfile', JSON.stringify(profileData));
         
