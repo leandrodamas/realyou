@@ -1,101 +1,101 @@
 
-import { useEffect, useCallback } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { useEffect } from "react";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { clearUserProfile } from "./userProfileManager";
+import { clearUserProfile } from "./profile";
 
 export const useAuthEvents = (
-  setSession: (session: Session | null) => void,
-  setUser: (user: User | null) => void,
-  setIsLoading: (loading: boolean) => void,
+  setSession: React.Dispatch<React.SetStateAction<Session | null>>,
+  setUser: React.Dispatch<React.SetStateAction<User | null>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
   loadUserProfile: (userId: string, user: User | null) => Promise<void>,
-  setProfileLoaded: (loaded: boolean) => void
+  setProfileLoaded: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-  const handleSessionRefresh = useCallback(async () => {
-    try {
-      const { data } = await supabase.auth.refreshSession();
-      const { session } = data;
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Dispatch an event to notify components of auth state changes
-      const event = new CustomEvent('authStateChange', { detail: { user: session?.user } });
-      document.dispatchEvent(event);
-    } catch (error) {
-      console.error("Error refreshing session:", error);
-    }
-  }, [setSession, setUser]);
-
+  // Configurar ouvinte para mudanças no estado de autenticação
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Definir um timeout para carregar a página mesmo se houver problemas
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+      console.log("Auth loading timeout occurred, continuing anyway");
+    }, 3000);
+    
+    setIsLoading(true);
+    
+    // Ouvir primeiro para eventos de estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.id);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+      async (event, newSession) => {
+        console.log("Auth state changed:", event);
         
-        if (event === 'SIGNED_IN') {
-          toast.success("Login realizado com sucesso!");
-          
-          // Initialize user profile if needed
-          if (currentSession?.user) {
-            // Load user profile from Supabase
-            setTimeout(() => {
-              loadUserProfile(currentSession.user.id, currentSession.user);
-              
-              // Dispatch auth state change event
-              const authChangeEvent = new CustomEvent('authStateChange', { 
-                detail: { user: currentSession.user } 
-              });
-              document.dispatchEvent(authChangeEvent);
-            }, 100);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          toast.info("Sessão encerrada");
-          clearUserProfile(); // Clear profile on sign out
+        // Importante atualizar imediatamente para evitar erros de ordem de execução
+        setUser(newSession?.user || null);
+        setSession(newSession);
+
+        // Limpar o timeout pois recebemos uma resposta
+        clearTimeout(loadingTimeout);
+        
+        // Lidar com diferentes eventos de autenticação
+        if (event === "SIGNED_OUT") {
+          clearUserProfile();
           setProfileLoaded(false);
-          
-          // Dispatch auth state change event
-          const authChangeEvent = new CustomEvent('authStateChange', { 
-            detail: { user: null } 
-          });
-          document.dispatchEvent(authChangeEvent);
-        } else if (event === 'USER_UPDATED') {
-          toast.info("Perfil atualizado");
-          
-          if (currentSession?.user) {
-            loadUserProfile(currentSession.user.id, currentSession.user);
+          setIsLoading(false);
+        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          if (newSession?.user) {
+            // Usar setTimeout para evitar deadlock com Supabase
+            setTimeout(() => {
+              loadUserProfile(newSession.user.id, newSession.user)
+                .finally(() => {
+                  setIsLoading(false);
+                });
+            }, 0);
+          } else {
+            setIsLoading(false);
           }
-        } else if (event === 'PASSWORD_RECOVERY') {
-          toast.info("Recuperação de senha solicitada");
+        } else {
+          setIsLoading(false);
         }
       }
     );
+    
+    // Verificar sessão existente
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user || null);
+        setSession(session);
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Checking existing session:", currentSession?.user?.id);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      // If there's an existing session, load the user profile
-      if (currentSession?.user) {
-        loadUserProfile(currentSession.user.id, currentSession.user);
-      } else {
+        if (session?.user) {
+          await loadUserProfile(session.user.id, session.user);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
         setIsLoading(false);
       }
-    }).catch(error => {
-      console.error("Error getting session:", error);
-      setIsLoading(false);
-    });
-
+    };
+    
+    // Iniciar validação de sessão
+    checkSession();
+    
     return () => {
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
-  }, [loadUserProfile, setIsLoading, setProfileLoaded, setSession, setUser]);
-
-  return {
-    handleSessionRefresh
+  }, [setSession, setUser, setIsLoading, loadUserProfile, setProfileLoaded]);
+  
+  // Função para atualizar a sessão
+  const handleSessionRefresh = async (): Promise<void> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        loadUserProfile(session.user.id, session.user);
+      }
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+    }
   };
+  
+  return { handleSessionRefresh };
 };

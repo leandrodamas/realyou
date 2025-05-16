@@ -1,7 +1,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useFileUpload } from "@/hooks/useFileUpload";
+import { useFileUpload } from "@/hooks/file-upload";
 import { toast } from "sonner";
 import { syncProfileWithSupabase, dispatchProfileUpdate, UserProfile } from "@/hooks/auth/profile";
 

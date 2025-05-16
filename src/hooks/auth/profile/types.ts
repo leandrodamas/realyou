@@ -1,20 +1,26 @@
 
 /**
- * Shared types for user profile management
+ * User profile type definition
  */
-
 export interface UserProfile {
-  userId: string;
   id: string;
+  userId: string;
   username?: string;
   fullName?: string;
-  avatar_url?: string;
-  lastUpdated: string;
+  title?: string;
+  bio?: string;
   profileImage?: string;
+  coverImage?: string;
+  avatar_url?: string;
+  postCount?: number;
+  connectionCount?: number;
+  skillsCount?: number;
+  lastUpdated: string;
+  createdAt?: string;
   basePrice?: number;
   currency?: string;
-  title?: string;
+  faceRegistered?: boolean;
+  registrationTimestamp?: string;
+  location?: string;
+  [key: string]: any;
 }
-
-// Maximum number of retries for profile operations
-export const MAX_RETRIES = 3;

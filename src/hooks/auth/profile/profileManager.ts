@@ -7,19 +7,19 @@ import { dispatchProfileUpdate } from "./eventManager";
 import { syncProfileWithSupabase } from "./supabaseSync";
 
 /**
- * Initializes user profile by fetching from Supabase or creating if needed
- * @param userId User ID
- * @param email User email
+ * Inicializa perfil do usuário buscando do Supabase ou criando se necessário
+ * @param userId ID do usuário
+ * @param email Email do usuário
  */
 export const initializeUserProfile = async (userId: string, email: string | undefined): Promise<void> => {
   console.log(`Initializing user profile for: ${userId}`);
   
-  // Cache local data before trying to fetch from server
+  // Cache dados locais antes de tentar buscar do servidor
   const localProfile = getLocalProfile(userId);
   
   try {
-    // First try to get profile from Supabase
-    const { data: profileData, error } = await withRetry(async () => { 
+    // Primeiro tenta obter perfil do Supabase com timeout
+    const profilePromise = withRetry(async () => { 
       const response = await supabase
         .from('profiles')
         .select('*')
@@ -28,17 +28,28 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       return response;
     });
     
+    // Adiciona timeout para não travar o carregamento
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Timeout loading profile from Supabase")), 5000);
+    });
+    
+    // Race entre o carregamento e o timeout
+    const { data: profileData, error } = await Promise.race([
+      profilePromise, 
+      timeoutPromise.then(() => ({ data: null, error: new Error("Timeout") }))
+    ]) as any;
+    
     if (error) {
       console.error("Error fetching profile from Supabase:", error);
       
-      // If there's already a local profile, use it
+      // Se já existe um perfil local, usa ele
       if (localProfile) {
         dispatchProfileUpdate(localProfile);
         return;
       }
     }
     
-    // If profile exists in Supabase, use it
+    // Se perfil existe no Supabase, usa ele
     if (profileData) {
       console.log("Found existing profile in Supabase:", profileData);
       const profile: UserProfile = {
@@ -57,18 +68,18 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       saveLocalProfile(profile);
       dispatchProfileUpdate(profile);
       
-      // Sync unsynced changes
+      // Sincroniza mudanças não sincronizadas
       if (localProfile && new Date(localProfile.lastUpdated) > new Date(profileData.updated_at || 0)) {
         console.log("Local profile is newer, syncing to server");
         await syncProfileWithSupabase(userId, localProfile);
       }
       
     } else {
-      // If no profile in Supabase, create one
+      // Se não há perfil no Supabase, cria um
       console.log("No profile found in Supabase, creating one");
       const username = email?.split('@')[0] || 'user';
       
-      // Use local data if available
+      // Usa dados locais se disponíveis
       const baseProfile = localProfile || {
         userId: userId,
         id: userId,
@@ -80,10 +91,10 @@ export const initializeUserProfile = async (userId: string, email: string | unde
         title: 'Serviço Profissional'
       };
       
-      // Try to create profile in Supabase, with proper RLS policy handling
+      // Tenta criar perfil no Supabase, com tratamento adequado de políticas RLS
       try {
-        // Use upsert to handle the case where the profile might already exist
-        const { error: insertError } = await withRetry(async () => {
+        // Usa upsert para lidar com o caso em que o perfil já possa existir
+        await withRetry(async () => {
           const response = await supabase
             .from('profiles')
             .upsert({
@@ -94,20 +105,17 @@ export const initializeUserProfile = async (userId: string, email: string | unde
               onConflict: 'id'
             });
           return response;
+        }).catch(err => {
+          console.error("Error creating profile:", err);
         });
           
-        if (insertError) {
-          console.error("Error creating profile in Supabase:", insertError);
-          console.log("Using local profile as fallback");
-        } else {
-          console.log("Successfully created profile in Supabase for user:", userId);
-        }
+        console.log("Profile created or updated in Supabase for user:", userId);
       } catch (error) {
         console.error("Failed to create profile in Supabase:", error);
         console.log("Using local profile as fallback");
       }
       
-      // Always use local data if there's an error
+      // Sempre usa dados locais se houver erro
       saveLocalProfile(baseProfile);
       dispatchProfileUpdate(baseProfile);
     }
@@ -115,7 +123,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
   } catch (error) {
     console.error("Exception during profile initialization:", error);
     
-    // Fallback to local storage only if there's an error
+    // Fallback para armazenamento local apenas se houver um erro
     if (localProfile) {
       console.log("Using local profile as fallback");
       dispatchProfileUpdate(localProfile);
@@ -141,15 +149,15 @@ export const initializeUserProfile = async (userId: string, email: string | unde
 };
 
 /**
- * Refreshes user profile with latest data from Supabase
- * @param userId User ID
- * @returns User profile or null
+ * Atualiza o perfil do usuário com os dados mais recentes do Supabase
+ * @param userId ID do usuário
+ * @returns Perfil do usuário ou null
  */
 export const refreshUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
     const localProfile = getLocalProfile(userId);
     
-    // Try to fetch more recent data from server
+    // Tenta buscar dados mais recentes do servidor
     const { data: profileData, error } = await withRetry(async () => {
       const response = await supabase
         .from('profiles')
@@ -165,7 +173,7 @@ export const refreshUserProfile = async (userId: string): Promise<UserProfile | 
     }
     
     if (profileData) {
-      // Merge server data with local data to ensure we have all information
+      // Mescla dados do servidor com dados locais para garantir que tenhamos todas as informações
       const updatedProfile: UserProfile = {
         userId: userId,
         id: userId,

@@ -3,26 +3,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFileUpload } from "@/hooks/file-upload";
-import { UserProfile as ProfileType } from "@/hooks/auth/profile/types";
-
-export interface UserProfile {
-  userId: string; // Changed from optional to required for consistency
-  username?: string;
-  fullName?: string;
-  profileImage?: string;
-  coverImage?: string;
-  faceRegistered?: boolean;
-  registrationTimestamp?: string;
-  lastUpdated: string; // Changed from optional to required for consistency
-  basePrice?: number; // Added to match usage in components
-  currency?: string; // Added to match usage in components
-  title?: string; // Added to match usage in components
-  [key: string]: any;
-}
+import { UserProfile } from "@/hooks/auth/profile/types";
+import { dispatchProfileUpdate } from "@/hooks/auth/profile";
 
 // Default profile with required fields and common optional fields
 export const DEFAULT_PROFILE: UserProfile = {
   userId: '',
+  id: '',
   lastUpdated: new Date().toISOString(),
   profileImage: '',
   fullName: '',
@@ -44,16 +31,15 @@ export const useProfileStorage = () => {
         ...DEFAULT_PROFILE,
         ...profile as UserProfile,
         ...profileData,
-        userId: profile.userId || user?.id || '', // Ensure userId is always set
+        userId: profile.userId || user?.id || '', 
+        id: profile.id || user?.id || '',
         lastUpdated: new Date().toISOString()
       };
       
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       
       // Notify other components about the profile update
-      document.dispatchEvent(new CustomEvent('profileUpdated', { 
-        detail: { profile: updatedProfile } 
-      }));
+      dispatchProfileUpdate(updatedProfile);
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Não foi possível salvar informações do perfil");
