@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Trophy, Award, Medal, Star, Crown, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface Achievement {
   id: number;
@@ -61,36 +63,102 @@ const ProfileAchievements: React.FC = () => {
   ]);
   
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadAchievements = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        setIsLoading(true);
         
-        if (!user) {
-          return;
-        }
+        // Load work gallery items count (for Content Creator achievement)
+        const { data: galleryData, error: galleryError } = await supabase
+          .from('work_gallery')
+          .select('id')
+          .eq('user_id', user.id);
+          
+        if (galleryError) throw galleryError;
         
-        // Configurar progresso inicial baseado em atividades do usuário
-        // Em uma implementação real, isso viria do banco de dados
+        // Load service bookings count (for Social Butterfly achievement)
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('service_bookings')
+          .select('id')
+          .eq('provider_id', user.id);
+          
+        if (bookingsError) throw bookingsError;
         
-        // Por enquanto, vamos definir valores iniciais baixos para mostrar progresso
-        setAchievements(prevAchievements => 
-          prevAchievements.map(achievement => ({
-            ...achievement,
-            progress: Math.floor(Math.random() * 25) // 0-25% de progresso para começar
-          }))
-        );
-        
+        // Calculate achievement progress based on actual data
+        setAchievements(prev => {
+          return prev.map(achievement => {
+            let progress = 0;
+            let completed = false;
+            
+            switch(achievement.id) {
+              case 1: // Content Creator
+                const postCount = galleryData?.length || 0;
+                progress = Math.min(Math.round((postCount / 100) * 100), 100);
+                completed = progress >= 100;
+                break;
+                
+              case 2: // Social Butterfly
+                const connectionCount = bookingsData?.length || 0;
+                progress = Math.min(Math.round((connectionCount / 250) * 100), 100);
+                completed = progress >= 100;
+                break;
+                
+              case 3: // Skill Master
+                // For demo purposes we'll set a random progress
+                // In a real app, you would fetch this from a skills table
+                progress = Math.floor(Math.random() * 70) + 10;
+                completed = progress >= 100;
+                break;
+                
+              case 4: // Rising Star
+                // Simulate view count based on bookings * 10 for now
+                const viewCount = (bookingsData?.length || 0) * 10;
+                progress = Math.min(Math.round((viewCount / 1000) * 100), 100);
+                completed = progress >= 100;
+                break;
+                
+              case 5: // Consistent Creator
+                // For now, set a random progress
+                // In a real app, you would calculate streak days
+                progress = Math.floor(Math.random() * 50) + 20;
+                completed = progress >= 100;
+                break;
+                
+              default:
+                progress = Math.floor(Math.random() * 60) + 10;
+                completed = progress >= 100;
+            }
+            
+            return {
+              ...achievement,
+              progress,
+              completed
+            };
+          });
+        });
       } catch (error) {
-        console.error("Erro ao carregar conquistas:", error);
+        console.error("Error loading achievements:", error);
+        toast.error("Não foi possível carregar suas conquistas");
+        
+        // Set fallback random progress values
+        setAchievements(prev => prev.map(achievement => ({
+          ...achievement,
+          progress: Math.floor(Math.random() * 70) + 10
+        })));
       } finally {
         setIsLoading(false);
       }
     };
     
     loadAchievements();
-  }, []);
+  }, [user]);
 
   const container = {
     hidden: { opacity: 0 },

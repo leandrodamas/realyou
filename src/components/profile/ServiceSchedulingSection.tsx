@@ -25,10 +25,7 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isPromptVisible, setIsPromptVisible] = useState(true);
   const [showMatchSuccess, setShowMatchSuccess] = useState(false);
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([
-    "08:00", "09:00", "10:00", "11:00", 
-    "14:00", "15:00", "16:00", "17:00"
-  ]);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const { getProfile } = useProfileStorage();
@@ -49,48 +46,90 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
       setIsLoading(true);
       
       try {
-        const { data: pricingData, error } = await supabase
+        // Get service pricing data
+        const { data: pricingData, error: pricingError } = await supabase
           .from('service_pricing')
-          .select('base_price, dynamic_pricing, peak_price_multiplier, id')
+          .select('base_price, dynamic_pricing, peak_price_multiplier, id, title')
           .eq('user_id', targetId)
-          .single();
+          .maybeSingle();
         
-        if (error && error.code !== 'PGRST116') {
-          throw error;
+        if (pricingError && pricingError.code !== 'PGRST116') {
+          throw pricingError;
         }
         
-        if (providerId && providerId !== user?.id) {
+        // Get user profile data
+        const { data: profileDbData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url, profession')
+          .eq('id', targetId)
+          .maybeSingle();
+          
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+        }
+        
+        // Get available schedule time slots
+        const { data: schedulesData, error: schedulesError } = await supabase
+          .from('service_schedules')
+          .select('start_time, end_time, day_of_week')
+          .eq('user_id', targetId)
+          .eq('is_available', true);
+          
+        if (schedulesError) {
+          console.error("Error fetching schedules:", schedulesError);
+        }
+        
+        // Set profile data based on DB data
+        if (profileDbData) {
           setProfileData({
-            profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
-            name: "Dr. Carlos Silva",
-            basePrice: pricingData?.base_price || 180
-          });
-        } else {
-          setProfileData({
-            profileImage: profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
-            name: profile.fullName || "Dr. Carlos Silva",
+            profileImage: profileDbData.avatar_url || profile.profileImage || "https://randomuser.me/api/portraits/men/32.jpg",
+            name: profileDbData.full_name || profile.fullName || "Dr. Carlos Silva",
             basePrice: pricingData?.base_price || profile.basePrice || 180
           });
         }
         
-        const { data: schedulesData } = await supabase
-          .from('service_schedules')
-          .select('start_time')
-          .eq('user_id', targetId)
-          .eq('is_available', true);
-        
+        // Generate available time slots from schedules
         if (schedulesData && schedulesData.length > 0) {
-          const timeSlots = [...new Set(schedulesData.map(s => 
-            s.start_time.substring(0, 5)
-          ))];
+          const timeSlots = new Set<string>();
+          schedulesData.forEach(schedule => {
+            const startParts = schedule.start_time.split(':').map(Number);
+            const endParts = schedule.end_time.split(':').map(Number);
+            
+            const startMinutes = startParts[0] * 60 + startParts[1];
+            const endMinutes = endParts[0] * 60 + endParts[1];
+            
+            // Generate hourly slots
+            for (let mins = startMinutes; mins < endMinutes; mins += 60) {
+              const hours = Math.floor(mins / 60);
+              const formattedHours = hours.toString().padStart(2, '0');
+              timeSlots.add(`${formattedHours}:00`);
+            }
+          });
           
-          if (timeSlots.length > 0) {
-            setAvailableTimeSlots(timeSlots);
+          if (timeSlots.size > 0) {
+            setAvailableTimeSlots(Array.from(timeSlots));
+          } else {
+            // Fallback to default slots
+            setAvailableTimeSlots([
+              "08:00", "09:00", "10:00", "11:00", 
+              "14:00", "15:00", "16:00", "17:00"
+            ]);
           }
+        } else {
+          // No schedules found, use default slots
+          setAvailableTimeSlots([
+            "08:00", "09:00", "10:00", "11:00", 
+            "14:00", "15:00", "16:00", "17:00"
+          ]);
         }
         
       } catch (error) {
         console.error("Erro ao carregar dados do serviço:", error);
+        // Use default values
+        setAvailableTimeSlots([
+          "08:00", "09:00", "10:00", "11:00", 
+          "14:00", "15:00", "16:00", "17:00"
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -134,29 +173,32 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
     try {
       const serviceDate = date.toISOString().split('T')[0];
       
+      // Check if booking already exists
       const { data: existingBooking } = await supabase
         .from('service_bookings')
         .select('id')
         .eq('provider_id', providerId || user.id)
         .eq('booking_date', serviceDate)
         .eq('start_time', `${selectedTime}:00`)
-        .single();
+        .maybeSingle();
       
       if (existingBooking) {
         toast.error("Este horário já está reservado. Por favor, escolha outro horário.");
         return;
       }
       
+      // Calculate end time (1 hour after start time)
       const [startHour, startMinute] = selectedTime.split(':').map(Number);
       let endHour = startHour + 1;
       const endMinute = startMinute;
       const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}:00`;
       
+      // Get service pricing
       const { data: pricingData } = await supabase
         .from('service_pricing')
         .select('base_price, dynamic_pricing, peak_price_multiplier, id')
         .eq('user_id', providerId || user.id)
-        .single();
+        .maybeSingle();
       
       let price = profileData.basePrice;
       let serviceId = null;
@@ -171,6 +213,7 @@ const ServiceSchedulingSection: React.FC<ServiceSchedulingSectionProps> = ({
         }
       }
       
+      // Create booking
       const { error } = await supabase
         .from('service_bookings')
         .insert({

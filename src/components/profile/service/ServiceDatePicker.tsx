@@ -29,67 +29,68 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   
-  // Carregar dados de disponibilidade real
+  // Fetch actual availability data from Supabase
   useEffect(() => {
-    if (!providerId) return;
+    if (!providerId && !user?.id) return;
+    
+    const targetId = providerId || user?.id;
     
     const fetchAvailability = async () => {
       setIsLoading(true);
       try {
-        // Buscar agendamentos do provedor
+        // Get current date and two weeks ahead
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
         const nextTwoWeeks = new Date(today);
         nextTwoWeeks.setDate(today.getDate() + 14);
         
-        // Buscar horários de trabalho do provedor
+        // Fetch actual availability data from service_schedules table
         const { data: schedulesData, error: schedulesError } = await supabase
           .from('service_schedules')
           .select('*')
-          .eq('user_id', providerId)
+          .eq('user_id', targetId)
           .eq('is_available', true);
         
         if (schedulesError) throw schedulesError;
         
-        // Buscar agendamentos já confirmados
+        // Fetch existing bookings to avoid showing already booked slots
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('service_bookings')
           .select('*')
-          .eq('provider_id', providerId)
-          .eq('status', 'confirmed')
+          .eq('provider_id', targetId)
+          .in('status', ['confirmed', 'pending'])
           .gte('booking_date', format(today, 'yyyy-MM-dd'))
           .lte('booking_date', format(nextTwoWeeks, 'yyyy-MM-dd'));
         
         if (bookingsError) throw bookingsError;
         
-        // Processar as datas disponíveis
+        // Process data to determine available dates
         const availableDays = new Set(schedulesData?.map(s => s.day_of_week) || []);
         const dates: Date[] = [];
         const urgents: Date[] = [];
         const highDemand: Date[] = [];
         
-        // Verificar os próximos 14 dias
+        // Check next 14 days for availability
         for (let i = 0; i <= 14; i++) {
           const date = addDays(today, i);
-          const dayOfWeek = date.getDay(); // 0-6, sendo 0 = domingo
+          const dayOfWeek = date.getDay(); // 0-6 (Sunday-Saturday)
           
-          // Se o dia da semana está na lista de dias disponíveis
           if (availableDays.has(dayOfWeek)) {
-            // Verificar se não está totalmente reservado
+            // Check if not fully booked
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayBookings = (bookingsData || []).filter(b => b.booking_date === dateStr);
             
-            // Se há menos de 8 agendamentos (suponhamos que 8 é o máximo de slots por dia)
+            // Assuming max 8 bookings per day
             if (dayBookings.length < 8) {
               dates.push(date);
               
-              // Marcar como urgente se for nos próximos 2 dias
+              // Mark as urgent if within next 2 days
               if (i <= 2) {
                 urgents.push(date);
               }
               
-              // Marcar como alta demanda se já tiver mais de 5 agendamentos
+              // Mark as high demand if more than 5 bookings
               if (dayBookings.length >= 5) {
                 highDemand.push(date);
               }
@@ -97,52 +98,52 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
           }
         }
         
-        setAvailableDates(dates);
+        setAvailableDates(dates.length > 0 ? dates : getDefaultDates(today));
         setUrgentDates(urgents);
         setHighDemandDates(highDemand);
       } catch (error) {
-        console.error('Erro ao buscar disponibilidade:', error);
-        toast.error('Não foi possível carregar a disponibilidade');
+        console.error('Error fetching availability data:', error);
+        toast.error('Não foi possível carregar dados de disponibilidade');
         
-        // Fallback para dados simulados
-        setFallbackData();
+        // Set default dates if error occurs
+        setDefaultDates();
       } finally {
         setIsLoading(false);
       }
     };
     
-    // Dados simulados de fallback
-    const setFallbackData = () => {
-      const dates: Date[] = [];
-      const urgents: Date[] = [];
-      const highDemand: Date[] = [];
-      
-      for (let i = 1; i <= 14; i++) {
-        // Pular 2-3 dias para simular indisponibilidade
-        if (i % 3 !== 0) {
-          const date = addDays(new Date(), i);
-          dates.push(date);
-          
-          // Adicionar alguns dias como urgentes (disponibilidade imediata)
-          if (i <= 2) {
-            urgents.push(date);
-          }
-          
-          // Adicionar alguns dias como alta demanda (preço dinâmico)
-          if (i === 3 || i === 6 || i === 10) {
-            highDemand.push(date);
-          }
-        }
-      }
-      
-      setAvailableDates(dates);
-      setUrgentDates(urgents);
-      setHighDemandDates(highDemand);
-    };
-    
     fetchAvailability();
-  }, [providerId]);
+  }, [providerId, user?.id]);
   
+  // Default dates generator function
+  const getDefaultDates = (startDate: Date) => {
+    const dates: Date[] = [];
+    for (let i = 1; i <= 14; i++) {
+      if (i % 3 !== 0) { // Skip every third day
+        dates.push(addDays(startDate, i));
+      }
+    }
+    return dates;
+  };
+  
+  // Set default dates for fallback
+  const setDefaultDates = () => {
+    const today = new Date();
+    const dates = getDefaultDates(today);
+    const urgents: Date[] = [];
+    const highDemand: Date[] = [];
+    
+    dates.forEach((date, index) => {
+      if (index < 2) urgents.push(date);
+      if ([2, 5, 8].includes(index)) highDemand.push(date);
+    });
+    
+    setAvailableDates(dates);
+    setUrgentDates(urgents);
+    setHighDemandDates(highDemand);
+  };
+  
+  // Helper functions for calendar display
   const isDateAvailable = (date: Date) => {
     return availableDates.some(availableDate => 
       isSameDay(availableDate, date)
@@ -161,14 +162,12 @@ const ServiceDatePicker: React.FC<ServiceDatePickerProps> = ({
     );
   };
   
-  // Número de pessoas que estão visualizando o calendário agora
+  // Simulate viewer count
   const [viewerCount, setViewerCount] = useState(0);
   
   useEffect(() => {
-    // Gerar um número aleatório de visualizadores entre 1 e 4
     setViewerCount(Math.floor(Math.random() * 4) + 1);
     
-    // Atualizar a cada 30 segundos
     const interval = setInterval(() => {
       setViewerCount(Math.floor(Math.random() * 4) + 1);
     }, 30000);

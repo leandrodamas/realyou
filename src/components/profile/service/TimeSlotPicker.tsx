@@ -31,7 +31,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
   const [slots, setSlots] = useState<string[]>(availableTimeSlots);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Carregar horários disponíveis reais do provedor
+  // Fetch available time slots for selected date
   useEffect(() => {
     if (!selectedDate || !providerId) return;
     
@@ -39,9 +39,9 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       setIsLoading(true);
       try {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const dayOfWeek = selectedDate.getDay(); // 0-6, sendo 0 = domingo
+        const dayOfWeek = selectedDate.getDay();
         
-        // Buscar horários configurados pelo provedor para este dia da semana
+        // Get provider's availability for this day of week
         const { data: schedulesData, error: schedulesError } = await supabase
           .from('service_schedules')
           .select('*')
@@ -51,7 +51,7 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         
         if (schedulesError) throw schedulesError;
         
-        // Buscar agendamentos já confirmados para esta data
+        // Get existing bookings for this date
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('service_bookings')
           .select('*')
@@ -61,23 +61,23 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         
         if (bookingsError) throw bookingsError;
         
-        // Se não há configuração para este dia, usar os horários padrão
+        // Generate available slots based on provider's schedule
         if (!schedulesData || schedulesData.length === 0) {
-          // Usar os horários padrão
+          // No schedule defined, use default slots
           setSlots(availableTimeSlots);
         } else {
-          // Gerar slots baseados na configuração do provedor
+          // Generate slots from provider's schedule
           const allSlots: string[] = [];
           
           schedulesData.forEach(schedule => {
-            // Converter hora de início e fim para minutos
+            // Convert start and end times to minutes
             const startParts = schedule.start_time.split(':').map(Number);
             const endParts = schedule.end_time.split(':').map(Number);
             
             const startMinutes = startParts[0] * 60 + startParts[1];
             const endMinutes = endParts[0] * 60 + endParts[1];
             
-            // Gerar slots de hora em hora
+            // Generate hourly slots within schedule
             for (let mins = startMinutes; mins < endMinutes; mins += 60) {
               const hours = Math.floor(mins / 60);
               const formattedHours = hours.toString().padStart(2, '0');
@@ -85,29 +85,30 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
             }
           });
           
-          // Remover horários já agendados
+          // Remove already booked times
           const bookedTimes = (bookingsData || []).map(booking => 
             booking.start_time.substring(0, 5)
           );
           
           const availableSlots = allSlots.filter(slot => !bookedTimes.includes(slot));
-          setSlots(availableSlots);
+          setSlots(availableSlots.length > 0 ? availableSlots : []);
         }
         
-        // Simular visualizações para alguns horários
-        const viewings: {[key: string]: number} = {};
+        // Generate viewer counts for a few random slots
         if (slots.length > 0) {
-          // Atribuir visualizadores aleatórios para alguns slots
-          const randomSlots = [...slots].sort(() => 0.5 - Math.random()).slice(0, 3);
+          const viewings: {[key: string]: number} = {};
+          const randomSlots = [...slots].sort(() => 0.5 - Math.random()).slice(0, Math.min(3, slots.length));
+          
           randomSlots.forEach(slot => {
             viewings[slot] = Math.floor(Math.random() * 3) + 1;
           });
+          
+          setViewingUsers(viewings);
         }
-        setViewingUsers(viewings);
         
       } catch (error) {
-        console.error('Erro ao buscar horários disponíveis:', error);
-        // Fallback para slots padrão
+        console.error('Error fetching available time slots:', error);
+        // Fall back to default slots
         setSlots(availableTimeSlots);
       } finally {
         setIsLoading(false);
@@ -118,12 +119,12 @@ const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
     
   }, [selectedDate, providerId, availableTimeSlots]);
   
-  // Simular visualizações em tempo real quando a data é selecionada
+  // Simulate real-time viewer counts
   useEffect(() => {
     if (selectedDate) {
       setRealTimeViewers(Math.floor(Math.random() * 5) + 1);
       
-      // Atualizar visualizadores simulados a cada 10-20 segundos
+      // Update viewer counts periodically
       const interval = setInterval(() => {
         setRealTimeViewers(Math.floor(Math.random() * 5) + 1);
       }, Math.random() * 10000 + 10000);
