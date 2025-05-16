@@ -182,8 +182,8 @@ export const refreshUserProfile = async (userId: string): Promise<UserProfile | 
         avatar_url: profileData.avatar_url,
         profileImage: profileData.avatar_url || localProfile?.profileImage,
         lastUpdated: new Date().toISOString(),
-        basePrice: profileData.base_price || localProfile?.basePrice || 180,
-        currency: profileData.currency || localProfile?.currency || 'BRL',
+        basePrice: localProfile?.basePrice || 180,
+        currency: localProfile?.currency || 'BRL',
         title: profileData.profession || localProfile?.title || 'Serviço Profissional'
       };
       
