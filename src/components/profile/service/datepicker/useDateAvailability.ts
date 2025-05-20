@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { format, addDays } from "date-fns";
+import { format, addDays, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getDefaultDates } from "./dateUtils";
