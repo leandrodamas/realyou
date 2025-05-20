@@ -4,7 +4,7 @@ export interface Achievement {
   name: string;
   description: string;
   progress: number;
-  icon: React.ReactNode;
+  iconName: string;
   color: string;
   completed?: boolean;
 }

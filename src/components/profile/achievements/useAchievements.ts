@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Achievement } from "./types";
-import { Trophy, Award, Medal, Star, Crown, Flame } from "lucide-react";
 
 export const useAchievements = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([
@@ -13,7 +11,7 @@ export const useAchievements = () => {
       name: "Content Creator", 
       description: "Posted 100+ quality content pieces", 
       progress: 0, 
-      icon: <Trophy className="h-5 w-5 text-amber-500" />,
+      iconName: "Trophy",
       color: "bg-amber-100 text-amber-700 border-amber-200"
     },
     { 
@@ -21,7 +19,7 @@ export const useAchievements = () => {
       name: "Social Butterfly", 
       description: "Connected with 250+ people", 
       progress: 0, 
-      icon: <Crown className="h-5 w-5 text-purple-500" />,
+      iconName: "Crown",
       color: "bg-purple-100 text-purple-700 border-purple-200"
     },
     { 
@@ -29,7 +27,7 @@ export const useAchievements = () => {
       name: "Skill Master", 
       description: "Verified expert in 10+ skills", 
       progress: 0, 
-      icon: <Award className="h-5 w-5 text-blue-500" />,
+      iconName: "Award",
       color: "bg-blue-100 text-blue-700 border-blue-200"
     },
     { 
@@ -37,7 +35,7 @@ export const useAchievements = () => {
       name: "Rising Star", 
       description: "Gained 1000+ profile views", 
       progress: 0, 
-      icon: <Star className="h-5 w-5 text-yellow-500" />,
+      iconName: "Star",
       color: "bg-yellow-100 text-yellow-700 border-yellow-200"
     },
     { 
@@ -45,7 +43,7 @@ export const useAchievements = () => {
       name: "Consistent Creator", 
       description: "Posted content for 30 days in a row", 
       progress: 0, 
-      icon: <Flame className="h-5 w-5 text-orange-500" />,
+      iconName: "Flame",
       color: "bg-orange-100 text-orange-700 border-orange-200"
     }
   ]);
