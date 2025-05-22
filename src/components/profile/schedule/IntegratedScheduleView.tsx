@@ -1,9 +1,9 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import TimeSlotPicker from "../service/TimeSlotPicker";
 import ServiceDatePicker from "../service/ServiceDatePicker";
-import { Card, CardContent } from "@/components/ui/card";
+import ProfileHeader from "./components/ProfileHeader";
 import { useAuth } from "@/hooks/useAuth";
 
 interface IntegratedScheduleViewProps {
@@ -33,14 +33,15 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
 }) => {
   const { user } = useAuth();
   
-  const isDynamicPrice = selectedDate && (
+  const isDynamicPrice = useMemo(() => selectedDate && (
     selectedDate.getDay() === 1 ||
     selectedDate.getDay() === 5
-  );
+  ), [selectedDate]);
   
-  const finalPrice = isDynamicPrice 
+  const finalPrice = useMemo(() => isDynamicPrice 
     ? Math.round(basePrice * 1.2) // 20% de aumento para dias de alta demanda
-    : basePrice;
+    : basePrice,
+  [basePrice, isDynamicPrice]);
 
   return (
     <div>
@@ -50,34 +51,14 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
         transition={{ duration: 0.4 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        {/* Perfil do profissional e preço */}
-        <Card className="md:col-span-3">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 mr-4">
-                <img
-                  src={profileImage}
-                  alt={name}
-                  className="h-16 w-16 rounded-full object-cover border-2 border-purple-200"
-                />
-              </div>
-              <div>
-                <h3 className="font-medium text-lg">{name}</h3>
-                <div className="text-sm text-gray-500">Consultor(a) Profissional</div>
-                <div className="mt-1 flex items-center">
-                  <span className="font-semibold">R$ {finalPrice},00</span>
-                  {isDynamicPrice && (
-                    <span className="ml-2 text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">
-                      Alta demanda (+20%)
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileHeader 
+          profileImage={profileImage}
+          name={name}
+          basePrice={basePrice}
+          isDynamicPrice={Boolean(isDynamicPrice)}
+          finalPrice={finalPrice}
+        />
 
-        {/* Seleção de data */}
         <div className="md:col-span-2">
           <ServiceDatePicker
             selectedDate={selectedDate}
@@ -86,7 +67,6 @@ const IntegratedScheduleView: React.FC<IntegratedScheduleViewProps> = ({
           />
         </div>
 
-        {/* Seleção de horário */}
         <div className="md:col-span-1">
           <TimeSlotPicker
             selectedDate={selectedDate}
