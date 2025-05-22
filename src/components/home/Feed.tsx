@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Smile, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -38,6 +39,10 @@ const Feed: React.FC = () => {
 
   const handleLogin = () => {
     navigate("/auth");
+  };
+
+  const handleDiscoverProfessionals = () => {
+    navigate("/search");
   };
 
   const toggleLike = (id: number) => {
@@ -95,7 +100,7 @@ const Feed: React.FC = () => {
         <h3 className="text-lg font-medium">Seu feed está vazio</h3>
         <p className="text-gray-500">Comece a seguir profissionais para ver seus posts aqui</p>
         <div className="py-4">
-          <Button onClick={() => navigate("/search")}>Descobrir profissionais</Button>
+          <Button onClick={handleDiscoverProfessionals}>Descobrir profissionais</Button>
         </div>
       </div>
     );
