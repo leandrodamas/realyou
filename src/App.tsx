@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import HomePage from './pages/Index';
@@ -17,6 +16,7 @@ import TimelinePage from './pages/TimelinePage';
 import AuthPage from './pages/AuthPage';
 import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { applyMobileOptimizations } from './utils/mobile';
 
 // Add scroll to top component
 const ScrollToTop = () => {
@@ -30,25 +30,9 @@ const ScrollToTop = () => {
 };
 
 function App() {
-  // Detect if running on mobile device
+  // Apply mobile optimizations on app initialization
   useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      document.documentElement.classList.add('mobile');
-      
-      // Handle viewport for iOS Safari to prevent zooming
-      const metaViewport = document.querySelector('meta[name=viewport]');
-      if (metaViewport) {
-        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-      }
-      
-      // Handle safe area for notched phones
-      document.documentElement.style.setProperty('--safe-area-top', 'env(safe-area-inset-top)');
-      document.documentElement.style.setProperty('--safe-area-bottom', 'env(safe-area-inset-bottom)');
-      document.documentElement.style.setProperty('--safe-area-left', 'env(safe-area-inset-left)');
-      document.documentElement.style.setProperty('--safe-area-right', 'env(safe-area-inset-right)');
-    }
+    applyMobileOptimizations();
   }, []);
 
   return (
