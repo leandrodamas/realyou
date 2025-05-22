@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Smile, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -6,6 +5,7 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Post {
   id: number;
@@ -24,6 +24,7 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,6 +35,10 @@ const Feed: React.FC = () => {
     
     checkAuth();
   }, []);
+
+  const handleLogin = () => {
+    navigate("/auth");
+  };
 
   const toggleLike = (id: number) => {
     setPosts(posts.map(post => 
@@ -79,7 +84,7 @@ const Feed: React.FC = () => {
       <div className="text-center py-10 px-4">
         <h3 className="text-lg font-medium mb-2">Faça login para ver o feed</h3>
         <p className="text-gray-500 mb-4">Conecte-se para ver posts de profissionais e compartilhar seu trabalho</p>
-        <Button>Entrar</Button>
+        <Button onClick={handleLogin}>Entrar</Button>
       </div>
     );
   }
@@ -90,7 +95,7 @@ const Feed: React.FC = () => {
         <h3 className="text-lg font-medium">Seu feed está vazio</h3>
         <p className="text-gray-500">Comece a seguir profissionais para ver seus posts aqui</p>
         <div className="py-4">
-          <Button>Descobrir profissionais</Button>
+          <Button onClick={() => navigate("/search")}>Descobrir profissionais</Button>
         </div>
       </div>
     );
