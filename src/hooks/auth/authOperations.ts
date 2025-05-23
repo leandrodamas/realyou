@@ -41,10 +41,20 @@ export const signIn = async (
 
 export const signInWithGoogle = async (): Promise<boolean> => {
   try {
+    console.log("Iniciando login com Google");
+    
+    // Obter a URL atual completa para o redirecionamento
+    const redirectUrl = window.location.origin;
+    console.log("Redirect URL configurada:", redirectUrl);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     });
 
@@ -55,6 +65,11 @@ export const signInWithGoogle = async (): Promise<boolean> => {
     }
 
     console.log("Google sign in initiated:", data);
+    if (data?.url) {
+      console.log("Redirecionando para:", data.url);
+    } else {
+      console.warn("URL de redirecionamento não recebida do Supabase");
+    }
     // No need for success message here as the page will redirect to Google
     return true;
   } catch (error: any) {

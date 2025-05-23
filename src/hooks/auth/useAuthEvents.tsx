@@ -1,101 +1,104 @@
 
-import { useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { clearUserProfile } from "./profile";
+import { toast } from "sonner";
 
 export const useAuthEvents = (
-  setSession: React.Dispatch<React.SetStateAction<Session | null>>,
-  setUser: React.Dispatch<React.SetStateAction<User | null>>,
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  loadUserProfile: (userId: string, user: User | null) => Promise<void>,
-  setProfileLoaded: React.Dispatch<React.SetStateAction<boolean>>
+  setSession: (session: any) => void,
+  setUser: (user: any) => void,
+  setIsLoading: (loading: boolean) => void,
+  loadUserProfile: (userId: string) => Promise<any>,
+  setProfileLoaded: (loaded: boolean) => void
 ) => {
-  // Configurar ouvinte para mudanças no estado de autenticação
-  useEffect(() => {
-    // Definir um timeout para carregar a página mesmo se houver problemas
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-      console.log("Auth loading timeout occurred, continuing anyway");
-    }, 3000);
-    
-    setIsLoading(true);
-    
-    // Ouvir primeiro para eventos de estado de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log("Auth state changed:", event);
-        
-        // Importante atualizar imediatamente para evitar erros de ordem de execução
-        setUser(newSession?.user || null);
-        setSession(newSession);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-        // Limpar o timeout pois recebemos uma resposta
-        clearTimeout(loadingTimeout);
-        
-        // Lidar com diferentes eventos de autenticação
-        if (event === "SIGNED_OUT") {
-          clearUserProfile();
+  useEffect(() => {
+    // Set up the auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event);
+        setSession(session);
+        setUser(session?.user || null);
+
+        if (event === "SIGNED_IN" && session?.user) {
+          console.log("Loading profile for user:", session.user.id);
+          
+          // Defer profile loading to avoid auth deadlocks
+          setTimeout(() => {
+            loadUserProfile(session.user!.id);
+          }, 0);
+        } else if (event === "SIGNED_OUT") {
+          console.log("User signed out");
           setProfileLoaded(false);
-          setIsLoading(false);
-        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          if (newSession?.user) {
-            // Usar setTimeout para evitar deadlock com Supabase
-            setTimeout(() => {
-              loadUserProfile(newSession.user.id, newSession.user)
-                .finally(() => {
-                  setIsLoading(false);
-                });
-            }, 0);
-          } else {
-            setIsLoading(false);
-          }
-        } else {
-          setIsLoading(false);
+          toast.success("Sessão encerrada");
+        } else if (event === "USER_UPDATED") {
+          toast.success("Perfil atualizado");
         }
       }
     );
-    
-    // Verificar sessão existente
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user || null);
-        setSession(session);
 
-        if (session?.user) {
-          await loadUserProfile(session.user.id, session.user);
+    // Initial session check
+    const initializeAuth = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await supabase.auth.getSession();
+        console.log("Auth state changed:", data?.session ? "INITIAL_SESSION" : "NO_SESSION");
+        
+        setSession(data?.session);
+        setUser(data?.session?.user || null);
+
+        if (data?.session?.user) {
+          // Defer profile loading to avoid auth deadlocks
+          setTimeout(() => {
+            loadUserProfile(data.session!.user.id);
+          }, 0);
         }
       } catch (error) {
         console.error("Error checking session:", error);
       } finally {
         setIsLoading(false);
+        setAuthInitialized(true);
       }
     };
-    
-    // Iniciar validação de sessão
-    checkSession();
-    
+
+    initializeAuth();
+
+    // Cleanup subscription
     return () => {
-      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, [setSession, setUser, setIsLoading, loadUserProfile, setProfileLoaded]);
-  
-  // Função para atualizar a sessão
-  const handleSessionRefresh = async (): Promise<void> => {
+
+  const handleSessionRefresh = async () => {
+    setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user || null);
+      const { data, error } = await supabase.auth.refreshSession();
       
-      if (session?.user) {
-        loadUserProfile(session.user.id, session.user);
+      if (error) {
+        console.error("Session refresh error:", error);
+        throw error;
       }
+      
+      setSession(data.session);
+      setUser(data.session?.user || null);
+      
+      if (data.session?.user) {
+        setTimeout(() => {
+          loadUserProfile(data.session!.user.id);
+        }, 0);
+      }
+      
+      return data;
     } catch (error) {
-      console.error("Error refreshing session:", error);
+      console.error("Session refresh failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  return { handleSessionRefresh };
+
+  return {
+    authInitialized,
+    handleSessionRefresh,
+  };
 };
