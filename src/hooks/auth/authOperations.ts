@@ -39,6 +39,31 @@ export const signIn = async (
   }
 };
 
+export const signInWithGoogle = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      console.error("Google sign in error:", error);
+      toast.error(`Erro ao fazer login com Google: ${error.message}`);
+      return false;
+    }
+
+    console.log("Google sign in initiated:", data);
+    // No need for success message here as the page will redirect to Google
+    return true;
+  } catch (error: any) {
+    console.error("Google sign in exception:", error);
+    toast.error(`Erro ao fazer login com Google: ${error.message}`);
+    return false;
+  }
+};
+
 export const signUp = async (
   email: string,
   password: string,

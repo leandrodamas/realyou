@@ -8,6 +8,7 @@ export interface AuthContextType {
   isLoading: boolean;
   profileLoaded?: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -19,6 +20,7 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   profileLoaded: false,
   signIn: () => Promise.resolve(false),
+  signInWithGoogle: () => Promise.resolve(false),
   signUp: () => Promise.resolve(false),
   signOut: () => Promise.resolve(),
   refreshSession: () => Promise.resolve(),
