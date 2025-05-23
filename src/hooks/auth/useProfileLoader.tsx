@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +13,7 @@ export const useProfileLoader = () => {
   const [profileLoadRetries, setProfileLoadRetries] = useState(0);
 
   // Function to load user profile from Supabase with retry mechanism
-  const loadUserProfile = useCallback(async (userId: string, user: User | null) => {
+  const loadUserProfile = useCallback(async (userId: string) => {
     try {
       console.log("Loading profile for user:", userId);
       
@@ -58,7 +59,7 @@ export const useProfileLoader = () => {
           
           // If we have no local data, try to initialize a new profile
           console.log("No local profile data, initializing new profile");
-          await initializeUserProfile(userId, user?.email);
+          await initializeUserProfile(userId);
           setProfileLoadRetries(0);
           return;
         }
@@ -67,7 +68,7 @@ export const useProfileLoader = () => {
         console.log(`Retrying profile load in ${backoffTime}ms (retry ${profileLoadRetries + 1}/${MAX_PROFILE_LOAD_RETRIES})`);
         setTimeout(() => {
           setProfileLoadRetries(prev => prev + 1);
-          loadUserProfile(userId, user);
+          loadUserProfile(userId);
         }, backoffTime);
         return;
       }
@@ -81,7 +82,7 @@ export const useProfileLoader = () => {
         const profileData = {
           userId,
           id: userId,
-          username: data.full_name || user?.email?.split('@')[0] || 'user',
+          username: data.full_name || 'user',
           fullName: data.full_name,
           lastUpdated: new Date().toISOString(),
           avatar_url: data.avatar_url,
@@ -99,7 +100,7 @@ export const useProfileLoader = () => {
       } else {
         // No profile found, let's create one
         console.log("No profile data returned from Supabase, initializing profile");
-        await initializeUserProfile(userId, user?.email);
+        await initializeUserProfile(userId);
       }
     } catch (err) {
       console.error("Error loading user profile:", err);
@@ -121,7 +122,7 @@ export const useProfileLoader = () => {
         }
       } else if (userId) {
         // Try to initialize profile in case of error
-        await initializeUserProfile(userId, user?.email);
+        await initializeUserProfile(userId);
       }
     }
   }, [profileLoadRetries]);

@@ -11,7 +11,7 @@ export interface AuthContextType {
   signInWithGoogle: () => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<any>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -23,7 +23,7 @@ export const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: () => Promise.resolve(false),
   signUp: () => Promise.resolve(false),
   signOut: () => Promise.resolve(),
-  refreshSession: () => Promise.resolve(),
+  refreshSession: () => Promise.resolve(null),
 });
 
 export const useAuth = () => {
