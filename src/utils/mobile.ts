@@ -1,4 +1,6 @@
 
+import * as React from 'react';
+
 /**
  * Centralized mobile utilities for device detection and optimizations
  */
@@ -113,3 +115,4 @@ export const useMobileDetection = () => {
     deviceType: getDeviceType()
   };
 };
+
