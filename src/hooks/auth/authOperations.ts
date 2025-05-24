@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -42,7 +43,7 @@ export const signInWithGoogle = async (): Promise<boolean> => {
   try {
     console.log("Iniciando login com Google");
     
-    // Obter a URL atual completa para o redirecionamento
+    // Get full current URL for redirection
     const redirectUrl = window.location.origin;
     console.log("Redirect URL configurada:", redirectUrl);
     
@@ -54,9 +55,7 @@ export const signInWithGoogle = async (): Promise<boolean> => {
           access_type: 'offline',
           prompt: 'consent',
         },
-        // OAuth 2.0 configuration - using the client ID and secret
         scopes: 'email profile',
-        // No need to specify client ID and secret directly here, these are managed in Supabase
       }
     });
 
@@ -69,12 +68,13 @@ export const signInWithGoogle = async (): Promise<boolean> => {
     console.log("Google sign in initiated:", data);
     if (data?.url) {
       console.log("Redirecionando para:", data.url);
+      // Use window.location.href for full page redirection
       window.location.href = data.url;
     } else {
       console.warn("URL de redirecionamento não recebida do Supabase");
       toast.error("Erro ao receber URL de redirecionamento do Google");
     }
-    // No need for success message here as the page will redirect to Google
+    
     return true;
   } catch (error: any) {
     console.error("Google sign in exception:", error);

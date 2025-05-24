@@ -16,12 +16,13 @@ export const useAuthEvents = (
     // Set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, session?.user?.id);
         setSession(session);
         setUser(session?.user || null);
 
         if (event === "SIGNED_IN" && session?.user) {
-          console.log("Loading profile for user:", session.user.id);
+          console.log("User signed in:", session.user.id);
+          toast.success("Login realizado com sucesso!");
           
           // Defer profile loading to avoid auth deadlocks
           setTimeout(() => {
@@ -33,16 +34,35 @@ export const useAuthEvents = (
           toast.success("Sessão encerrada");
         } else if (event === "USER_UPDATED") {
           toast.success("Perfil atualizado");
+        } else if (event === "TOKEN_REFRESHED") {
+          console.log("Auth token refreshed");
         }
       }
     );
+
+    // Check URL parameters for authentication errors
+    const checkUrlForErrors = () => {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get('error');
+      const errorDescription = params.get('error_description');
+      
+      if (error) {
+        console.error("Auth error from redirect:", error, errorDescription);
+        toast.error(`Erro de autenticação: ${errorDescription || error}`);
+        
+        // Clean URL params after processing
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    
+    checkUrlForErrors();
 
     // Initial session check
     const initializeAuth = async () => {
       try {
         setIsLoading(true);
         const { data } = await supabase.auth.getSession();
-        console.log("Auth state changed:", data?.session ? "INITIAL_SESSION" : "NO_SESSION");
+        console.log("Initial auth state:", data?.session ? "LOGGED_IN" : "LOGGED_OUT");
         
         setSession(data?.session);
         setUser(data?.session?.user || null);

@@ -11,6 +11,11 @@ verify_jwt = true
 enable_sign_up = true
 double_confirm_changes = true
 
+[auth.external.google]
+enabled = true
+client_id = "488795335109-nl36d4bkt53rjrsc0sdkpq1iljtbhptr.apps.googleusercontent.com"
+secret = "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"
+
 [realtime]
 enable_permissions = true
 
