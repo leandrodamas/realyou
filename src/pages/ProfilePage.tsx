@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -7,181 +6,197 @@ import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import FloatingActionButton from "@/components/profile/FloatingActionButton";
 import { useAuth } from "@/hooks/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // Import useParams
 import { initializeUserProfile } from "@/hooks/auth/profile";
+import { Professional } from "@/hooks/useSearchProfessionals"; // Import Professional type
 
 const ProfilePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("posts");
-  const [profile, setProfile] = useState({
-    name: "Seu Perfil",
-    title: "Configure seu perfil profissional",
-    avatar: "/placeholder.svg",
-    coverImage: "",
-    postCount: 0,
-    connectionCount: 0,
-    skillsCount: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const { userId: routeUserId } = useParams<{ userId?: string }>(); // Get userId from route params
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // Redirect to login if no user
+
+  const [activeTab, setActiveTab] = useState("posts");
+  const [profile, setProfile] = useState<Partial<Professional> & { coverImage?: string, postCount?: number, connectionCount?: number, skillsCount?: number }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // Determine target user ID and if the viewer is the owner
+  const targetUserId = routeUserId || user?.id;
+
   useEffect(() => {
-    if (!isLoading && !user) {
+    setIsOwner(!!user && targetUserId === user.id);
+  }, [user, targetUserId]);
+
+  // Redirect to login if trying to view own profile while logged out
+  useEffect(() => {
+    if (!isLoading && !user && !routeUserId) {
       toast.error("Faça login para acessar seu perfil");
       navigate("/auth");
     }
-  }, [user, isLoading, navigate]);
-  
-  useEffect(() => {
-    const loadProfile = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Obter usuário autenticado
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
-        
-        // First check localStorage for cached profile
-        const cachedProfile = localStorage.getItem('userProfile');
-        if (cachedProfile) {
-          try {
-            const profileData = JSON.parse(cachedProfile);
-            setProfile({
-              name: profileData.fullName || profileData.username || "Seu Perfil",
-              title: profileData.title || "Configure seu perfil profissional",
-              avatar: profileData.profileImage || profileData.avatar_url || "/placeholder.svg",
-              coverImage: profileData.coverImage || "",
-              postCount: profileData.postCount || 0,
-              connectionCount: profileData.connectionCount || 0,
-              skillsCount: profileData.skillsCount || 0
-            });
-          } catch (error) {
-            console.error("Error parsing cached profile:", error);
-          }
-        }
-        
-        // Then try to fetch from Supabase
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("Erro ao carregar perfil:", error);
-          
-          // Still using the cached profile if we have it
-          if (!cachedProfile) {
-            toast.error("Não foi possível carregar seu perfil");
-          }
-          setIsLoading(false);
-          return;
-        }
-        
-        if (profileData) {
-          setProfile({
-            name: profileData.full_name || "Seu Perfil",
-            title: profileData.profession || "Configure seu perfil profissional",
-            avatar: profileData.avatar_url || "/placeholder.svg",
-            coverImage: "", // Default empty string as profiles table doesn't have cover_image field
-            postCount: 0, // Será atualizado quando implementarmos posts
-            connectionCount: 0, // Será atualizado quando implementarmos conexões
-            skillsCount: 0 // Será atualizado quando implementarmos habilidades
-          });
-        }
-      } catch (error) {
-        console.error("Erro:", error);
-      } finally {
-        setIsLoading(false);
+  }, [user, isLoading, navigate, routeUserId]);
+
+  // Load profile data based on targetUserId
+  const loadProfile = useCallback(async () => {
+    if (!targetUserId) {
+      setIsLoading(false);
+      // If no target ID and not logged in, redirect handled above
+      // If logged in but no target ID, it implies viewing own profile, but user object might still be loading
+      if (user) {
+          console.log("Aguardando ID do usuário autenticado...");
+      } else if (!routeUserId) {
+          console.log("Nenhum ID de perfil para carregar.");
       }
-    };
-    
-    loadProfile();
-    
-    // Listen for profile updates
-    const handleProfileUpdate = (e: Event) => {
-      if (e instanceof CustomEvent && e.detail?.profile) {
-        const updatedProfile = e.detail.profile;
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Fetch profile data from Supabase for the target user
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select(`
+          id,
+          full_name,
+          profession,
+          avatar_url,
+          address,
+          latitude,
+          longitude,
+          bio
+          -- TODO: Add fields for postCount, connectionCount, skillsCount if they exist
+        `)
+        .eq("id", targetUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Erro ao carregar perfil:", error);
+        toast.error("Não foi possível carregar o perfil.");
+        setProfile({}); // Clear profile on error
+        setIsLoading(false);
+        // Optionally navigate back or show an error state
+        // navigate("/");
+        return;
+      }
+
+      if (profileData) {
         setProfile({
-          name: updatedProfile.fullName || updatedProfile.username || "Seu Perfil",
-          title: updatedProfile.title || "Configure seu perfil profissional",
-          avatar: updatedProfile.profileImage || updatedProfile.avatar_url || "/placeholder.svg",
-          coverImage: updatedProfile.coverImage || "",
+          id: profileData.id, // Assuming service_pricing ID is not needed here, using profile ID
+          user_id: profileData.id,
+          name: profileData.full_name || "Usuário",
+          username: profileData.id,
+          title: profileData.profession || (isOwner ? "Configure seu perfil" : "Profissional"),
+          avatar: profileData.avatar_url || "/placeholder.svg",
+          location: profileData.address || "Localização não informada",
+          coordinates: profileData.latitude && profileData.longitude ? { lat: profileData.latitude, lng: profileData.longitude } : undefined,
+          // Placeholder counts - these should ideally come from related tables or aggregated columns
           postCount: 0,
           connectionCount: 0,
-          skillsCount: 0
+          skillsCount: 0,
+          // coverImage: profileData.cover_image_url || "", // Add if cover image exists
         });
+
+        // If owner, maybe update local storage cache?
+        if (isOwner) {
+            // Consider updating localStorage cache if used consistently
+            // localStorage.setItem("userProfile", JSON.stringify(profileData));
+        }
+
+      } else {
+        // Handle case where profile is not found
+        toast.error("Perfil não encontrado.");
+        setProfile({});
+        // navigate("/"); // Navigate away if profile doesn't exist?
+      }
+    } catch (err) {
+      console.error("Erro inesperado ao carregar perfil:", err);
+      toast.error("Ocorreu um erro ao carregar o perfil.");
+      setProfile({});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [targetUserId, isOwner, user]); // Add user dependency
+
+  useEffect(() => {
+    loadProfile();
+
+    // Listen for profile updates (relevant if viewing own profile)
+    const handleProfileUpdate = (e: Event) => {
+      if (isOwner && e instanceof CustomEvent && e.detail?.profile) {
+        console.log("Evento profileUpdated recebido, recarregando perfil...");
+        loadProfile(); // Reload profile data on update
       }
     };
-    
-    document.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
-    
+
+    document.addEventListener("profileUpdated", handleProfileUpdate as EventListener);
+
     return () => {
-      document.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+      document.removeEventListener("profileUpdated", handleProfileUpdate as EventListener);
     };
-  }, [user]);
+  }, [loadProfile, isOwner]); // Add isOwner dependency
 
   const openSettings = (section?: string) => {
+    if (!isOwner) return; // Prevent non-owners from opening settings
     if (section) {
       localStorage.setItem("settingsSection", section);
     }
     navigate("/settings");
   };
-  
+
   const handleNewPublication = () => {
+    if (!isOwner) return;
     toast.info("Funcionalidade de nova publicação em desenvolvimento");
     // Open upload work dialog later
   };
 
+  // Render loading state or profile not found
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Carregando perfil...</div>; // Add a proper loading spinner
+  }
+
+  if (!profile.id) {
+      return <div className="flex justify-center items-center min-h-screen">Perfil não encontrado ou erro ao carregar.</div>;
+  }
+
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
-      <ProfilePageHeader 
-        openSettings={openSettings} 
-        isOwner={true}
+      {/* Pass targetUserId to header if needed for actions like connecting */} 
+      <ProfilePageHeader
+        openSettings={openSettings}
+        isOwner={isOwner}
+        targetUserId={targetUserId} // Pass target ID
       />
       <div className="max-w-md mx-auto px-4">
-        <ProfileHeader 
-          name={profile.name}
-          title={profile.title}
-          avatar={profile.avatar}
+        <ProfileHeader
+          name={profile.name || "Usuário"}
+          title={profile.title || ""}
+          avatar={profile.avatar || "/placeholder.svg"}
           coverImage={profile.coverImage}
-          postCount={profile.postCount}
-          connectionCount={profile.connectionCount}
-          skillsCount={profile.skillsCount}
-          isOwner={true}
+          postCount={profile.postCount || 0}
+          connectionCount={profile.connectionCount || 0}
+          skillsCount={profile.skillsCount || 0}
+          isOwner={isOwner}
         />
-        <ProfileTabs 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
+        {/* Pass targetUserId to tabs if needed for fetching data specific to the viewed profile */}
+        <ProfileTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           openSettings={openSettings}
-          isOwner={true}
+          isOwner={isOwner}
+          targetUserId={targetUserId} // Pass target ID
         />
-        
-        {/* Simple no content state for empty profile */}
-        {activeTab === "posts" && (
+
+        {/* Content for tabs will be rendered inside ProfileTabs component */}
+        {/* Example: Placeholder for empty state if needed outside tabs */}
+        {/* {activeTab === "posts" && !isLoading && profile.postCount === 0 && (
           <div className="text-center py-8 bg-white rounded-lg shadow-sm mt-4">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19ZM11 17H13V13H17V11H13V7H11V11H7V13H11V17Z" fill="#3B82F6"/>
-              </svg>
-            </div>
-            <h3 className="text-md font-medium mb-2">Nenhuma publicação</h3>
-            <p className="text-sm text-gray-500 mb-4">Adicione seu primeiro trabalho para mostrar aos clientes</p>
-            <button 
-              onClick={handleNewPublication}
-              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500"
-            >
-              Nova Publicação
-            </button>
+             ... No posts content ...
           </div>
-        )}
+        )} */} 
       </div>
-      <FloatingActionButton onNewPost={handleNewPublication} />
+      {isOwner && <FloatingActionButton onNewPost={handleNewPublication} />}
     </div>
   );
 };
 
 export default ProfilePage;
+

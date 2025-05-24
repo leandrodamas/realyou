@@ -1,21 +1,116 @@
-
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import FaceCapture from "@/components/facial-recognition/FaceCapture";
 import FaceTechnologyInfo from "@/components/facial-recognition/FaceTechnologyInfo";
 import FaceSecurityPrivacy from "@/components/facial-recognition/FaceSecurityPrivacy";
-import { ArrowLeft, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Info, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client"; // Assuming Supabase client is configured
+import MatchedPersonCard from "@/components/facial-recognition/MatchedPersonCard"; // Re-using for display
+import NoMatchFound from "@/components/facial-recognition/NoMatchFound"; // Re-using for display
+import { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes"; // Reuse type
 
 const FaceRecognitionPage: React.FC = () => {
   const [showInfo, setShowInfo] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [matchedPerson, setMatchedPerson] = useState<MatchedPerson | null>(null);
+  const [noMatchFound, setNoMatchFound] = useState(false);
+  const [connectionSent, setConnectionSent] = useState(false);
+  const [lastCapturedImage, setLastCapturedImage] = useState<string | null>(null);
+
+  // Callback function passed to FaceCapture component
+  const handleCaptureComplete = useCallback(async (imageData: string) => {
+    console.log("FaceRecognitionPage: Capture complete, image data received.");
+    setLastCapturedImage(imageData); // Store the image for potential retry/display
+    setIsSearching(true);
+    setMatchedPerson(null);
+    setNoMatchFound(false);
+    setConnectionSent(false);
+    toast.info("Buscando correspondência...");
+
+    try {
+      // *** Backend Call for Recognition ***
+      // This is where you'd call your backend (e.g., a Supabase Edge Function)
+      // passing the imageData (base64 string) for comparison.
+      // Example using a hypothetical Supabase function 'face-search':
+      const { data, error } = await supabase.functions.invoke("face-search", {
+        body: { image_base64: imageData.split(',')[1] }, // Send only base64 part
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data && data.match_found) {
+        console.log("Match found:", data.user_profile);
+        // Adapt the received data structure to the MatchedPerson type
+        const profile = data.user_profile;
+        setMatchedPerson({
+          id: profile.id,
+          name: profile.full_name || "Usuário",
+          title: profile.profession || "Profissional",
+          avatar: profile.avatar_url || "/placeholder.svg",
+          connectionStatus: "not_connected", // Initial status
+          // Add other relevant fields if available
+        });
+        toast.success("Usuário encontrado!");
+      } else {
+        console.log("No match found.");
+        setNoMatchFound(true);
+        toast.info("Nenhum usuário correspondente encontrado.");
+      }
+    } catch (err: any) {
+      console.error("Erro na busca por reconhecimento facial:", err);
+      toast.error(`Erro na busca: ${err.message}`);
+      setNoMatchFound(true); // Indicate no match on error as well
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Function to handle sending connection request
+  const handleSendConnectionRequest = useCallback(async () => {
+    if (!matchedPerson) return;
+
+    toast.info("Enviando solicitação de conexão...");
+    try {
+      // *** Backend Call for Connection Request ***
+      // Call a Supabase function or interact directly with DB
+      // to create a connection request between the current user and matchedPerson.id
+      // Example:
+      // const { error } = await supabase.from('connection_requests').insert({ sender_id: currentUser.id, receiver_id: matchedPerson.id });
+      // if (error) throw error;
+
+      // Simulate success for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setConnectionSent(true);
+      toast.success("Solicitação de conexão enviada!");
+      // Optionally update matchedPerson state if needed
+      setMatchedPerson(prev => prev ? { ...prev, connectionStatus: 'pending' } : null);
+
+    } catch (err: any) {
+      console.error("Erro ao enviar solicitação de conexão:", err);
+      toast.error(`Erro ao conectar: ${err.message}`);
+    }
+  }, [matchedPerson]);
+
+  // Function to reset the search state and allow recapture
+  const handleResetSearch = () => {
+    setMatchedPerson(null);
+    setNoMatchFound(false);
+    setConnectionSent(false);
+    setLastCapturedImage(null);
+    // The FaceCapture component handles restarting the camera internally now
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md p-4 flex items-center border-b border-gray-100 shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md p-4 flex items-center border-b border-gray-100 shadow-sm sticky top-0 z-10">
         <Link to="/" className="mr-4 rounded-full hover:bg-gray-100 p-2 transition-colors">
           <ArrowLeft className="h-5 w-5 text-gray-700" />
         </Link>
@@ -55,50 +150,66 @@ const FaceRecognitionPage: React.FC = () => {
               Como Funciona
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="scan" className="focus:outline-none">
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl blur opacity-30"></div>
               <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
-                <FaceCapture />
+                {/* Pass the callback to FaceCapture */}
+                {!matchedPerson && !noMatchFound && !isSearching && (
+                  <FaceCapture onCaptureComplete={handleCaptureComplete} />
+                )}
+
+                {/* Display Loading State */}
+                {isSearching && (
+                  <div className="flex flex-col items-center justify-center p-10 h-64">
+                    <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
+                    <p className="text-gray-600">Buscando correspondência...</p>
+                  </div>
+                )}
+
+                {/* Display Match Result */}
+                {matchedPerson && !isSearching && (
+                   <MatchedPersonCard
+                      matchedPerson={matchedPerson}
+                      connectionSent={connectionSent}
+                      onSendConnectionRequest={handleSendConnectionRequest}
+                      // Add other necessary props like onShowScheduleDialog if needed
+                      // onShowScheduleDialog={() => { /* Logic */ }}
+                    />
+                )}
+
+                {/* Display No Match Found */}
+                {noMatchFound && !isSearching && (
+                  <NoMatchFound onReset={handleResetSearch} />
+                )}
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="info" className="focus:outline-none">
-            <div className="bg-white rounded-xl p-6 shadow-md space-y-4">
+             {/* Content from previous version... */}
+             <div className="bg-white rounded-xl p-6 shadow-md space-y-4">
               <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Como usar a Busca por Foto</h3>
-              
               <div className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-medium">1</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Tire uma foto clara em um ambiente bem iluminado</p>
+                 {/* Steps... */}
+                 <div className="flex gap-3">
+                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0"><span className="text-purple-600 font-medium">1</span></div>
+                  <p className="text-sm text-gray-600">Posicione o rosto no centro da câmera em um ambiente bem iluminado</p>
                 </div>
-                
-                <div className="flex gap-3">
-                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-medium">2</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Utilize a foto para procurar outros usuários</p>
+                 <div className="flex gap-3">
+                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0"><span className="text-purple-600 font-medium">2</span></div>
+                  <p className="text-sm text-gray-600">Aguarde a captura automática da melhor imagem</p>
                 </div>
-                
-                <div className="flex gap-3">
-                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-medium">3</span>
-                  </div>
-                  <p className="text-sm text-gray-600">O app analisará a foto e buscará correspondências com usuários do RealYou</p>
+                 <div className="flex gap-3">
+                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0"><span className="text-purple-600 font-medium">3</span></div>
+                  <p className="text-sm text-gray-600">O app buscará correspondências com usuários do RealYou</p>
                 </div>
-                
-                <div className="flex gap-3">
-                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-medium">4</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Envie uma solicitação de conexão para estabelecer contato</p>
+                 <div className="flex gap-3">
+                  <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0"><span className="text-purple-600 font-medium">4</span></div>
+                  <p className="text-sm text-gray-600">Se encontrar, envie uma solicitação de conexão para estabelecer contato</p>
                 </div>
               </div>
-              
               <div className="mt-6">
                 <Button asChild variant="outline" className="w-full">
                   <Link to="/register">
@@ -115,3 +226,4 @@ const FaceRecognitionPage: React.FC = () => {
 };
 
 export default FaceRecognitionPage;
+
