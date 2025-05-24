@@ -9,9 +9,8 @@ import { syncProfileWithSupabase } from "./supabaseSync";
 /**
  * Inicializa perfil do usuário buscando do Supabase ou criando se necessário
  * @param userId ID do usuário
- * @param email Email do usuário
  */
-export const initializeUserProfile = async (userId: string, email: string | undefined): Promise<void> => {
+export const initializeUserProfile = async (userId: string): Promise<void> => {
   console.log(`Initializing user profile for: ${userId}`);
   
   // Cache dados locais antes de tentar buscar do servidor
@@ -55,7 +54,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       const profile: UserProfile = {
         userId: userId,
         id: userId,
-        username: profileData.full_name || email?.split('@')[0] || 'user',
+        username: profileData.full_name || (profileData.email?.split('@')[0] || 'user'),
         fullName: profileData.full_name,
         avatar_url: profileData.avatar_url,
         profileImage: profileData.avatar_url,
@@ -77,7 +76,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
     } else {
       // Se não há perfil no Supabase, cria um
       console.log("No profile found in Supabase, creating one");
-      const username = email?.split('@')[0] || 'user';
+      const username = 'user';
       
       // Usa dados locais se disponíveis
       const baseProfile = localProfile || {
@@ -136,7 +135,7 @@ export const initializeUserProfile = async (userId: string, email: string | unde
       const initialProfile: UserProfile = {
         userId: userId,
         id: userId,
-        username: email?.split('@')[0] || 'user',
+        username: 'user',
         lastUpdated: new Date().toISOString(),
         basePrice: 180,
         currency: 'BRL',

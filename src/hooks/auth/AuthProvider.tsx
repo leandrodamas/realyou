@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { AuthContext } from "./AuthContext";
-import { signIn, signUp, signOut, signInWithGoogle } from "./authOperations";
+import { signIn, signUp, signOut, signInWithGoogle, refreshSession as refreshSessionOp } from "./authOperations";
 import { useProfileLoader } from "./useProfileLoader";
 import { useAuthEvents } from "./useAuthEvents";
 

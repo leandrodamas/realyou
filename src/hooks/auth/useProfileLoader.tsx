@@ -59,7 +59,7 @@ export const useProfileLoader = () => {
           
           // If we have no local data, try to initialize a new profile
           console.log("No local profile data, initializing new profile");
-          await initializeUserProfile(userId, undefined);
+          await initializeUserProfile(userId);
           setProfileLoadRetries(0);
           return;
         }
@@ -100,7 +100,7 @@ export const useProfileLoader = () => {
       } else {
         // No profile found, let's create one
         console.log("No profile data returned from Supabase, initializing profile");
-        await initializeUserProfile(userId, undefined);
+        await initializeUserProfile(userId);
       }
     } catch (err) {
       console.error("Error loading user profile:", err);
@@ -122,7 +122,7 @@ export const useProfileLoader = () => {
         }
       } else if (userId) {
         // Try to initialize profile in case of error
-        await initializeUserProfile(userId, undefined);
+        await initializeUserProfile(userId);
       }
     }
   }, [profileLoadRetries]);

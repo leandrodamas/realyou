@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,17 +113,23 @@ const AuthPage: React.FC = () => {
       setIsGoogleSubmitting(true);
       setAuthError(null);
       console.log("Iniciando processo de login com Google");
+      
+      // Verificar se há bloqueadores de pop-up
+      const popupBlockerTest = window.open('about:blank', '_blank');
+      if (!popupBlockerTest || popupBlockerTest.closed || typeof popupBlockerTest.closed === 'undefined') {
+        // Pop-up bloqueado
+        toast.error("Por favor, permita pop-ups para este site para continuar com o login do Google");
+        setIsGoogleSubmitting(false);
+        return;
+      }
+      popupBlockerTest.close();
+      
       await signInWithGoogle();
       // Success toast is handled in the auth context
     } catch (error: any) {
       console.error("Google authentication error:", error);
       setAuthError(error.message || "Erro ao autenticar com Google");
-    } finally {
-      // Como haverá redirecionamento, não precisamos resetar isGoogleSubmitting aqui
-      // O componente será desmontado durante o redirecionamento
-      setTimeout(() => {
-        setIsGoogleSubmitting(false);
-      }, 5000); // Timeout como precaução caso não haja redirecionamento
+      setIsGoogleSubmitting(false);
     }
   };
 
