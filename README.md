@@ -22,7 +22,15 @@ Uma aplicação de rede social com autenticação facial, reconhecimento de usu�
 - WebAssembly (WASM) para processamento de imagem em tempo real
 - Notificações em tempo real via Supabase Realtime
 
-## Como iniciar
+## Deploy Permanente
+
+O site está implantado permanentemente e acessível publicamente na seguinte URL:
+
+**[https://vkecfkyg.manus.space](https://vkecfkyg.manus.space)**
+
+**Importante:** Para que o aplicativo funcione corretamente neste ambiente público, é **essencial** configurar as variáveis de ambiente reais do Supabase (`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`) diretamente na plataforma de hospedagem que você utiliza (ex: Vercel, Netlify, etc.). O build atual utiliza valores de exemplo.
+
+## Como iniciar (Desenvolvimento Local)
 
 Siga estas etapas para configurar o projeto localmente:
 
@@ -36,10 +44,10 @@ cd realyou
 # Instale as dependências
 npm install
 
-# Configure as variáveis de ambiente
+# Configure as variáveis de ambiente (para desenvolvimento)
 # Crie um arquivo .env.local com as seguintes variáveis:
-# VITE_SUPABASE_URL=sua_url_do_supabase
-# VITE_SUPABASE_ANON_KEY=sua_chave_anon_do_supabase
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anon_do_supabase
 # VITE_FACIAL_RECOGNITION_API_KEY=sua_chave_api_kbyai (opcional)
 
 # Inicie o servidor de desenvolvimento
@@ -51,8 +59,8 @@ npm run dev
 O projeto utiliza o SDK KBY-AI para reconhecimento facial. Os arquivos do SDK (`.js`, `.wasm`, `.data`) estão localizados em `/public/kbyai_sdk/`. Para utilizar sua própria chave de API:
 
 1. Obtenha uma chave de API da KBY-AI
-2. Configure a variável de ambiente `VITE_FACIAL_RECOGNITION_API_KEY` com sua chave
-3. Ou atualize diretamente no arquivo `/src/services/sdk/initializeSDK.ts`
+2. Configure a variável de ambiente `VITE_FACIAL_RECOGNITION_API_KEY` com sua chave (tanto localmente em `.env.local` quanto no ambiente de produção)
+3. Ou atualize diretamente no arquivo `/src/services/sdk/initializeSDK.ts` (não recomendado para produção)
 
 ## Fluxo de Reconhecimento Facial
 
@@ -73,6 +81,7 @@ O projeto segue uma arquitetura baseada em componentes React com TypeScript:
 - `/src/services` - Serviços de integração com APIs e SDK
 - `/src/utils` - Funções utilitárias
 - `/public/kbyai_sdk` - Arquivos do SDK KBY-AI (WASM, JS)
+- `/dist` - Diretório com os arquivos do build para produção
 
 ## Permissões Necessárias
 
