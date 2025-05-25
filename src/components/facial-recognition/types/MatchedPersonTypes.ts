@@ -1,8 +1,10 @@
 
 export interface MatchedPerson {
   name: string;
+  title?: string; // Adding title property to match usage
   profession: string;
   avatar: string;
+  connectionStatus?: 'not_connected' | 'pending' | 'connected';
   schedule?: Array<ScheduleSlot>;
 }
 

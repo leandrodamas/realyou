@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client"; // Assuming Supabase client is configured
-import MatchedPersonCard from "@/components/facial-recognition/MatchedPersonCard"; // Re-using for display
-import NoMatchFound from "@/components/facial-recognition/NoMatchFound"; // Re-using for display
-import { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes"; // Reuse type
+import { supabase } from "@/integrations/supabase/client";
+import MatchedPersonCard from "@/components/facial-recognition/MatchedPersonCard";
+import NoMatchFound from "@/components/facial-recognition/NoMatchFound";
+import { MatchedPerson } from "@/components/facial-recognition/types/MatchedPersonTypes";
 
 const FaceRecognitionPage: React.FC = () => {
   const [showInfo, setShowInfo] = useState(false);
@@ -22,10 +22,9 @@ const FaceRecognitionPage: React.FC = () => {
   const [connectionSent, setConnectionSent] = useState(false);
   const [lastCapturedImage, setLastCapturedImage] = useState<string | null>(null);
 
-  // Callback function passed to FaceCapture component
   const handleCaptureComplete = useCallback(async (imageData: string) => {
     console.log("FaceRecognitionPage: Capture complete, image data received.");
-    setLastCapturedImage(imageData); // Store the image for potential retry/display
+    setLastCapturedImage(imageData);
     setIsSearching(true);
     setMatchedPerson(null);
     setNoMatchFound(false);
@@ -33,12 +32,8 @@ const FaceRecognitionPage: React.FC = () => {
     toast.info("Buscando correspondência...");
 
     try {
-      // *** Backend Call for Recognition ***
-      // This is where you'd call your backend (e.g., a Supabase Edge Function)
-      // passing the imageData (base64 string) for comparison.
-      // Example using a hypothetical Supabase function 'face-search':
       const { data, error } = await supabase.functions.invoke("face-search", {
-        body: { image_base64: imageData.split(',')[1] }, // Send only base64 part
+        body: { image_base64: imageData.split(',')[1] },
       });
 
       if (error) {
@@ -47,14 +42,12 @@ const FaceRecognitionPage: React.FC = () => {
 
       if (data && data.match_found) {
         console.log("Match found:", data.user_profile);
-        // Adapt the received data structure to the MatchedPerson type
         const profile = data.user_profile;
         setMatchedPerson({
           name: profile.full_name || "Usuário",
-          title: profile.profession || "Profissional",
+          profession: profile.profession || "Profissional",
           avatar: profile.avatar_url || "/placeholder.svg",
-          connectionStatus: "not_connected", // Initial status
-          // Add other relevant fields if available
+          connectionStatus: "not_connected",
         });
         toast.success("Usuário encontrado!");
       } else {
@@ -65,31 +58,21 @@ const FaceRecognitionPage: React.FC = () => {
     } catch (err: any) {
       console.error("Erro na busca por reconhecimento facial:", err);
       toast.error(`Erro na busca: ${err.message}`);
-      setNoMatchFound(true); // Indicate no match on error as well
+      setNoMatchFound(true);
     } finally {
       setIsSearching(false);
     }
   }, []);
 
-  // Function to handle sending connection request
   const handleSendConnectionRequest = useCallback(async () => {
     if (!matchedPerson) return;
 
     toast.info("Enviando solicitação de conexão...");
     try {
-      // *** Backend Call for Connection Request ***
-      // Call a Supabase function or interact directly with DB
-      // to create a connection request between the current user and matchedPerson.id
-      // Example:
-      // const { error } = await supabase.from('connection_requests').insert({ sender_id: currentUser.id, receiver_id: matchedPerson.id });
-      // if (error) throw error;
-
-      // Simulate success for now
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setConnectionSent(true);
       toast.success("Solicitação de conexão enviada!");
-      // Optionally update matchedPerson state if needed
       setMatchedPerson(prev => prev ? { ...prev, connectionStatus: 'pending' } : null);
 
     } catch (err: any) {
@@ -98,18 +81,15 @@ const FaceRecognitionPage: React.FC = () => {
     }
   }, [matchedPerson]);
 
-  // Function to handle showing schedule dialog
   const handleShowScheduleDialog = useCallback(() => {
     toast.info("Funcionalidade de agendamento em desenvolvimento");
   }, []);
 
-  // Function to reset the search state and allow recapture
   const handleResetSearch = () => {
     setMatchedPerson(null);
     setNoMatchFound(false);
     setConnectionSent(false);
     setLastCapturedImage(null);
-    // The FaceCapture component handles restarting the camera internally now
   };
 
   return (
@@ -160,12 +140,10 @@ const FaceRecognitionPage: React.FC = () => {
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl blur opacity-30"></div>
               <div className="relative bg-white rounded-xl shadow-xl overflow-hidden">
-                {/* Pass the callback to FaceCapture */}
                 {!matchedPerson && !noMatchFound && !isSearching && (
                   <FaceCapture onCaptureComplete={handleCaptureComplete} />
                 )}
 
-                {/* Display Loading State */}
                 {isSearching && (
                   <div className="flex flex-col items-center justify-center p-10 h-64">
                     <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
@@ -173,7 +151,6 @@ const FaceRecognitionPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Display Match Result */}
                 {matchedPerson && !isSearching && (
                    <MatchedPersonCard
                       matchedPerson={matchedPerson}
@@ -183,7 +160,6 @@ const FaceRecognitionPage: React.FC = () => {
                     />
                 )}
 
-                {/* Display No Match Found */}
                 {noMatchFound && !isSearching && (
                   <NoMatchFound onReset={handleResetSearch} />
                 )}
@@ -192,11 +168,9 @@ const FaceRecognitionPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="info" className="focus:outline-none">
-             {/* Content from previous version... */}
              <div className="bg-white rounded-xl p-6 shadow-md space-y-4">
               <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Como usar a Busca por Foto</h3>
               <div className="space-y-3">
-                 {/* Steps... */}
                  <div className="flex gap-3">
                   <div className="bg-purple-100 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0"><span className="text-purple-600 font-medium">1</span></div>
                   <p className="text-sm text-gray-600">Posicione o rosto no centro da câmera em um ambiente bem iluminado</p>
