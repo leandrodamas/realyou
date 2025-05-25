@@ -13,10 +13,14 @@ export const useAuthEvents = (
   const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    // Set up the auth state change listener
+    let mounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+
         console.log("Auth state changed:", event, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user || null);
 
@@ -24,67 +28,62 @@ export const useAuthEvents = (
           console.log("User signed in:", session.user.id);
           toast.success("Login realizado com sucesso!");
           
-          // Defer profile loading to avoid auth deadlocks
+          // Load profile with delay to avoid auth conflicts
           setTimeout(() => {
-            loadUserProfile(session.user!.id);
-          }, 0);
+            if (mounted) {
+              loadUserProfile(session.user!.id);
+            }
+          }, 100);
         } else if (event === "SIGNED_OUT") {
           console.log("User signed out");
           setProfileLoaded(false);
-          toast.success("Sessão encerrada");
-        } else if (event === "USER_UPDATED") {
-          toast.success("Perfil atualizado");
+          localStorage.removeItem('userProfile');
         } else if (event === "TOKEN_REFRESHED") {
           console.log("Auth token refreshed");
         }
       }
     );
 
-    // Check URL parameters for authentication errors
-    const checkUrlForErrors = () => {
-      const params = new URLSearchParams(window.location.search);
-      const error = params.get('error');
-      const errorDescription = params.get('error_description');
-      
-      if (error) {
-        console.error("Auth error from redirect:", error, errorDescription);
-        toast.error(`Erro de autenticação: ${errorDescription || error}`);
-        
-        // Clean URL params after processing
-        window.history.replaceState(null, '', window.location.pathname);
-      }
-    };
-    
-    checkUrlForErrors();
-
-    // Initial session check
+    // Check for existing session
     const initializeAuth = async () => {
+      if (!mounted) return;
+      
       try {
         setIsLoading(true);
-        const { data } = await supabase.auth.getSession();
-        console.log("Initial auth state:", data?.session ? "LOGGED_IN" : "LOGGED_OUT");
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        setSession(data?.session);
-        setUser(data?.session?.user || null);
+        if (error) {
+          console.error("Error getting session:", error);
+        } else {
+          console.log("Initial session check:", session ? "LOGGED_IN" : "LOGGED_OUT");
+          
+          if (mounted) {
+            setSession(session);
+            setUser(session?.user || null);
 
-        if (data?.session?.user) {
-          // Defer profile loading to avoid auth deadlocks
-          setTimeout(() => {
-            loadUserProfile(data.session!.user.id);
-          }, 0);
+            if (session?.user) {
+              setTimeout(() => {
+                if (mounted) {
+                  loadUserProfile(session.user!.id);
+                }
+              }, 100);
+            }
+          }
         }
       } catch (error) {
         console.error("Error checking session:", error);
       } finally {
-        setIsLoading(false);
-        setAuthInitialized(true);
+        if (mounted) {
+          setIsLoading(false);
+          setAuthInitialized(true);
+        }
       }
     };
 
     initializeAuth();
 
-    // Cleanup subscription
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [setSession, setUser, setIsLoading, loadUserProfile, setProfileLoaded]);
@@ -105,7 +104,7 @@ export const useAuthEvents = (
       if (data.session?.user) {
         setTimeout(() => {
           loadUserProfile(data.session!.user.id);
-        }, 0);
+        }, 100);
       }
       
       return data;

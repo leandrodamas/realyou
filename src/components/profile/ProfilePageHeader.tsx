@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 interface ProfilePageHeaderProps {
   openSettings: (section?: string) => void;
   isOwner?: boolean;
+  targetUserId?: string;
 }
 
 const ProfilePageHeader: React.FC<ProfilePageHeaderProps> = ({ openSettings, isOwner = true }) => {

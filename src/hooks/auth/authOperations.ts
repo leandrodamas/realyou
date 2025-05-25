@@ -9,7 +9,7 @@ export const signIn = async (
 ): Promise<boolean> => {
   setIsLoading(true);
   try {
-    console.log("Signing in with:", email);
+    console.log("Attempting sign in with:", email);
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -28,7 +28,7 @@ export const signIn = async (
       return false;
     }
     
-    console.log("Sign in successful:", data.user?.id);
+    console.log("Sign in successful for user:", data.user?.id);
     return true;
   } catch (error: any) {
     console.error("Sign in exception:", error);
@@ -43,8 +43,7 @@ export const signInWithGoogle = async (): Promise<boolean> => {
   try {
     console.log("Iniciando login com Google");
     
-    // Get full current URL for redirection
-    const redirectUrl = window.location.origin;
+    const redirectUrl = `${window.location.origin}/auth`;
     console.log("Redirect URL configurada:", redirectUrl);
     
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -65,16 +64,7 @@ export const signInWithGoogle = async (): Promise<boolean> => {
       return false;
     }
 
-    console.log("Google sign in initiated:", data);
-    if (data?.url) {
-      console.log("Redirecionando para:", data.url);
-      // Use window.location.href for full page redirection
-      window.location.href = data.url;
-    } else {
-      console.warn("URL de redirecionamento não recebida do Supabase");
-      toast.error("Erro ao receber URL de redirecionamento do Google");
-    }
-    
+    console.log("Google sign in initiated successfully");
     return true;
   } catch (error: any) {
     console.error("Google sign in exception:", error);
@@ -90,14 +80,14 @@ export const signUp = async (
 ): Promise<boolean> => {
   setIsLoading(true);
   try {
-    console.log("Signing up with:", email);
+    console.log("Attempting sign up with:", email);
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth`,
         data: {
-          username: email.split('@')[0]
+          full_name: email.split('@')[0]
         }
       }
     });
@@ -115,34 +105,10 @@ export const signUp = async (
     
     console.log("Sign up response:", data);
     
-    // Check if email confirmation is required
     if (data.user && data.session) {
-      // Auto-login if email confirmation is not enabled in Supabase
       toast.success("Conta criada com sucesso!");
-      
-      // Create initial profile for the user
-      try {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            full_name: email.split('@')[0],
-            avatar_url: '/placeholder.svg',
-            updated_at: new Date().toISOString()
-          });
-          
-        if (profileError) {
-          console.error("Error creating user profile:", profileError);
-        } else {
-          console.log("Created initial profile for user:", data.user.id);
-        }
-      } catch (profileError) {
-        console.error("Exception creating profile:", profileError);
-      }
-      
       return true;
     } else if (data.user && !data.session) {
-      // Email confirmation is required
       toast.info("Conta criada! Por favor, verifique seu email para confirmar.");
       return true;
     }
@@ -164,6 +130,8 @@ export const signOut = async (setIsLoading: (loading: boolean) => void): Promise
     if (error) {
       console.error("Sign out error:", error);
       toast.error(`Erro ao fazer logout: ${error.message}`);
+    } else {
+      toast.success("Logout realizado com sucesso!");
     }
   } catch (error: any) {
     console.error("Sign out exception:", error);
@@ -181,7 +149,7 @@ export const refreshSession = async () => {
       console.error("Refresh session error:", error);
       throw error;
     }
-    console.log("Session refreshed:", data.session?.user?.id);
+    console.log("Session refreshed successfully");
     return data;
   } catch (error: any) {
     console.error("Refresh session exception:", error);

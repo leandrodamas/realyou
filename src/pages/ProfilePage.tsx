@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,12 +7,12 @@ import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import FloatingActionButton from "@/components/profile/FloatingActionButton";
 import { useAuth } from "@/hooks/auth";
-import { useNavigate, useParams } from "react-router-dom"; // Import useParams
+import { useNavigate, useParams } from "react-router-dom";
 import { initializeUserProfile } from "@/hooks/auth/profile";
-import { Professional } from "@/hooks/useSearchProfessionals"; // Import Professional type
+import { Professional } from "@/hooks/useSearchProfessionals";
 
 const ProfilePage: React.FC = () => {
-  const { userId: routeUserId } = useParams<{ userId?: string }>(); // Get userId from route params
+  const { userId: routeUserId } = useParams<{ userId?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -39,8 +40,6 @@ const ProfilePage: React.FC = () => {
   const loadProfile = useCallback(async () => {
     if (!targetUserId) {
       setIsLoading(false);
-      // If no target ID and not logged in, redirect handled above
-      // If logged in but no target ID, it implies viewing own profile, but user object might still be loading
       if (user) {
           console.log("Aguardando ID do usuário autenticado...");
       } else if (!routeUserId) {
@@ -51,7 +50,7 @@ const ProfilePage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Fetch profile data from Supabase for the target user
+      // Fixed SQL query - removed invalid comment syntax
       const { data: profileData, error } = await supabase
         .from("profiles")
         .select(`
@@ -59,11 +58,8 @@ const ProfilePage: React.FC = () => {
           full_name,
           profession,
           avatar_url,
-          address,
-          latitude,
-          longitude,
-          bio
-          -- TODO: Add fields for postCount, connectionCount, skillsCount if they exist
+          created_at,
+          updated_at
         `)
         .eq("id", targetUserId)
         .maybeSingle();
@@ -71,41 +67,36 @@ const ProfilePage: React.FC = () => {
       if (error) {
         console.error("Erro ao carregar perfil:", error);
         toast.error("Não foi possível carregar o perfil.");
-        setProfile({}); // Clear profile on error
+        setProfile({});
         setIsLoading(false);
-        // Optionally navigate back or show an error state
-        // navigate("/");
         return;
       }
 
       if (profileData) {
+        console.log("Profile data loaded:", profileData);
         setProfile({
-          id: profileData.id, // Assuming service_pricing ID is not needed here, using profile ID
+          id: profileData.id,
           user_id: profileData.id,
           name: profileData.full_name || "Usuário",
           username: profileData.id,
           title: profileData.profession || (isOwner ? "Configure seu perfil" : "Profissional"),
           avatar: profileData.avatar_url || "/placeholder.svg",
-          location: profileData.address || "Localização não informada",
-          coordinates: profileData.latitude && profileData.longitude ? { lat: profileData.latitude, lng: profileData.longitude } : undefined,
-          // Placeholder counts - these should ideally come from related tables or aggregated columns
+          location: "Localização não informada",
           postCount: 0,
           connectionCount: 0,
           skillsCount: 0,
-          // coverImage: profileData.cover_image_url || "", // Add if cover image exists
         });
-
-        // If owner, maybe update local storage cache?
-        if (isOwner) {
-            // Consider updating localStorage cache if used consistently
-            // localStorage.setItem("userProfile", JSON.stringify(profileData));
-        }
-
       } else {
-        // Handle case where profile is not found
-        toast.error("Perfil não encontrado.");
-        setProfile({});
-        // navigate("/"); // Navigate away if profile doesn't exist?
+        // Profile not found, create one if user is owner
+        if (isOwner && user) {
+          console.log("Creating new profile for user:", user.id);
+          await initializeUserProfile(user.id);
+          // Retry loading after initialization
+          setTimeout(() => loadProfile(), 1000);
+        } else {
+          toast.error("Perfil não encontrado.");
+          setProfile({});
+        }
       }
     } catch (err) {
       console.error("Erro inesperado ao carregar perfil:", err);
@@ -114,16 +105,16 @@ const ProfilePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [targetUserId, isOwner, user]); // Add user dependency
+  }, [targetUserId, isOwner, user]);
 
   useEffect(() => {
     loadProfile();
 
-    // Listen for profile updates (relevant if viewing own profile)
+    // Listen for profile updates
     const handleProfileUpdate = (e: Event) => {
       if (isOwner && e instanceof CustomEvent && e.detail?.profile) {
         console.log("Evento profileUpdated recebido, recarregando perfil...");
-        loadProfile(); // Reload profile data on update
+        loadProfile();
       }
     };
 
@@ -132,10 +123,10 @@ const ProfilePage: React.FC = () => {
     return () => {
       document.removeEventListener("profileUpdated", handleProfileUpdate as EventListener);
     };
-  }, [loadProfile, isOwner]); // Add isOwner dependency
+  }, [loadProfile, isOwner]);
 
   const openSettings = (section?: string) => {
-    if (!isOwner) return; // Prevent non-owners from opening settings
+    if (!isOwner) return;
     if (section) {
       localStorage.setItem("settingsSection", section);
     }
@@ -145,30 +136,43 @@ const ProfilePage: React.FC = () => {
   const handleNewPublication = () => {
     if (!isOwner) return;
     toast.info("Funcionalidade de nova publicação em desenvolvimento");
-    // Open upload work dialog later
   };
 
-  // Render loading state or profile not found
+  // Render loading state
   if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">Carregando perfil...</div>; // Add a proper loading spinner
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-purple-600"></div>
+          <p className="text-sm text-gray-600">Carregando perfil...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!profile.id) {
-      return <div className="flex justify-center items-center min-h-screen">Perfil não encontrado ou erro ao carregar.</div>;
+  // If no profile and not owner, show not found
+  if (!profile.id && !isOwner) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-lg font-medium">Perfil não encontrado</p>
+          <p className="text-gray-500 mt-2">O usuário que você está procurando não existe.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
-      {/* Pass targetUserId to header if needed for actions like connecting */} 
       <ProfilePageHeader
         openSettings={openSettings}
         isOwner={isOwner}
-        targetUserId={targetUserId} // Pass target ID
+        targetUserId={targetUserId}
       />
       <div className="max-w-md mx-auto px-4">
         <ProfileHeader
           name={profile.name || "Usuário"}
-          title={profile.title || ""}
+          title={profile.title || (isOwner ? "Configure seu perfil" : "Profissional")}
           avatar={profile.avatar || "/placeholder.svg"}
           coverImage={profile.coverImage}
           postCount={profile.postCount || 0}
@@ -176,22 +180,13 @@ const ProfilePage: React.FC = () => {
           skillsCount={profile.skillsCount || 0}
           isOwner={isOwner}
         />
-        {/* Pass targetUserId to tabs if needed for fetching data specific to the viewed profile */}
         <ProfileTabs
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           openSettings={openSettings}
           isOwner={isOwner}
-          targetUserId={targetUserId} // Pass target ID
+          targetUserId={targetUserId}
         />
-
-        {/* Content for tabs will be rendered inside ProfileTabs component */}
-        {/* Example: Placeholder for empty state if needed outside tabs */}
-        {/* {activeTab === "posts" && !isLoading && profile.postCount === 0 && (
-          <div className="text-center py-8 bg-white rounded-lg shadow-sm mt-4">
-             ... No posts content ...
-          </div>
-        )} */} 
       </div>
       {isOwner && <FloatingActionButton onNewPost={handleNewPublication} />}
     </div>
@@ -199,4 +194,3 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
-
