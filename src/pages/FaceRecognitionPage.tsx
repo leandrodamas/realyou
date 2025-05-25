@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import FaceCapture from "@/components/facial-recognition/FaceCapture";
 import FaceTechnologyInfo from "@/components/facial-recognition/FaceTechnologyInfo";
@@ -49,7 +50,6 @@ const FaceRecognitionPage: React.FC = () => {
         // Adapt the received data structure to the MatchedPerson type
         const profile = data.user_profile;
         setMatchedPerson({
-          id: profile.id,
           name: profile.full_name || "Usuário",
           title: profile.profession || "Profissional",
           avatar: profile.avatar_url || "/placeholder.svg",
@@ -97,6 +97,11 @@ const FaceRecognitionPage: React.FC = () => {
       toast.error(`Erro ao conectar: ${err.message}`);
     }
   }, [matchedPerson]);
+
+  // Function to handle showing schedule dialog
+  const handleShowScheduleDialog = useCallback(() => {
+    toast.info("Funcionalidade de agendamento em desenvolvimento");
+  }, []);
 
   // Function to reset the search state and allow recapture
   const handleResetSearch = () => {
@@ -174,8 +179,7 @@ const FaceRecognitionPage: React.FC = () => {
                       matchedPerson={matchedPerson}
                       connectionSent={connectionSent}
                       onSendConnectionRequest={handleSendConnectionRequest}
-                      // Add other necessary props like onShowScheduleDialog if needed
-                      // onShowScheduleDialog={() => { /* Logic */ }}
+                      onShowScheduleDialog={handleShowScheduleDialog}
                     />
                 )}
 
@@ -226,4 +230,3 @@ const FaceRecognitionPage: React.FC = () => {
 };
 
 export default FaceRecognitionPage;
-

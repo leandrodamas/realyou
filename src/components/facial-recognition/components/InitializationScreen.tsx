@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 interface InitializationScreenProps {
   isInitializing: boolean;
   hasError: boolean;
+  error?: string;
   onRetry: () => void;
 }
 
 const InitializationScreen: React.FC<InitializationScreenProps> = ({ 
   isInitializing, 
   hasError,
+  error,
   onRetry 
 }) => {
   useEffect(() => {
@@ -37,7 +39,7 @@ const InitializationScreen: React.FC<InitializationScreenProps> = ({
           </div>
           <h3 className="text-lg font-medium mb-2">Falha de inicialização</h3>
           <p className="text-gray-600 mb-4">
-            Não foi possível inicializar os recursos de reconhecimento facial. Verifique sua conexão ou permissões do navegador.
+            {error || "Não foi possível inicializar os recursos de reconhecimento facial. Verifique sua conexão ou permissões do navegador."}
           </p>
           <Button
             onClick={(e) => {

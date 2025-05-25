@@ -61,8 +61,13 @@ export const useNotifications = (): UseNotificationsReturn => {
       if (fetchError) throw fetchError;
 
       if (data) {
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.is_read).length);
+        // Cast data to Notification[] since we know the structure matches
+        const typedNotifications = data.map(notification => ({
+          ...notification,
+          type: notification.type as 'connection_request' | 'new_message' | 'scheduling_request' | 'other'
+        }));
+        setNotifications(typedNotifications);
+        setUnreadCount(typedNotifications.filter(n => !n.is_read).length);
       }
     } catch (err: any) {
       console.error('Error fetching notifications:', err);

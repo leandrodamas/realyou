@@ -7,23 +7,20 @@ import IntroContainer from "./components/IntroContainer";
 
 interface FaceCaptureCameraProps {
   isCameraActive: boolean;
-  capturedImage: string | null;
-  onStartCamera: () => void;
-  onCapture: () => void;
-  onReset: () => void;
+  feedbackMessage?: string;
+  onToggleCamera: () => void;
 }
 
 const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
   isCameraActive,
-  capturedImage,
-  onStartCamera,
-  onCapture,
-  onReset,
+  feedbackMessage,
+  onToggleCamera,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [brightness, setBrightness] = useState(2.0);
   const mountedRef = useRef<boolean>(true);
   const [startupAttempted, setStartupAttempted] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   
   const { 
     videoRef, 
@@ -86,10 +83,20 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       brightness,
       onCaptureComplete: () => {
         if (mountedRef.current) {
-          onCapture();
+          // Handle capture completion
+          console.log("Image captured successfully");
         }
       }
     });
+  };
+
+  const handleStartCamera = () => {
+    onToggleCamera();
+  };
+
+  const handleReset = () => {
+    setCapturedImage(null);
+    onToggleCamera();
   };
 
   const increaseBrightness = () => {
@@ -106,8 +113,8 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       <IntroContainer 
         isCameraActive={isCameraActive}
         capturedImage={capturedImage}
-        onStartCamera={onStartCamera}
-        onReset={onReset}
+        onStartCamera={handleStartCamera}
+        onReset={handleReset}
       />
     );
   }
@@ -128,7 +135,7 @@ const FaceCaptureCamera: React.FC<FaceCaptureCameraProps> = ({
       switchCamera={switchCamera}
       increaseBrightness={increaseBrightness}
       decreaseBrightness={decreaseBrightness}
-      onReset={onReset}
+      onReset={handleReset}
     />
   );
 };

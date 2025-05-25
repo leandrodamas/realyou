@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,18 +51,15 @@ export const useSearchProfessionals = (query: string = "") => {
         // 2. Obter IDs únicos dos usuários (profissionais)
         const userIds = [...new Set(serviceProviders.map(provider => provider.user_id))];
 
-        // 3. Buscar perfis desses profissionais, incluindo localização/coordenadas
+        // 3. Buscar perfis desses profissionais
         const { data: profiles, error: profilesError } = await supabase
-          .from("profiles") // Tabela de perfis
+          .from("profiles")
           .select(`
             id,
             full_name,
             profession,
             avatar_url,
-            address, -- Supondo que exista um campo de endereço
-            latitude, -- Supondo que exista latitude
-            longitude -- Supondo que exista longitude
-            -- Adicionar outros campos relevantes como skills, rating se existirem
+            address
           `)
           .in("id", userIds);
 
@@ -90,8 +88,7 @@ export const useSearchProfessionals = (query: string = "") => {
             username: profile.id, // Usar ID do perfil como username
             avatar: profile.avatar_url || "/placeholder.svg",
             title: profile.profession || service.title || "Profissional",
-            location: profile.address || "Localização não informada", // Usar endereço real
-            coordinates: profile.latitude && profile.longitude ? { lat: profile.latitude, lng: profile.longitude } : undefined, // Usar coordenadas reais
+            location: profile.address || "Localização não informada",
             rating: 4.7, // Placeholder - buscar de uma tabela de avaliações?
             skills: ["React", "Node.js", "Supabase"], // Placeholder - buscar de uma tabela de skills?
             base_price: service.base_price
@@ -124,4 +121,3 @@ export const useSearchProfessionals = (query: string = "") => {
 
   return { professionals, isLoading };
 };
-
