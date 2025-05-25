@@ -1,22 +1,22 @@
+
 import React, { useState, useEffect } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import ProfileGallery from "@/components/profile/ProfileGallery";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client"; // Assuming Supabase client is here
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Define a type for posts if not already defined
+// Define a type for posts
 interface Post {
   id: string;
   imageUrl: string;
   caption?: string;
-  // Add other relevant post fields
 }
 
 interface PostsTabProps {
   isOwner: boolean;
-  targetUserId: string; // Add targetUserId prop
+  targetUserId: string;
 }
 
 const PostsTab: React.FC<PostsTabProps> = ({ isOwner, targetUserId }) => {
@@ -28,17 +28,25 @@ const PostsTab: React.FC<PostsTabProps> = ({ isOwner, targetUserId }) => {
       if (!targetUserId) return;
       setIsLoading(true);
       try {
-        // TODO: Replace 'posts_table' with your actual table name and adjust columns
+        // Use the existing work_gallery table for posts
         const { data, error } = await supabase
-          .from('posts_table') // Replace with your actual posts table name
-          .select('id, imageUrl: image_url, caption') // Adjust column names as needed
+          .from('work_gallery')
+          .select('id, image_path, title, description')
           .eq('user_id', targetUserId)
           .order('created_at', { ascending: false });
 
         if (error) {
           throw error;
         }
-        setPosts(data || []);
+        
+        // Map work_gallery data to Post format
+        const mappedPosts: Post[] = (data || []).map(item => ({
+          id: item.id,
+          imageUrl: item.image_path,
+          caption: item.title || item.description
+        }));
+        
+        setPosts(mappedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
         toast.error("Erro ao carregar publicações.");
@@ -52,8 +60,7 @@ const PostsTab: React.FC<PostsTabProps> = ({ isOwner, targetUserId }) => {
   }, [targetUserId]);
 
   const handleNewPublication = () => {
-      // Logic to open a modal or navigate to a new post creation page
-      toast.info("Funcionalidade de nova publicação em desenvolvimento");
+    toast.info("Funcionalidade de nova publicação em desenvolvimento");
   };
 
   return (
@@ -65,22 +72,17 @@ const PostsTab: React.FC<PostsTabProps> = ({ isOwner, targetUserId }) => {
             variant="outline" 
             size="sm" 
             className="rounded-full flex items-center gap-1"
-            onClick={handleNewPublication} // Add onClick handler
+            onClick={handleNewPublication}
           >
             <Plus className="h-4 w-4" />
             Nova publicação
           </Button>
         )}
       </div>
-      {/* Pass fetched posts to ProfileGallery */}
-      <ProfileGallery 
-        isOwner={isOwner} 
-        posts={posts} // Pass posts data
-        isLoading={isLoading} // Pass loading state
-      />
+      {/* ProfileGallery handles its own data loading */}
+      <ProfileGallery isOwner={isOwner} />
     </TabsContent>
   );
 };
 
 export default PostsTab;
-

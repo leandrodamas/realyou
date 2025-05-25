@@ -69,35 +69,113 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          related_entity_id: string | null
+          related_user_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          related_entity_id?: string | null
+          related_user_id?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          related_entity_id?: string | null
+          related_user_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          caption: string | null
+          comments: number | null
+          created_at: string | null
+          id: string
+          image_url: string
+          likes: number | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          comments?: number | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          likes?: number | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          comments?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          likes?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          bio: string | null
+          company: string | null
           created_at: string
+          education: string | null
           face_registered: boolean | null
           face_registered_at: string | null
           full_name: string | null
           id: string
           profession: string | null
+          skills: string[] | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
           created_at?: string
+          education?: string | null
           face_registered?: boolean | null
           face_registered_at?: string | null
           full_name?: string | null
           id: string
           profession?: string | null
+          skills?: string[] | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
           created_at?: string
+          education?: string | null
           face_registered?: boolean | null
           face_registered_at?: string | null
           full_name?: string | null
           id?: string
           profession?: string | null
+          skills?: string[] | null
           updated_at?: string
         }
         Relationships: []

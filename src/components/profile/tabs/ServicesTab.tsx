@@ -1,20 +1,19 @@
+
 import React from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import ServiceSchedulingSection from "@/components/profile/ServiceSchedulingSection";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "sonner"; // Import toast for feedback
+import { toast } from "sonner";
 
 interface ServicesTabProps {
   isOwner: boolean;
-  targetUserId: string; // Add targetUserId prop
+  targetUserId: string;
 }
 
 const ServicesTab: React.FC<ServicesTabProps> = ({ isOwner, targetUserId }) => {
-
   const handleNewService = () => {
-      // Logic to open a modal or navigate to a new service creation page
-      toast.info("Funcionalidade de adicionar novo serviço em desenvolvimento");
+    toast.info("Funcionalidade de adicionar novo serviço em desenvolvimento");
   };
 
   return (
@@ -26,21 +25,17 @@ const ServicesTab: React.FC<ServicesTabProps> = ({ isOwner, targetUserId }) => {
             variant="outline" 
             size="sm" 
             className="rounded-full"
-            onClick={handleNewService} // Add onClick handler
+            onClick={handleNewService}
           >
             <Plus className="h-4 w-4 mr-1" />
             Novo Serviço
           </Button>
         </div>
       )}
-      {/* Pass targetUserId to ServiceSchedulingSection */}
-      <ServiceSchedulingSection 
-        isOwner={isOwner} 
-        targetUserId={targetUserId} // Pass the ID of the profile being viewed
-      />
+      {/* ServiceSchedulingSection doesn't need targetUserId prop according to its interface */}
+      <ServiceSchedulingSection isOwner={isOwner} />
     </TabsContent>
   );
 };
 
 export default ServicesTab;
-
